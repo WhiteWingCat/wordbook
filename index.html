@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111318">
+  <meta name="description" content="Explore everyday English vocabulary with definitions, examples, conversations, and learning tips.">
+  <title>Wordbook — English Learning Dictionary</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111318;
+      --panel: #191c23;
+      --panel-hover: #20242d;
+      --border: #2d323d;
+      --text: #f3f4f6;
+      --muted: #a1a7b4;
+      --accent: #a9b9ff;
+      --accent-bg: #252e4a;
+      --green: #9bd7b3;
+      --shadow: 0 18px 55px rgba(0,0,0,.32);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .wrap { width: min(1120px, calc(100% - 36px)); margin: 0 auto; }
+    header { border-bottom: 1px solid var(--border); background: rgba(17,19,24,.94); }
+    .topbar { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+    .brand { display: flex; align-items: center; gap: 11px; font-size: 1.15rem; font-weight: 750; letter-spacing: -.035em; }
+    .brand-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; background: var(--accent-bg); color: var(--accent); font-weight: 800; }
+    .top-note { color: var(--muted); font-size: .88rem; }
+    .hero { padding: 42px 0 26px; }
+    .eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: .12em; font-size: .75rem; font-weight: 750; }
+    h1 { margin: 7px 0 8px; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -.055em; line-height: 1.12; }
+    .hero p { color: var(--muted); max-width: 650px; margin: 0; }
+    .category-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+    .category-button { border: 1px solid var(--border); border-radius: 10px; background: var(--panel); color: var(--muted); padding: 8px 12px; }
+    .category-button:hover, .category-button.active { background: var(--accent-bg); border-color: #4c5b8b; color: var(--accent); }
+    .search-row { display: flex; gap: 10px; margin-top: 13px; }
+    .search-box { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--border); border-radius: 13px; padding: 0 15px; }
+    .search-box span { color: var(--muted); font-size: 1.2rem; }
+    .search-box input { width: 100%; padding: 14px 0; border: 0; outline: 0; color: var(--text); background: transparent; }
+    .search-box input::placeholder { color: #777e8c; }
+    .filter-button, .secondary-button { border: 1px solid var(--border); border-radius: 12px; background: var(--panel); color: var(--text); padding: 0 16px; }
+    .filter-button[aria-pressed="true"] { background: var(--accent-bg); border-color: #4c5b8b; color: var(--accent); }
+    .alphabet { display: flex; flex-wrap: wrap; gap: 6px; margin: 18px 0 0; }
+    .letter { width: 33px; height: 33px; border-radius: 9px; border: 1px solid transparent; color: var(--muted); background: transparent; }
+    .letter:hover, .letter.active { color: var(--text); background: var(--panel-hover); border-color: var(--border); }
+    .letter:disabled { opacity: .27; cursor: default; }
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin: 27px 0 14px; }
+    .section-head h2 { font-size: 1.1rem; margin: 0; letter-spacing: -.02em; }
+    .count { color: var(--muted); font-size: .88rem; }
+    .word-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; padding-bottom: 18px; }
+    .word-card { min-height: 58px; text-align: left; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--text); display: flex; align-items: center; justify-content: space-between; gap: 7px; transition: border-color .16s, transform .16s, background .16s; }
+    .word-card:hover { border-color: #59627a; background: var(--panel-hover); transform: translateY(-1px); }
+    .word-card:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .word-name { font-size: .98rem; font-weight: 730; letter-spacing: -.025em; overflow-wrap: anywhere; }
+    .saved-mark { color: var(--green); font-size: .85rem; flex: 0 0 auto; }
+    .part { color: var(--accent); background: var(--accent-bg); border-radius: 6px; padding: 2px 7px; font-size: .7rem; white-space: nowrap; }
+    .saved-mark { color: var(--green); }
+    .empty { grid-column: 1 / -1; padding: 44px 20px; border: 1px dashed var(--border); border-radius: 14px; color: var(--muted); text-align: center; }
+    footer { border-top: 1px solid var(--border); color: var(--muted); padding: 20px 0 30px; font-size: .82rem; }
+    .pagination { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 10px 0 42px; }
+    .pagination button:disabled { opacity: .4; cursor: not-allowed; }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.72); display: none; align-items: stretch; justify-content: flex-start; padding: 0; z-index: 10; }
+    .modal-backdrop.open { display: flex; }
+    .modal { width: 50vw; max-width: 760px; min-width: 440px; height: 100dvh; max-height: 100dvh; overflow-y: auto; border: 1px solid #3a404d; border-left: 0; border-radius: 0 19px 19px 0; background: #171a21; box-shadow: var(--shadow); transform: translateX(-100%); animation: slide-in .22s ease-out forwards; }
+    @keyframes slide-in { to { transform: translateX(0); } }
+    .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 23px 24px 17px; border-bottom: 1px solid var(--border); }
+    .modal-word { font-size: clamp(1.8rem, 5vw, 2.4rem); margin: 0; letter-spacing: -.05em; }
+    .modal-pronunciation { color: var(--muted); margin-top: 4px; }
+    .modal-actions { display: flex; gap: 8px; }
+    .icon-button { border: 1px solid var(--border); border-radius: 10px; width: 39px; height: 39px; color: var(--text); background: var(--panel); }
+    .modal-content { padding: 22px 24px 26px; }
+    .detail-section + .detail-section { margin-top: 22px; }
+    .detail-section h3 { margin: 0 0 9px; color: var(--muted); font-size: .76rem; text-transform: uppercase; letter-spacing: .1em; }
+    .definition { font-size: 1.05rem; margin: 0; }
+    .example-list { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+    .example-list li { border-left: 2px solid #56699e; padding: 9px 13px; border-radius: 0 8px 8px 0; background: #20242d; }
+    .conversation { border: 1px solid var(--border); border-radius: 12px; padding: 14px; background: #13161c; }
+    .dialogue-line { margin: 6px 0; }
+    .speaker { display: inline-block; min-width: 72px; color: var(--accent); font-size: .84rem; font-weight: 700; }
+    .tip { color: var(--muted); font-size: .88rem; }
+    .modal-footer { display: flex; justify-content: space-between; gap: 10px; padding-top: 22px; }
+    .primary-button { border: 1px solid #6576b0; background: var(--accent-bg); color: var(--accent); border-radius: 10px; padding: 10px 14px; }
+    .secondary-button { padding: 10px 14px; }
+    @media (max-width: 1100px) { .word-grid { grid-template-columns: repeat(5, minmax(0,1fr)); } }
+    @media (max-width: 900px) { .word-grid { grid-template-columns: repeat(4, minmax(0,1fr)); } .modal { width: 70vw; } }
+    @media (max-width: 650px) {
+      .wrap { width: min(100% - 24px, 1120px); }
+      .top-note { display: none; }
+      .hero { padding-top: 31px; }
+      .search-row { flex-direction: column; }
+      .filter-button { padding: 11px 14px; }
+      .word-grid { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 7px; }
+      .word-card { min-height: 48px; padding: 9px; }
+      .word-name { font-size: .92rem; }
+      .modal { width: 88vw; min-width: 0; border-radius: 0 15px 15px 0; }
+      .modal-head, .modal-content { padding-left: 17px; padding-right: 17px; }
+      .category-button { padding: 7px 9px; font-size: .85rem; }
+      .pagination { gap: 8px; }
+    }
+    @media (max-width: 360px) { .word-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap topbar">
+      <div class="brand"><div class="brand-icon">W</div><span>Wordbook</span></div>
+      <div class="top-note">A small step toward a bigger vocabulary.</div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div class="eyebrow">English · Growing collection</div>
+      <h1>Learn one word at a time.</h1>
+      <p>Explore useful English words, understand what they mean, and see how people use them in everyday conversation.</p>
+      <div class="category-row" aria-label="Filter by part of speech">
+        <button class="category-button active" type="button" data-category="all" aria-pressed="true">All categories</button>
+        <button class="category-button" type="button" data-category="noun" aria-pressed="false">Nouns</button>
+        <button class="category-button" type="button" data-category="verb" aria-pressed="false">Verbs</button>
+        <button class="category-button" type="button" data-category="adjective" aria-pressed="false">Adjectives</button>
+        <button class="category-button" type="button" data-category="adverb" aria-pressed="false">Adverbs</button>
+        <button class="category-button" type="button" data-category="other" aria-pressed="false">Other / multiple uses</button>
+      </div>
+      <div class="search-row">
+        <label class="search-box">
+          <span aria-hidden="true">⌕</span>
+          <input id="search" type="search" placeholder="Search a word or meaning..." autocomplete="off" aria-label="Search words or meanings">
+        </label>
+        <button id="savedFilter" class="filter-button" type="button" aria-pressed="false">☆ Saved words</button>
+      </div>
+      <nav id="alphabet" class="alphabet" aria-label="Filter words by first letter"></nav>
+    </section>
+
+    <section aria-labelledby="explore-title">
+      <div class="section-head">
+        <h2 id="explore-title">Explore words</h2>
+        <div class="count" id="count" aria-live="polite"></div>
+      </div>
+      <div id="wordGrid" class="word-grid"></div>
+      <nav class="pagination" aria-label="Dictionary pages">
+        <button id="previousPage" class="secondary-button" type="button" disabled>← Previous</button>
+        <span id="pageStatus" class="count" aria-live="polite"></span>
+        <button id="nextPage" class="primary-button" type="button">Next →</button>
+      </nav>
+    </section>
+  </main>
+
+  <footer><div class="wrap">Wordbook · Everyday English vocabulary · Your saved words stay in this browser.</div></footer>
+
+  <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalWord">
+    <article class="modal">
+      <div class="modal-head">
+        <div>
+          <div id="modalPart" class="part"></div>
+          <h2 id="modalWord" class="modal-word"></h2>
+          <div id="modalPhonetic" class="modal-pronunciation"></div>
+        </div>
+        <div class="modal-actions">
+          <button id="saveButton" class="icon-button" type="button" aria-label="Save word">☆</button>
+          <button id="closeButton" class="icon-button" type="button" aria-label="Close word details">×</button>
+        </div>
+      </div>
+      <div class="modal-content">
+        <section class="detail-section">
+          <h3>Definition</h3>
+          <p id="modalDefinition" class="definition"></p>
+        </section>
+        <section class="detail-section">
+          <h3>Example sentences</h3>
+          <ul id="modalExamples" class="example-list"></ul>
+        </section>
+        <section class="detail-section">
+          <h3>Everyday conversation</h3>
+          <div id="modalConversation" class="conversation"></div>
+        </section>
+        <section class="detail-section">
+          <h3>Learning tip</h3>
+          <p id="modalTip" class="tip"></p>
+        </section>
+        <div class="modal-footer">
+          <button id="previousButton" class="secondary-button" type="button">← Previous</button>
+          <button id="nextButton" class="primary-button" type="button">Next word →</button>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <script>
+    // Starter vocabulary. Add more entries by following this same object structure.
+    const words = [
+      {word:"abundant",part:"adjective",phonetic:"/əˈbʌn.dənt/",definition:"Existing in large quantities; more than enough.",examples:["Fresh fruit is abundant at the market in summer.","The region has abundant natural resources."],conversation:[["Mia","Do we have enough snacks for everyone?"],["Leo","Yes, there's an abundant supply in the kitchen."]],tip:"Often used with resources, opportunities, evidence, or supplies."},
+      {word:"achieve",part:"verb",phonetic:"/əˈtʃiːv/",definition:"To succeed in doing or completing something through effort.",examples:["She worked hard to achieve her goal.","You can achieve a lot with regular practice."],conversation:[["Ari","I finally passed my driving test!"],["Sam","That's great—you worked hard to achieve it."]],tip:"Common pattern: achieve a goal, result, success, or dream."},
+      {word:"adapt",part:"verb",phonetic:"/əˈdæpt/",definition:"To change your behavior or approach to suit a new situation.",examples:["It took me a week to adapt to my new job.","Plants adapt to changes in their environment."],conversation:[["Nina","Is the new schedule difficult?"],["Omar","At first, but I'm adapting to it."]],tip:"Use 'adapt to' when naming the situation you are adjusting to."},
+      {word:"advice",part:"noun",phonetic:"/ədˈvaɪs/",definition:"A suggestion or recommendation about what someone should do.",examples:["My teacher gave me useful advice.","Could I ask you for some advice?"],conversation:[["Kai","I'm nervous about the interview."],["Elle","My advice is to practise your answers beforehand."]],tip:"Advice is usually uncountable: say 'some advice' or 'a piece of advice', not 'an advice'."},
+      {word:"appreciate",part:"verb",phonetic:"/əˈpriː.ʃi.eɪt/",definition:"To recognize the value of something, or to feel thankful for it.",examples:["I really appreciate your help.","We appreciate your patience."],conversation:[["Jo","I picked up your package for you."],["Rae","Thank you! I really appreciate it."]],tip:"'I appreciate it' is a polite way to express thanks."},
+      {word:"benefit",part:"noun / verb",phonetic:"/ˈben.ɪ.fɪt/",definition:"An advantage or helpful result; to be helped by something.",examples:["One benefit of walking is better fitness.","You'll benefit from getting enough sleep."],conversation:[["Max","Why are you studying every day?"],["Ivy","It helps me remember new words, so I benefit from the routine."]],tip:"Common patterns: the benefit of something; benefit from something."},
+      {word:"brave",part:"adjective",phonetic:"/breɪv/",definition:"Ready to face danger, difficulty, or something frightening.",examples:["It was brave of him to speak in front of everyone.","She made a brave decision."],conversation:[["Lee","I told my manager I need help."],["Ash","That was brave of you."]],tip:"Often used to praise someone for doing something difficult despite fear."},
+      {word:"calm",part:"adjective / verb",phonetic:"/kɑːm/",definition:"Peaceful and not excited, angry, or worried; to make someone less upset.",examples:["Try to stay calm during the test.","The music helped calm the baby."],conversation:[["Bea","I'm panicking about the deadline."],["Noah","Take a breath and try to stay calm."]],tip:"Useful phrases include 'stay calm', 'keep calm', and 'calm down'."},
+      {word:"confident",part:"adjective",phonetic:"/ˈkɒn.fɪ.dənt/",definition:"Feeling sure about your abilities or that something will happen.",examples:["She feels confident speaking English now.","I'm confident that we can finish on time."],conversation:[["Tess","Are you ready to present?"],["Ray","Yes, I feel more confident after practising."]],tip:"Say 'confident about' something or 'confident that' something is true."},
+      {word:"curious",part:"adjective",phonetic:"/ˈkjʊə.ri.əs/",definition:"Eager to know, learn, or understand something.",examples:["The child was curious about how the machine worked.","I'm curious to hear what happened."],conversation:[["Moe","Why are you reading that book?"],["Ada","I'm curious about space."]],tip:"Common patterns: curious about something; curious to know or see."},
+      {word:"decide",part:"verb",phonetic:"/dɪˈsaɪd/",definition:"To choose something after thinking about the options.",examples:["We need to decide where to eat.","She decided to learn another language."],conversation:[["Ben","Movie or dinner first?"],["Kim","Let's decide after we check the times."]],tip:"Use 'decide to' before a verb: decide to go, decide to stay."},
+      {word:"depend",part:"verb",phonetic:"/dɪˈpend/",definition:"To be affected or determined by something or someone.",examples:["The price depends on the size.","You can depend on me if you need help."],conversation:[["Ali","Can we go hiking tomorrow?"],["May","It depends on the weather."]],tip:"'It depends' is a very common everyday response when the answer is conditional."},
+      {word:"effort",part:"noun",phonetic:"/ˈef.ət/",definition:"Physical or mental energy used to do something.",examples:["Learning a language takes time and effort.","Thanks for making the effort to visit."],conversation:[["Eli","I still make mistakes when I speak."],["Zoe","You're improving. Your effort is paying off."]],tip:"Common phrases: make an effort, put effort into something, and a lot of effort."},
+      {word:"encourage",part:"verb",phonetic:"/ɪnˈkʌr.ɪdʒ/",definition:"To give someone support, confidence, or hope to do something.",examples:["My friends encourage me to keep practising.","The teacher encouraged her students to ask questions."],conversation:[["Ren","I'm afraid to try."],["Sol","I'll encourage you, and we can practise together."]],tip:"You can encourage someone to do something."},
+      {word:"essential",part:"adjective",phonetic:"/ɪˈsen.ʃəl/",definition:"Completely necessary or extremely important.",examples:["Water is essential for life.","It's essential to save your work regularly."],conversation:[["Dan","Do I need to bring anything?"],["Liv","Your ID is essential; everything else is optional."]],tip:"Often used in phrases such as 'essential for' and 'essential to'."},
+      {word:"familiar",part:"adjective",phonetic:"/fəˈmɪl.i.ər/",definition:"Well known to you, or easily recognized because you have encountered it before.",examples:["That song sounds familiar.","I'm familiar with this software."],conversation:[["Pat","Have you used this app before?"],["Jay","Yes, I'm familiar with it."]],tip:"Say 'familiar with' a topic or tool, and 'familiar to' something that seems known."},
+      {word:"flexible",part:"adjective",phonetic:"/ˈflek.sə.bəl/",definition:"Able to change or adapt easily; willing to adjust plans.",examples:["My working hours are flexible.","We need a flexible plan in case it rains."],conversation:[["Kim","Can we move the meeting to Friday?"],["Ari","I'm flexible, so Friday works for me."]],tip:"In everyday conversation, 'I'm flexible' means you can accommodate different options."},
+      {word:"grateful",part:"adjective",phonetic:"/ˈɡreɪt.fəl/",definition:"Feeling or showing thanks for something.",examples:["I'm grateful for your support.","She was grateful to everyone who helped."],conversation:[["Mia","I covered your shift yesterday."],["Leo","I'm really grateful. Thank you."]],tip:"Common patterns: grateful for something; grateful to someone."},
+      {word:"habit",part:"noun",phonetic:"/ˈhæb.ɪt/",definition:"Something you do regularly, often without thinking about it.",examples:["Reading before bed is a good habit.","I'm trying to break the habit of checking my phone."],conversation:[["Nia","How do you learn new words?"],["Omar","I make it a habit to review them every morning."]],tip:"Common phrases: form a habit, build a habit, and break a habit."},
+      {word:"hesitate",part:"verb",phonetic:"/ˈhez.ɪ.teɪt/",definition:"To pause before doing or saying something because you are unsure or nervous.",examples:["Don't hesitate to ask questions.","He hesitated before answering."],conversation:[["Rae","Can I ask you for help?"],["Jo","Of course. Don't hesitate to ask."]],tip:"'Don't hesitate to...' is a polite phrase inviting someone to act or ask."},
+      {word:"improve",part:"verb",phonetic:"/ɪmˈpruːv/",definition:"To become better, or to make something better.",examples:["Practising daily will improve your pronunciation.","The service has improved a lot."],conversation:[["Kai","My English is still not perfect."],["Elle","That's okay. You're improving every week."]],tip:"You can improve a skill, improve something, or improve at doing something."},
+      {word:"independent",part:"adjective",phonetic:"/ˌɪn.dɪˈpen.dənt/",definition:"Able to act or make decisions without relying on others.",examples:["She became financially independent.","Try to work independently before asking for help."],conversation:[["Max","Do you need me to do this for you?"],["Ivy","Thanks, but I'd like to try independently first."]],tip:"The opposite is dependent. 'Independently' is the adverb form."},
+      {word:"journey",part:"noun",phonetic:"/ˈdʒɜː.ni/",definition:"The act of travelling from one place to another; also, a long process of change or learning.",examples:["The journey took three hours.","Learning a language is a journey, not a race."],conversation:[["Tess","Is learning English difficult?"],["Ray","Sometimes, but I enjoy the journey."]],tip:"Journey can be literal travel or a metaphor for personal progress."},
+      {word:"maintain",part:"verb",phonetic:"/meɪnˈteɪn/",definition:"To keep something in good condition or continue it at the same level.",examples:["It's important to maintain a healthy routine.","They maintain the building every year."],conversation:[["Bea","How do you keep your skills sharp?"],["Noah","I maintain a regular practice schedule."]],tip:"Common combinations include maintain a relationship, maintain a routine, and maintain equipment."},
+      {word:"necessary",part:"adjective",phonetic:"/ˈnes.ə.ser.i/",definition:"Needed or required for a particular purpose.",examples:["A passport is necessary for international travel.","It's not necessary to finish everything today."],conversation:[["Lee","Should I print the document?"],["Ash","No, that's not necessary."]],tip:"'It's not necessary' is a polite way to say something is not needed."},
+      {word:"opportunity",part:"noun",phonetic:"/ˌɒp.əˈtʃuː.nə.ti/",definition:"A suitable time or situation in which you can do or achieve something.",examples:["This job is a great opportunity to learn.","I had the opportunity to meet the author."],conversation:[["Ari","Are you going to apply for the course?"],["Sam","Yes, it's a good opportunity."]],tip:"Common phrases: an opportunity to do something; take an opportunity."},
+      {word:"patient",part:"adjective / noun",phonetic:"/ˈpeɪ.ʃənt/",definition:"Able to wait or deal with difficulties without becoming annoyed; also, a person receiving medical care.",examples:["Be patient while the file uploads.","The doctor spoke with her patient."],conversation:[["Moe","This is taking forever."],["Ada","Be patient. It should finish soon."]],tip:"Patient (adjective) is different from patience (noun): 'Be patient' versus 'Thanks for your patience'."},
+      {word:"reliable",part:"adjective",phonetic:"/rɪˈlaɪ.ə.bəl/",definition:"Able to be trusted or depended on.",examples:["She's a reliable friend.","We need a reliable internet connection."],conversation:[["Ben","Can I trust this information?"],["Kim","The source is reliable."]],tip:"Often describes people, sources, services, tools, or equipment."},
+      {word:"specific",part:"adjective",phonetic:"/spəˈsɪf.ɪk/",definition:"Clearly defined or exact rather than general.",examples:["Could you give me a specific example?","We need a specific date for the meeting."],conversation:[["Nina","What kind of book do you want?"],["Omar","Nothing specific—I'm open to suggestions."]],tip:"'Nothing specific' is a natural way to say you don't have an exact preference."},
+      {word:"support",part:"noun / verb",phonetic:"/səˈpɔːt/",definition:"Help, encouragement, or assistance; to help someone or something.",examples:["Thank you for your support.","My colleagues supported me during the project."],conversation:[["Jo","I'm worried about the exam."],["Rae","I'll support you however I can."]],tip:"Support can be emotional, practical, financial, or technical."},
+      {word:"valuable",part:"adjective",phonetic:"/ˈvæl.ju.ə.bəl/",definition:"Worth a lot, or very useful and important.",examples:["Your feedback is valuable to us.","Experience can be more valuable than money."],conversation:[["Max","Was the workshop useful?"],["Ivy","Yes, I learned some valuable skills."]],tip:"Valuable can describe money value or usefulness and importance."},
+      {word:"wonder",part:"verb / noun",phonetic:"/ˈwʌn.dər/",definition:"To want to know something or think about it with curiosity; a feeling of amazement.",examples:["I wonder what time the shop closes.","She wondered whether he was okay."],conversation:[["Tess","Why is the sky orange?"],["Ray","I wonder if it's because of the sunset."]],tip:"'I wonder if...' is a gentle way to ask or think aloud."},
+
+      // Expanded everyday vocabulary collection.
+      {"word":"ability","part":"noun","phonetic":"","definition":"The skill or power to do something.","examples":["She has the ability to explain difficult ideas clearly.","Practice can improve your ability to speak confidently."],"conversation":[["Alex","Can you help me understand 'ability'?"],["Jamie","She has the ability to explain difficult ideas clearly."]],"tip":"Often used with “ability to do something”."},
+      {"word":"accept","part":"verb","phonetic":"","definition":"To agree to receive or consider something.","examples":["She accepted the invitation to dinner.","I can accept your suggestion if we adjust the timing."],"conversation":[["Alex","Can you help me understand 'accept'?"],["Jamie","She accepted the invitation to dinner."]],"tip":"Opposite: reject. You can accept an offer, invitation, apology, or responsibility."},
+      {"word":"accurate","part":"adjective","phonetic":"","definition":"Correct and free from mistakes.","examples":["Please make sure the information is accurate.","The map is accurate enough to help us find the place."],"conversation":[["Alex","Can you help me understand 'accurate'?"],["Jamie","Please make sure the information is accurate."]],"tip":"Common with information, details, measurements, and records."},
+      {"word":"active","part":"adjective","phonetic":"","definition":"Doing things or moving around rather than being inactive.","examples":["My grandfather is still very active.","The group has an active role in the community."],"conversation":[["Alex","Can you help me understand 'active'?"],["Jamie","My grandfather is still very active."]],"tip":"Can describe people, accounts, participation, or involvement."},
+      {"word":"actually","part":"adverb","phonetic":"","definition":"Used to emphasize what is true or to correct an assumption.","examples":["I thought the shop was closed, but it is actually open.","Actually, I have already finished the report."],"conversation":[["Alex","Can you help me understand 'actually'?"],["Jamie","I thought the shop was closed, but it is actually open."]],"tip":"Often used to gently correct or clarify something."},
+      {"word":"add","part":"verb","phonetic":"","definition":"To put something together with something else.","examples":["Could you add my name to the list?","Add a little salt and stir the soup."],"conversation":[["Alex","Can you help me understand 'add'?"],["Jamie","Could you add my name to the list?"]],"tip":"Common patterns: add something to something; add up numbers."},
+      {"word":"admit","part":"verb","phonetic":"","definition":"To agree that something is true, often reluctantly.","examples":["He admitted that he had made a mistake.","I must admit, this is harder than I expected."],"conversation":[["Alex","Can you help me understand 'admit'?"],["Jamie","He admitted that he had made a mistake."]],"tip":"“I must admit” is a natural way to introduce an honest opinion."},
+      {"word":"advantage","part":"noun","phonetic":"","definition":"A condition that makes success or progress easier.","examples":["Speaking two languages can be an advantage.","One advantage of this plan is that it saves time."],"conversation":[["Alex","Can you help me understand 'advantage'?"],["Jamie","Speaking two languages can be an advantage."]],"tip":"Common phrase: take advantage of an opportunity."},
+      {"word":"afford","part":"verb","phonetic":"","definition":"To have enough money, time, or ability for something.","examples":["I cannot afford a new laptop right now.","We cannot afford to waste any more time."],"conversation":[["Alex","Can you help me understand 'afford'?"],["Jamie","I cannot afford a new laptop right now."]],"tip":"Can refer to money or to the risk of doing something."},
+      {"word":"allow","part":"verb","phonetic":"","definition":"To let someone do something or make something possible.","examples":["My parents allow me to stay out until ten.","This ticket allows you to enter the museum."],"conversation":[["Alex","Can you help me understand 'allow'?"],["Jamie","My parents allow me to stay out until ten."]],"tip":"Pattern: allow someone to do something."},
+      {"word":"although","part":"conjunction","phonetic":"","definition":"Despite the fact that; used to show contrast.","examples":["Although it was raining, we went for a walk.","Although she was tired, she finished her work."],"conversation":[["Alex","Can you help me understand 'although'?"],["Jamie","Although it was raining, we went for a walk."]],"tip":"Usually introduces a contrast; avoid pairing it with “but” in the same clause."},
+      {"word":"amaze","part":"verb","phonetic":"","definition":"To surprise someone greatly.","examples":["The view from the top amazed us.","It amazes me how quickly children learn."],"conversation":[["Alex","Can you help me understand 'amaze'?"],["Jamie","The view from the top amazed us."]],"tip":"“Amazing” describes something; “amazed” describes a person’s feeling."},
+      {"word":"anxious","part":"adjective","phonetic":"","definition":"Worried or nervous about something that may happen.","examples":["I feel anxious before job interviews.","She was anxious to hear the results."],"conversation":[["Alex","Can you help me understand 'anxious'?"],["Jamie","I feel anxious before job interviews."]],"tip":"Use “anxious about” a situation; “anxious to” do something can mean eager."},
+      {"word":"appear","part":"verb","phonetic":"","definition":"To become visible or to seem a certain way.","examples":["A message appeared on my screen.","He appears calm, but he is nervous inside."],"conversation":[["Alex","Can you help me understand 'appear'?"],["Jamie","A message appeared on my screen."]],"tip":"Can mean “show up” or “seem”."},
+      {"word":"approach","part":"noun / verb","phonetic":"","definition":"A way of dealing with something; to move closer.","examples":["We need a different approach to this problem.","A stranger approached me to ask for directions."],"conversation":[["Alex","Can you help me understand 'approach'?"],["Jamie","We need a different approach to this problem."]],"tip":"As a noun: an approach to a task. As a verb: approach someone or something."},
+      {"word":"argue","part":"verb","phonetic":"","definition":"To disagree with someone, often by giving reasons.","examples":["They argued about where to eat.","I do not want to argue; I want to understand your point."],"conversation":[["Alex","Can you help me understand 'argue'?"],["Jamie","They argued about where to eat."]],"tip":"“Argue with” a person; “argue about” a topic."},
+      {"word":"arrange","part":"verb","phonetic":"","definition":"To organize or plan something.","examples":["I arranged a meeting for Friday.","Can we arrange a time to talk?"],"conversation":[["Alex","Can you help me understand 'arrange'?"],["Jamie","I arranged a meeting for Friday."]],"tip":"Common with meetings, transport, appointments, and plans."},
+      {"word":"arrive","part":"verb","phonetic":"","definition":"To reach a place, especially at the end of a journey.","examples":["The train arrived ten minutes late.","Please call me when you arrive."],"conversation":[["Alex","Can you help me understand 'arrive'?"],["Jamie","The train arrived ten minutes late."]],"tip":"Use “arrive at” a specific place and “arrive in” a city or country."},
+      {"word":"attend","part":"verb","phonetic":"","definition":"To go to an event, class, or meeting.","examples":["I attend an English class every Saturday.","Several managers attended the meeting."],"conversation":[["Alex","Can you help me understand 'attend'?"],["Jamie","I attend an English class every Saturday."]],"tip":"Usually takes a direct object: attend a class, event, or meeting."},
+      {"word":"avoid","part":"verb","phonetic":"","definition":"To stay away from something or prevent it from happening.","examples":["Try to avoid checking your phone while studying.","We left early to avoid traffic."],"conversation":[["Alex","Can you help me understand 'avoid'?"],["Jamie","Try to avoid checking your phone while studying."]],"tip":"Often followed by a noun or an -ing verb: avoid doing something."},
+      {"word":"aware","part":"adjective","phonetic":"","definition":"Knowing or noticing that something exists or is happening.","examples":["Are you aware of the new schedule?","I was not aware that the office had moved."],"conversation":[["Alex","Can you help me understand 'aware'?"],["Jamie","Are you aware of the new schedule?"]],"tip":"Common patterns: aware of something; aware that something happened."},
+      {"word":"balance","part":"noun / verb","phonetic":"","definition":"A steady or equal condition; to keep things in the right proportions.","examples":["It can be difficult to balance work and rest.","She balanced the box carefully on the shelf."],"conversation":[["Alex","Can you help me understand 'balance'?"],["Jamie","It can be difficult to balance work and rest."]],"tip":"Useful phrase: work-life balance."},
+      {"word":"behave","part":"verb","phonetic":"","definition":"To act or conduct yourself in a particular way.","examples":["The children behaved well at the restaurant.","Please behave respectfully during the meeting."],"conversation":[["Alex","Can you help me understand 'behave'?"],["Jamie","The children behaved well at the restaurant."]],"tip":"“Behave yourself” means act appropriately."},
+      {"word":"believe","part":"verb","phonetic":"","definition":"To think that something is true or that someone is telling the truth.","examples":["I believe you can do it.","Do you believe that story?"],"conversation":[["Alex","Can you help me understand 'believe'?"],["Jamie","I believe you can do it."]],"tip":"Use “believe in” for trust in a person, idea, or ability."},
+      {"word":"belong","part":"verb","phonetic":"","definition":"To be the property of someone or to be in the right place.","examples":["This bag belongs to my sister.","Those files belong in the top drawer."],"conversation":[["Alex","Can you help me understand 'belong'?"],["Jamie","This bag belongs to my sister."]],"tip":"Use “belong to” for ownership."},
+      {"word":"borrow","part":"verb","phonetic":"","definition":"To take and use something temporarily with permission.","examples":["Can I borrow your pen for a moment?","I borrowed a book from the library."],"conversation":[["Alex","Can you help me understand 'borrow'?"],["Jamie","Can I borrow your pen for a moment?"]],"tip":"Borrow from someone; lend something to someone."},
+      {"word":"bother","part":"verb / noun","phonetic":"","definition":"To annoy or worry someone; trouble or effort.","examples":["Sorry to bother you, but could I ask a question?","The noise does not bother me."],"conversation":[["Alex","Can you help me understand 'bother'?"],["Jamie","Sorry to bother you, but could I ask a question?"]],"tip":"“Don’t bother” can mean something is not necessary."},
+      {"word":"brief","part":"adjective","phonetic":"","definition":"Short in time or using few words.","examples":["We had a brief conversation after class.","Please give me a brief explanation."],"conversation":[["Alex","Can you help me understand 'brief'?"],["Jamie","We had a brief conversation after class."]],"tip":"Opposite: lengthy. “Briefly” is the adverb."},
+      {"word":"capable","part":"adjective","phonetic":"","definition":"Having the ability or qualities needed to do something.","examples":["She is capable of solving the problem herself.","I know you are capable of more than you think."],"conversation":[["Alex","Can you help me understand 'capable'?"],["Jamie","She is capable of solving the problem herself."]],"tip":"Pattern: capable of doing something."},
+      {"word":"career","part":"noun","phonetic":"","definition":"The work or profession someone follows over time.","examples":["He wants a career in animation.","Changing careers can feel challenging."],"conversation":[["Alex","Can you help me understand 'career'?"],["Jamie","He wants a career in animation."]],"tip":"A career usually refers to a longer professional journey, not one job."},
+      {"word":"certain","part":"adjective","phonetic":"","definition":"Sure that something is true; particular but not named.","examples":["I am certain that I locked the door.","Certain foods make me feel sleepy."],"conversation":[["Alex","Can you help me understand 'certain'?"],["Jamie","I am certain that I locked the door."]],"tip":"“Certain” can mean sure or refer to some specific things."},
+      {"word":"challenge","part":"noun / verb","phonetic":"","definition":"A difficult task that tests your ability; to question or test.","examples":["Learning pronunciation is a challenge for me.","The project challenged us to think creatively."],"conversation":[["Alex","Can you help me understand 'challenge'?"],["Jamie","Learning pronunciation is a challenge for me."]],"tip":"A challenge can be difficult but also help you grow."},
+      {"word":"choice","part":"noun","phonetic":"","definition":"An act of choosing or something that can be chosen.","examples":["You have a choice between tea and coffee.","It was a difficult choice to make."],"conversation":[["Alex","Can you help me understand 'choice'?"],["Jamie","You have a choice between tea and coffee."]],"tip":"Common phrases: make a choice; have no choice."},
+      {"word":"communicate","part":"verb","phonetic":"","definition":"To share information, thoughts, or feelings.","examples":["It is important to communicate clearly with your team.","We communicate mostly through messages."],"conversation":[["Alex","Can you help me understand 'communicate'?"],["Jamie","It is important to communicate clearly with your team."]],"tip":"You communicate with people or communicate an idea."},
+      {"word":"compare","part":"verb","phonetic":"","definition":"To examine two or more things to notice similarities or differences.","examples":["Compare these two designs before choosing one.","It is unfair to compare your progress with someone else’s."],"conversation":[["Alex","Can you help me understand 'compare'?"],["Jamie","Compare these two designs before choosing one."]],"tip":"Compare A with/to B."},
+      {"word":"complain","part":"verb","phonetic":"","definition":"To say that something is wrong or unsatisfactory.","examples":["Customers complained about the long wait.","I do not want to complain, but the room is too cold."],"conversation":[["Alex","Can you help me understand 'complain'?"],["Jamie","Customers complained about the long wait."]],"tip":"“Complain about” a problem; “complain to” a person or organization."},
+      {"word":"complete","part":"adjective / verb","phonetic":"","definition":"Having all parts; to finish doing something.","examples":["Please complete the form before Friday.","The project is complete, so we can relax."],"conversation":[["Alex","Can you help me understand 'complete'?"],["Jamie","Please complete the form before Friday."]],"tip":"Complete a task, form, course, or project."},
+      {"word":"concentrate","part":"verb","phonetic":"","definition":"To give your full attention to something.","examples":["I find it hard to concentrate when it is noisy.","Let us concentrate on one task at a time."],"conversation":[["Alex","Can you help me understand 'concentrate'?"],["Jamie","I find it hard to concentrate when it is noisy."]],"tip":"Use “concentrate on” something."},
+      {"word":"consider","part":"verb","phonetic":"","definition":"To think carefully about something before deciding.","examples":["I am considering applying for the position.","Please consider all the options first."],"conversation":[["Alex","Can you help me understand 'consider'?"],["Jamie","I am considering applying for the position."]],"tip":"Often followed by a noun or an -ing verb."},
+      {"word":"convenient","part":"adjective","phonetic":"","definition":"Easy or suitable for a particular situation.","examples":["Is 3 p.m. convenient for you?","Online banking is convenient when you are busy."],"conversation":[["Alex","Can you help me understand 'convenient'?"],["Jamie","Is 3 p.m. convenient for you?"]],"tip":"Often used when arranging a time or describing practical services."},
+      {"word":"create","part":"verb","phonetic":"","definition":"To make something new or bring something into existence.","examples":["We created a simple plan for the weekend.","Artists create in different ways."],"conversation":[["Alex","Can you help me understand 'create'?"],["Jamie","We created a simple plan for the weekend."]],"tip":"Common with art, opportunities, plans, and solutions."},
+      {"word":"decision","part":"noun","phonetic":"","definition":"A choice made after thinking about options.","examples":["Have you made a decision yet?","It was a big decision to move away."],"conversation":[["Alex","Can you help me understand 'decision'?"],["Jamie","Have you made a decision yet?"]],"tip":"Make a decision; reach a decision."},
+      {"word":"describe","part":"verb","phonetic":"","definition":"To say or write what someone or something is like.","examples":["Can you describe the person you saw?","It is difficult to describe how happy I feel."],"conversation":[["Alex","Can you help me understand 'describe'?"],["Jamie","Can you describe the person you saw?"]],"tip":"Describe something to someone."},
+      {"word":"develop","part":"verb","phonetic":"","definition":"To grow, change, or create something over time.","examples":["I want to develop my drawing skills.","The team developed a new method."],"conversation":[["Alex","Can you help me understand 'develop'?"],["Jamie","I want to develop my drawing skills."]],"tip":"Develop a skill, habit, idea, product, or relationship."},
+      {"word":"difference","part":"noun","phonetic":"","definition":"A way in which people or things are not the same.","examples":["What is the difference between these words?","A little practice can make a big difference."],"conversation":[["Alex","Can you help me understand 'difference'?"],["Jamie","What is the difference between these words?"]],"tip":"“Make a difference” means have a meaningful effect."},
+      {"word":"disappoint","part":"verb","phonetic":"","definition":"To make someone feel sad because expectations were not met.","examples":["I did not want to disappoint my team.","The ending disappointed some viewers."],"conversation":[["Alex","Can you help me understand 'disappoint'?"],["Jamie","I did not want to disappoint my team."]],"tip":"“Disappointed” describes a feeling; “disappointing” describes the cause."},
+      {"word":"discover","part":"verb","phonetic":"","definition":"To find or learn something for the first time.","examples":["I discovered a quiet café near my office.","She discovered that the answer was simpler than expected."],"conversation":[["Alex","Can you help me understand 'discover'?"],["Jamie","I discovered a quiet café near my office."]],"tip":"Discover a place, fact, talent, or solution."},
+      {"word":"discuss","part":"verb","phonetic":"","definition":"To talk about something with another person or group.","examples":["We discussed the budget this morning.","Let us discuss the details later."],"conversation":[["Alex","Can you help me understand 'discuss'?"],["Jamie","We discussed the budget this morning."]],"tip":"Usually takes a direct object: discuss a topic, not “discuss about” a topic."},
+      {"word":"effective","part":"adjective","phonetic":"","definition":"Producing the result that is wanted.","examples":["This is an effective way to remember vocabulary.","The medicine was effective for the pain."],"conversation":[["Alex","Can you help me understand 'effective'?"],["Jamie","This is an effective way to remember vocabulary."]],"tip":"Effective means it works; efficient means it uses time or resources well."},
+      {"word":"efficient","part":"adjective","phonetic":"","definition":"Working well without wasting time, effort, or resources.","examples":["We need a more efficient way to organize the files.","She is efficient at handling several tasks."],"conversation":[["Alex","Can you help me understand 'efficient'?"],["Jamie","We need a more efficient way to organize the files."]],"tip":"Often describes systems, processes, and ways of working."},
+      {"word":"either","part":"determiner / pronoun / adverb","phonetic":"","definition":"One or the other of two options; used in negative statements to mean “also not”.","examples":["You can choose either colour.","I do not like that movie either."],"conversation":[["Alex","Can you help me understand 'either'?"],["Jamie","You can choose either colour."]],"tip":"“Either…or…” presents two alternatives."},
+      {"word":"emergency","part":"noun","phonetic":"","definition":"A serious, unexpected situation that needs immediate action.","examples":["Call this number in an emergency.","The clinic has a separate entrance for emergencies."],"conversation":[["Alex","Can you help me understand 'emergency'?"],["Jamie","Call this number in an emergency."]],"tip":"“In case of emergency” is a common phrase."},
+      {"word":"emotion","part":"noun","phonetic":"","definition":"A feeling such as happiness, anger, fear, or sadness.","examples":["Music can bring out strong emotions.","He found it hard to express his emotions."],"conversation":[["Alex","Can you help me understand 'emotion'?"],["Jamie","Music can bring out strong emotions."]],"tip":"Related adjective: emotional."},
+      {"word":"enough","part":"determiner / adverb / pronoun","phonetic":"","definition":"As much or as many as needed.","examples":["We have enough food for everyone.","You are working hard enough; take a break."],"conversation":[["Alex","Can you help me understand 'enough'?"],["Jamie","We have enough food for everyone."]],"tip":"Use “enough + noun” but “adjective + enough”."},
+      {"word":"environment","part":"noun","phonetic":"","definition":"The natural world or the conditions around a person or activity.","examples":["We should protect the environment.","A quiet environment helps me study."],"conversation":[["Alex","Can you help me understand 'environment'?"],["Jamie","We should protect the environment."]],"tip":"Can refer to nature or a work/learning setting."},
+      {"word":"especially","part":"adverb","phonetic":"","definition":"More than usual or more than others; particularly.","examples":["I enjoy fruit, especially mangoes.","The road is dangerous, especially at night."],"conversation":[["Alex","Can you help me understand 'especially'?"],["Jamie","I enjoy fruit, especially mangoes."]],"tip":"Use it to highlight one thing in a group."},
+      {"word":"eventually","part":"adverb","phonetic":"","definition":"At the end of a process or after some time.","examples":["We eventually found the right address.","If you keep practising, you will eventually improve."],"conversation":[["Alex","Can you help me understand 'eventually'?"],["Jamie","We eventually found the right address."]],"tip":"Means “in the end”, not necessarily “soon”."},
+      {"word":"experience","part":"noun / verb","phonetic":"","definition":"Knowledge gained by doing something; to go through an event or feeling.","examples":["Work experience can help you find a job.","I experienced a lot of growth this year."],"conversation":[["Alex","Can you help me understand 'experience'?"],["Jamie","Work experience can help you find a job."]],"tip":"“Experience” is often uncountable for knowledge, but countable for an event."},
+      {"word":"explain","part":"verb","phonetic":"","definition":"To make an idea or situation easier to understand.","examples":["Could you explain this rule again?","He explained why the plan had changed."],"conversation":[["Alex","Can you help me understand 'explain'?"],["Jamie","Could you explain this rule again?"]],"tip":"Explain something to someone; do not say “explain me”."},
+      {"word":"express","part":"verb","phonetic":"","definition":"To communicate a thought, feeling, or idea.","examples":["It can be hard to express your feelings.","She expressed her thanks in a short message."],"conversation":[["Alex","Can you help me understand 'express'?"],["Jamie","It can be hard to express your feelings."]],"tip":"Express an opinion, feeling, concern, or gratitude."},
+      {"word":"fair","part":"adjective / noun","phonetic":"","definition":"Reasonable and treating people equally; an event where goods are shown or sold.","examples":["I think that is a fair price.","The teacher gave everyone a fair chance."],"conversation":[["Alex","Can you help me understand 'fair'?"],["Jamie","I think that is a fair price."]],"tip":"Can mean just/equal or a public event, depending on context."},
+      {"word":"familiarity","part":"noun","phonetic":"","definition":"Knowledge of or experience with something.","examples":["Familiarity with the software is helpful.","With familiarity, the process becomes easier."],"conversation":[["Alex","Can you help me understand 'familiarity'?"],["Jamie","Familiarity with the software is helpful."]],"tip":"Related adjective: familiar."},
+      {"word":"focus","part":"noun / verb","phonetic":"","definition":"The centre of attention; to give attention to one thing.","examples":["My main focus is improving my English.","Let us focus on the most important task."],"conversation":[["Alex","Can you help me understand 'focus'?"],["Jamie","My main focus is improving my English."]],"tip":"“Focus on” a task, topic, or goal."},
+      {"word":"forgive","part":"verb","phonetic":"","definition":"To stop feeling angry or resentful toward someone for an action.","examples":["I hope you can forgive me for being late.","She forgave him after they talked honestly."],"conversation":[["Alex","Can you help me understand 'forgive'?"],["Jamie","I hope you can forgive me for being late."]],"tip":"Forgive someone for something."},
+      {"word":"frequent","part":"adjective","phonetic":"","definition":"Happening often.","examples":["Frequent breaks can help you stay focused.","There are frequent buses to the city centre."],"conversation":[["Alex","Can you help me understand 'frequent'?"],["Jamie","Frequent breaks can help you stay focused."]],"tip":"“Frequently” is the adverb form."},
+      {"word":"gather","part":"verb","phonetic":"","definition":"To bring things together or come together in a group.","examples":["Please gather your belongings before leaving.","Friends gathered at her house for dinner."],"conversation":[["Alex","Can you help me understand 'gather'?"],["Jamie","Please gather your belongings before leaving."]],"tip":"Gather information, people, ideas, or objects."},
+      {"word":"generally","part":"adverb","phonetic":"","definition":"Usually or in most situations.","examples":["Generally, the buses are reliable.","I generally study better in the morning."],"conversation":[["Alex","Can you help me understand 'generally'?"],["Jamie","Generally, the buses are reliable."]],"tip":"Use it for a broad statement that allows exceptions."},
+      {"word":"goal","part":"noun","phonetic":"","definition":"Something you want to achieve.","examples":["My goal is to speak English more naturally.","Set a small goal for this week."],"conversation":[["Alex","Can you help me understand 'goal'?"],["Jamie","My goal is to speak English more naturally."]],"tip":"Set, reach, achieve, or work toward a goal."},
+      {"word":"handle","part":"verb / noun","phonetic":"","definition":"To deal with a situation or control something; a part used to hold an object.","examples":["Can you handle this task today?","She handled the complaint calmly."],"conversation":[["Alex","Can you help me understand 'handle'?"],["Jamie","Can you handle this task today?"]],"tip":"“Handle” often means manage, not physically hold."},
+      {"word":"however","part":"adverb","phonetic":"","definition":"Used to introduce a contrast or exception.","examples":["I wanted to go; however, I was too busy.","The task is difficult. However, it is possible."],"conversation":[["Alex","Can you help me understand 'however'?"],["Jamie","I wanted to go; however, I was too busy."]],"tip":"Often starts a new sentence or follows a semicolon in formal writing."},
+      {"word":"ignore","part":"verb","phonetic":"","definition":"To pay no attention to someone or something.","examples":["Try to ignore distractions while studying.","He ignored my message by mistake."],"conversation":[["Alex","Can you help me understand 'ignore'?"],["Jamie","Try to ignore distractions while studying."]],"tip":"Can sound rude when used about a person, so use it carefully."},
+      {"word":"imagine","part":"verb","phonetic":"","definition":"To form a picture or idea in your mind.","examples":["Imagine living beside the sea.","I cannot imagine doing that without help."],"conversation":[["Alex","Can you help me understand 'imagine'?"],["Jamie","Imagine living beside the sea."]],"tip":"Often followed by a noun or an -ing verb."},
+      {"word":"include","part":"verb","phonetic":"","definition":"To have something or someone as part of a group or whole.","examples":["The price includes breakfast.","Please include your phone number on the form."],"conversation":[["Alex","Can you help me understand 'include'?"],["Jamie","The price includes breakfast."]],"tip":"“Include” does not always mean “everything”; it names some parts."},
+      {"word":"increase","part":"verb / noun","phonetic":"","definition":"To become or make greater in amount, size, or degree.","examples":["The price may increase next month.","We saw an increase in visitors."],"conversation":[["Alex","Can you help me understand 'increase'?"],["Jamie","The price may increase next month."]],"tip":"An increase in something; increase something by a certain amount."},
+      {"word":"individual","part":"noun / adjective","phonetic":"","definition":"One person or thing considered separately; relating to one person.","examples":["Each individual has different strengths.","Please put each item in an individual box."],"conversation":[["Alex","Can you help me understand 'individual'?"],["Jamie","Each individual has different strengths."]],"tip":"“Individual” can emphasize a single person rather than a group."},
+      {"word":"instead","part":"adverb","phonetic":"","definition":"As an alternative or replacement.","examples":["We stayed home instead of going out.","I will have tea instead."],"conversation":[["Alex","Can you help me understand 'instead'?"],["Jamie","We stayed home instead of going out."]],"tip":"Use “instead of + noun/-ing” to name what is replaced."},
+      {"word":"interest","part":"noun / verb","phonetic":"","definition":"A feeling of wanting to know more; to attract someone’s attention.","examples":["I have a strong interest in animation.","This topic interests me."],"conversation":[["Alex","Can you help me understand 'interest'?"],["Jamie","I have a strong interest in animation."]],"tip":"“Interested” describes a person; “interesting” describes a thing."},
+      {"word":"involve","part":"verb","phonetic":"","definition":"To include someone or something as a necessary part.","examples":["The job involves working with a team.","The project involved several departments."],"conversation":[["Alex","Can you help me understand 'involve'?"],["Jamie","The job involves working with a team."]],"tip":"Often followed by a noun or an -ing verb."},
+      {"word":"issue","part":"noun / verb","phonetic":"","definition":"An important topic or problem; to officially give something.","examples":["We need to solve this issue quickly.","The office issued a new access card."],"conversation":[["Alex","Can you help me understand 'issue'?"],["Jamie","We need to solve this issue quickly."]],"tip":"In everyday work contexts, “issue” often means a problem."},
+      {"word":"manage","part":"verb","phonetic":"","definition":"To succeed in doing something or to be in charge of something.","examples":["I managed to finish before the deadline.","She manages a small design team."],"conversation":[["Alex","Can you help me understand 'manage'?"],["Jamie","I managed to finish before the deadline."]],"tip":"“Manage to do” means succeed despite difficulty."},
+      {"word":"mention","part":"verb / noun","phonetic":"","definition":"To refer to something briefly; a brief reference.","examples":["He mentioned your name during the meeting.","Did I mention that I got the job?"],"conversation":[["Alex","Can you help me understand 'mention'?"],["Jamie","He mentioned your name during the meeting."]],"tip":"Usually “mention something”, not “mention about something”."},
+      {"word":"method","part":"noun","phonetic":"","definition":"A particular way of doing something.","examples":["This method helps me learn new words.","We tested another method to save time."],"conversation":[["Alex","Can you help me understand 'method'?"],["Jamie","This method helps me learn new words."]],"tip":"A method for doing something."},
+      {"word":"notice","part":"verb / noun","phonetic":"","definition":"To see, hear, or become aware of something; a written announcement.","examples":["Did you notice the sign near the door?","I noticed that she looked tired."],"conversation":[["Alex","Can you help me understand 'notice'?"],["Jamie","Did you notice the sign near the door?"]],"tip":"“Notice” often means become aware without deliberately searching."},
+      {"word":"obvious","part":"adjective","phonetic":"","definition":"Easy to see, recognize, or understand.","examples":["The answer seems obvious now.","It was obvious that he was excited."],"conversation":[["Alex","Can you help me understand 'obvious'?"],["Jamie","The answer seems obvious now."]],"tip":"Can sound blunt when describing another person’s mistake."},
+      {"word":"ordinary","part":"adjective","phonetic":"","definition":"Normal or usual, not special or unusual.","examples":["It was an ordinary day at work.","A small act of kindness can make an ordinary day better."],"conversation":[["Alex","Can you help me understand 'ordinary'?"],["Jamie","It was an ordinary day at work."]],"tip":"Often used to contrast with unusual or extraordinary."},
+      {"word":"organize","part":"verb","phonetic":"","definition":"To arrange things or plan an activity.","examples":["I need to organize my notes.","They organized a surprise birthday party."],"conversation":[["Alex","Can you help me understand 'organize'?"],["Jamie","I need to organize my notes."]],"tip":"Can be spelled “organise” in British English."},
+      {"word":"participate","part":"verb","phonetic":"","definition":"To take part in an activity or event.","examples":["Everyone is welcome to participate in the discussion.","She participated in a drawing competition."],"conversation":[["Alex","Can you help me understand 'participate'?"],["Jamie","Everyone is welcome to participate in the discussion."]],"tip":"Participate in an activity, event, or discussion."},
+      {"word":"perform","part":"verb","phonetic":"","definition":"To do a task or activity; to entertain an audience.","examples":["The team performed well under pressure.","The band will perform tonight."],"conversation":[["Alex","Can you help me understand 'perform'?"],["Jamie","The team performed well under pressure."]],"tip":"Can refer to work/results or a public show."},
+      {"word":"perhaps","part":"adverb","phonetic":"","definition":"Possibly; used when something is uncertain.","examples":["Perhaps we should leave a little earlier.","I will perhaps call you tomorrow."],"conversation":[["Alex","Can you help me understand 'perhaps'?"],["Jamie","Perhaps we should leave a little earlier."]],"tip":"A slightly more formal alternative to “maybe”."},
+      {"word":"persuade","part":"verb","phonetic":"","definition":"To convince someone to do or believe something.","examples":["She persuaded me to try the new restaurant.","I could not persuade him to change his mind."],"conversation":[["Alex","Can you help me understand 'persuade'?"],["Jamie","She persuaded me to try the new restaurant."]],"tip":"Persuade someone to do something."},
+      {"word":"prepare","part":"verb","phonetic":"","definition":"To get ready for something.","examples":["I need to prepare for my interview.","They prepared dinner together."],"conversation":[["Alex","Can you help me understand 'prepare'?"],["Jamie","I need to prepare for my interview."]],"tip":"Prepare for an event; prepare something such as a meal or document."},
+      {"word":"prevent","part":"verb","phonetic":"","definition":"To stop something from happening.","examples":["Wearing a helmet can prevent serious injuries.","We left early to prevent delays."],"conversation":[["Alex","Can you help me understand 'prevent'?"],["Jamie","Wearing a helmet can prevent serious injuries."]],"tip":"Prevent something or prevent someone from doing something."},
+      {"word":"probably","part":"adverb","phonetic":"","definition":"Almost certainly; likely to happen or be true.","examples":["I will probably take the train.","She is probably already at home."],"conversation":[["Alex","Can you help me understand 'probably'?"],["Jamie","I will probably take the train."]],"tip":"Often placed before the main verb, but after “be”."},
+      {"word":"provide","part":"verb","phonetic":"","definition":"To give or make something available.","examples":["The company provides training for new staff.","Could you provide more details?"],"conversation":[["Alex","Can you help me understand 'provide'?"],["Jamie","The company provides training for new staff."]],"tip":"Provide someone with something; provide something for someone."},
+      {"word":"purpose","part":"noun","phonetic":"","definition":"The reason something is done or exists.","examples":["What is the purpose of this meeting?","I started learning English with a clear purpose."],"conversation":[["Alex","Can you help me understand 'purpose'?"],["Jamie","What is the purpose of this meeting?"]],"tip":"“On purpose” means intentionally; “for the purpose of” is more formal."},
+      {"word":"realize","part":"verb","phonetic":"","definition":"To understand or become aware of something.","examples":["I did not realize it was already so late.","She realized that she had left her keys behind."],"conversation":[["Alex","Can you help me understand 'realize'?"],["Jamie","I did not realize it was already so late."]],"tip":"British English often spells it “realise”."},
+      {"word":"recommend","part":"verb","phonetic":"","definition":"To suggest that someone or something is good or suitable.","examples":["Can you recommend a good book?","I recommend taking notes while you read."],"conversation":[["Alex","Can you help me understand 'recommend'?"],["Jamie","Can you recommend a good book?"]],"tip":"Recommend something or recommend doing something."},
+      {"word":"reduce","part":"verb","phonetic":"","definition":"To make something smaller or less in amount, size, or degree.","examples":["I am trying to reduce my screen time.","The shop reduced the price by ten percent."],"conversation":[["Alex","Can you help me understand 'reduce'?"],["Jamie","I am trying to reduce my screen time."]],"tip":"Reduce something by an amount or reduce it to a level."},
+      {"word":"refuse","part":"verb","phonetic":"","definition":"To say that you will not do or accept something.","examples":["He refused to answer the question.","I had to refuse the invitation because I was busy."],"conversation":[["Alex","Can you help me understand 'refuse'?"],["Jamie","He refused to answer the question."]],"tip":"Refuse to do something; it is stronger than “decline” in some contexts."},
+      {"word":"remind","part":"verb","phonetic":"","definition":"To help someone remember something.","examples":["Please remind me to send the email.","This song reminds me of my childhood."],"conversation":[["Alex","Can you help me understand 'remind'?"],["Jamie","Please remind me to send the email."]],"tip":"Remind someone to do something; remind someone of something."},
+      {"word":"replace","part":"verb","phonetic":"","definition":"To take the place of something or put something new in its place.","examples":["We need to replace the broken cable.","Nothing can replace regular practice."],"conversation":[["Alex","Can you help me understand 'replace'?"],["Jamie","We need to replace the broken cable."]],"tip":"Replace A with B."},
+      {"word":"require","part":"verb","phonetic":"","definition":"To need something or make it necessary.","examples":["This role requires good communication skills.","The form requires your signature."],"conversation":[["Alex","Can you help me understand 'require'?"],["Jamie","This role requires good communication skills."]],"tip":"“Require” is more formal than “need”."},
+      {"word":"respond","part":"verb","phonetic":"","definition":"To answer or react to something.","examples":["Please respond to the email by Friday.","He responded calmly to the criticism."],"conversation":[["Alex","Can you help me understand 'respond'?"],["Jamie","Please respond to the email by Friday."]],"tip":"Respond to a message, question, or situation."},
+      {"word":"responsible","part":"adjective","phonetic":"","definition":"Having a duty to deal with something or being trusted to act sensibly.","examples":["I am responsible for updating the website.","It is responsible to check the details before sending."],"conversation":[["Alex","Can you help me understand 'responsible'?"],["Jamie","I am responsible for updating the website."]],"tip":"Responsible for a task; responsible to a person or organization."},
+      {"word":"result","part":"noun / verb","phonetic":"","definition":"Something that happens because of an action; to happen because of something.","examples":["The result was better than we expected.","Small daily habits can result in steady progress."],"conversation":[["Alex","Can you help me understand 'result'?"],["Jamie","The result was better than we expected."]],"tip":"A result of something; result in means cause; result from means be caused by."},
+      {"word":"schedule","part":"noun / verb","phonetic":"","definition":"A plan that lists times for events or tasks; to arrange a time.","examples":["My schedule is full this week.","We scheduled the interview for Monday."],"conversation":[["Alex","Can you help me understand 'schedule'?"],["Jamie","My schedule is full this week."]],"tip":"Pronunciation differs by region; both “schedule” variants are common."},
+      {"word":"solution","part":"noun","phonetic":"","definition":"An answer to a problem or a way to deal with it.","examples":["We need a practical solution to this problem.","Restarting the computer was a simple solution."],"conversation":[["Alex","Can you help me understand 'solution'?"],["Jamie","We need a practical solution to this problem."]],"tip":"Solution to a problem; solve is the related verb."},
+      {"word":"suggest","part":"verb","phonetic":"","definition":"To offer an idea or plan for someone to consider.","examples":["I suggest taking a short break.","Could you suggest a place for lunch?"],"conversation":[["Alex","Can you help me understand 'suggest'?"],["Jamie","I suggest taking a short break."]],"tip":"Suggest doing something or suggest that someone do something."},
+      {"word":"temporary","part":"adjective","phonetic":"","definition":"Lasting for a limited time, not permanent.","examples":["This is only a temporary solution.","She found temporary work while studying."],"conversation":[["Alex","Can you help me understand 'temporary'?"],["Jamie","This is only a temporary solution."]],"tip":"Opposite: permanent."},
+      {"word":"throughout","part":"preposition / adverb","phonetic":"","definition":"In every part of a place or during the whole of a period.","examples":["It rained throughout the night.","The story is popular throughout the world."],"conversation":[["Alex","Can you help me understand 'throughout'?"],["Jamie","It rained throughout the night."]],"tip":"Use it for a whole period or all parts of an area."},
+      {"word":"typical","part":"adjective","phonetic":"","definition":"Having the usual qualities of a person, thing, or situation.","examples":["That is a typical response from him.","A typical workday starts at nine."],"conversation":[["Alex","Can you help me understand 'typical'?"],["Jamie","That is a typical response from him."]],"tip":"“Typically” is the adverb form."},
+      {"word":"unfortunately","part":"adverb","phonetic":"","definition":"Used when introducing something disappointing or unlucky.","examples":["Unfortunately, the last bus has already left.","I wanted to join you, but unfortunately I was working."],"conversation":[["Alex","Can you help me understand 'unfortunately'?"],["Jamie","Unfortunately, the last bus has already left."]],"tip":"Often used to soften disappointing news."},
+      {"word":"useful","part":"adjective","phonetic":"","definition":"Helping you do or achieve something; practical.","examples":["This website is useful for learning vocabulary.","Your feedback was very useful."],"conversation":[["Alex","Can you help me understand 'useful'?"],["Jamie","This website is useful for learning vocabulary."]],"tip":"Useful for doing something; useful to someone."},
+      {"word":"usual","part":"adjective / noun","phonetic":"","definition":"Normal or happening most of the time.","examples":["I took my usual route to work.","As usual, she arrived early."],"conversation":[["Alex","Can you help me understand 'usual'?"],["Jamie","I took my usual route to work."]],"tip":"“As usual” means in the way that normally happens."},
+      {"word":"various","part":"adjective","phonetic":"","definition":"Several different types of something.","examples":["The course covers various topics.","We tried various ways to fix the problem."],"conversation":[["Alex","Can you help me understand 'various'?"],["Jamie","The course covers various topics."]],"tip":"Similar to “different”, often used in formal descriptions."},
+      {"word":"whether","part":"conjunction","phonetic":"","definition":"Used to introduce alternatives or express uncertainty.","examples":["I do not know whether he is coming.","Tell me whether you prefer tea or coffee."],"conversation":[["Alex","Can you help me understand 'whether'?"],["Jamie","I do not know whether he is coming."]],"tip":"“Whether or not” emphasizes that either outcome is possible."},
+      {"word":"within","part":"preposition / adverb","phonetic":"","definition":"Inside a particular area, limit, or period of time.","examples":["Please reply within two days.","The café is within walking distance."],"conversation":[["Alex","Can you help me understand 'within'?"],["Jamie","Please reply within two days."]],"tip":"Often used for time limits, boundaries, and ranges."},
+      {"word":"worth","part":"adjective / noun","phonetic":"","definition":"Having a value or being deserving of a particular action.","examples":["This book is worth reading.","The old camera is not worth much money."],"conversation":[["Alex","Can you help me understand 'worth'?"],["Jamie","This book is worth reading."]],"tip":"Common pattern: worth + noun or worth + -ing verb."},
+      {"word":"yet","part":"adverb / conjunction","phonetic":"","definition":"Until now; nevertheless; or at a time in the future.","examples":["Have you finished your work yet?","It is difficult, yet we can still succeed."],"conversation":[["Alex","Can you help me understand 'yet'?"],["Jamie","Have you finished your work yet?"]],"tip":"In questions/negatives, “yet” often means “by now”."},
+      {"word":"wonderful","part":"adjective","phonetic":"","definition":"Extremely good, pleasant, or enjoyable.","examples":["We had a wonderful time together.","That is wonderful news!"],"conversation":[["Alex","Can you help me understand 'wonderful'?"],["Jamie","We had a wonderful time together."]],"tip":"A warm, positive everyday adjective."},
+      {"word":"analyze","part":"verb","phonetic":"","definition":"To examine something carefully to understand it.","examples":["We need to analyze the results before deciding.","She analyzed the feedback from users."],"conversation":[["Alex","Can you help me understand 'analyze'?"],["Jamie","We need to analyze the results before deciding."]],"tip":"British spelling: analyse."},
+      {"word":"creative","part":"adjective","phonetic":"","definition":"Using imagination to make or think of new things.","examples":["The team found a creative solution.","Creative practice helps me relax."],"conversation":[["Alex","Can you help me understand 'creative'?"],["Jamie","The team found a creative solution."]],"tip":"Can describe people, ideas, work, or problem-solving."},
+      {"word":"detail","part":"noun / verb","phonetic":"","definition":"A small piece of information; to describe something fully.","examples":["Please check every detail before submitting.","He detailed the steps in his report."],"conversation":[["Alex","Can you help me understand 'detail'?"],["Jamie","Please check every detail before submitting."]],"tip":"“In detail” means thoroughly; “pay attention to detail” is common."},
+      {"word":"deadline","part":"noun","phonetic":"","definition":"The latest time or date by which something must be finished.","examples":["The deadline for the application is Friday.","I work better when I break a deadline into smaller tasks."],"conversation":[["Alex","Can you help me understand 'deadline'?"],["Jamie","The deadline for the application is Friday."]],"tip":"Meet, miss, extend, or set a deadline."},
+      {"word":"feedback","part":"noun","phonetic":"","definition":"Information or opinions about how well something was done.","examples":["Thank you for the helpful feedback.","I would appreciate feedback on my portfolio."],"conversation":[["Alex","Can you help me understand 'feedback'?"],["Jamie","Thank you for the helpful feedback."]],"tip":"Usually uncountable: “some feedback”, not “a feedback”."},
+      {"word":"progress","part":"noun / verb","phonetic":"","definition":"Forward movement toward a goal; to develop or improve.","examples":["You have made good progress this month.","The work is progressing more quickly now."],"conversation":[["Alex","Can you help me understand 'progress'?"],["Jamie","You have made good progress this month."]],"tip":"Make progress; progress toward a goal."},
+      {"word":"practice","part":"noun / verb","phonetic":"","definition":"Repeated activity to improve a skill; to do something repeatedly.","examples":["Daily practice helps build confidence.","I practice speaking English with a friend."],"conversation":[["Alex","Can you help me understand 'practice'?"],["Jamie","Daily practice helps build confidence."]],"tip":"In American English, practice is both noun and verb; British English uses “practise” as the verb."},
+      {"word":"opinion","part":"noun","phonetic":"","definition":"A belief or view about something that may not be a fact.","examples":["In my opinion, this design is easier to use.","Everyone is entitled to an opinion."],"conversation":[["Alex","Can you help me understand 'opinion'?"],["Jamie","In my opinion, this design is easier to use."]],"tip":"“In my opinion” introduces a personal view."},
+      {"word":"polite","part":"adjective","phonetic":"","definition":"Showing respect and consideration for others.","examples":["It is polite to say thank you.","She politely asked if she could join us."],"conversation":[["Alex","Can you help me understand 'polite'?"],["Jamie","It is polite to say thank you."]],"tip":"“Polite” is the adjective; “politely” is the adverb."},
+      {"word":"prefer","part":"verb","phonetic":"","definition":"To like one option more than another.","examples":["I prefer tea to coffee.","Would you prefer to meet online?"],"conversation":[["Alex","Can you help me understand 'prefer'?"],["Jamie","I prefer tea to coffee."]],"tip":"Prefer A to B; prefer doing something to doing something else."},
+      {"word":"patiently","part":"adverb","phonetic":"","definition":"In a way that shows the ability to wait calmly.","examples":["He waited patiently for his turn.","Thank you for explaining it patiently."],"conversation":[["Alex","Can you help me understand 'patiently'?"],["Jamie","He waited patiently for his turn."]],"tip":"Adverb form of “patient”."},
+      {"word":"quietly","part":"adverb","phonetic":"","definition":"With little or no noise; without attracting attention.","examples":["Please speak quietly in the library.","She quietly left the room."],"conversation":[["Alex","Can you help me understand 'quietly'?"],["Jamie","Please speak quietly in the library."]],"tip":"Adverb form of “quiet”."},
+      {"word":"serious","part":"adjective","phonetic":"","definition":"Important or needing careful thought; not joking.","examples":["We need to have a serious conversation.","Are you serious about learning a new skill?"],"conversation":[["Alex","Can you help me understand 'serious'?"],["Jamie","We need to have a serious conversation."]],"tip":"Can describe a situation, intention, illness, or tone."},
+      {"word":"simple","part":"adjective","phonetic":"","definition":"Easy to understand or do; not complicated.","examples":["Let us start with a simple example.","The solution is simple but effective."],"conversation":[["Alex","Can you help me understand 'simple'?"],["Jamie","Let us start with a simple example."]],"tip":"“Simple” can describe instructions, designs, or ideas."},
+      {"word":"successful","part":"adjective","phonetic":"","definition":"Achieving the result that was wanted.","examples":["The event was successful.","She became a successful animator after years of practice."],"conversation":[["Alex","Can you help me understand 'successful'?"],["Jamie","The event was successful."]],"tip":"“Successful in doing something”; related noun: success."},
+      {"word":"trust","part":"noun / verb","phonetic":"","definition":"Belief that someone is honest or reliable; to believe in someone’s honesty.","examples":["Trust takes time to build.","I trust her to finish the task."],"conversation":[["Alex","Can you help me understand 'trust'?"],["Jamie","Trust takes time to build."]],"tip":"Trust someone; trust someone to do something."},
+      {"word":"understand","part":"verb","phonetic":"","definition":"To know the meaning or reason for something.","examples":["I understand what you mean.","It took me a while to understand the instructions."],"conversation":[["Alex","Can you help me understand 'understand'?"],["Jamie","I understand what you mean."]],"tip":"“I understand” can acknowledge a point even when you disagree."},
+      {"word":"urgent","part":"adjective","phonetic":"","definition":"Needing immediate attention or action.","examples":["This email is urgent, so please read it first.","We need urgent help with the server."],"conversation":[["Alex","Can you help me understand 'urgent'?"],["Jamie","This email is urgent, so please read it first."]],"tip":"An urgent matter needs action soon."},
+      {"word":"value","part":"noun / verb","phonetic":"","definition":"The importance, usefulness, or price of something; to consider important.","examples":["I value your honest opinion.","The value of the ticket has increased."],"conversation":[["Alex","Can you help me understand 'value'?"],["Jamie","I value your honest opinion."]],"tip":"“Value” can mean price or personal importance."},
+      {"word":"willing","part":"adjective","phonetic":"","definition":"Ready or happy to do something.","examples":["Are you willing to help me practise?","I am willing to learn from my mistakes."],"conversation":[["Alex","Can you help me understand 'willing'?"],["Jamie","Are you willing to help me practise?"]],"tip":"Pattern: willing to do something."},
+      {"word":"achievable","part":"adjective","phonetic":"","definition":"Possible to do or reach successfully.","examples":["Set an achievable goal for this week.","The target is challenging but achievable."],"conversation":[["Alex","Can you help me understand 'achievable'?"],["Jamie","Set an achievable goal for this week."]],"tip":"Useful when planning realistic goals."},
+      {"word":"appointment","part":"noun","phonetic":"","definition":"An arranged time to meet someone or receive a service.","examples":["I have a dentist appointment tomorrow.","Could we make an appointment for next week?"],"conversation":[["Alex","Can you help me understand 'appointment'?"],["Jamie","I have a dentist appointment tomorrow."]],"tip":"Make, book, cancel, or reschedule an appointment."},
+      {"word":"apologize","part":"verb","phonetic":"","definition":"To say that you are sorry for something you did.","examples":["I apologize for the delay.","He apologized to his colleague for the mistake."],"conversation":[["Alex","Can you help me understand 'apologize'?"],["Jamie","I apologize for the delay."]],"tip":"Apologize to someone for something; British spelling: apologise."},
+      {"word":"confuse","part":"verb","phonetic":"","definition":"To make someone unable to understand something clearly.","examples":["The similar words confuse me.","I do not want to confuse you with too much information."],"conversation":[["Alex","Can you help me understand 'confuse'?"],["Jamie","The similar words confuse me."]],"tip":"“Confused” describes a person; “confusing” describes the thing."},
+      {"word":"dependable","part":"adjective","phonetic":"","definition":"Reliable and able to be trusted.","examples":["She is a dependable member of the team.","We need a dependable internet connection."],"conversation":[["Alex","Can you help me understand 'dependable'?"],["Jamie","She is a dependable member of the team."]],"tip":"Similar to “reliable”."},
+      {"word":"encounter","part":"verb / noun","phonetic":"","definition":"To meet or experience something, especially unexpectedly.","examples":["I encountered a problem while installing the software.","It was an unexpected encounter with an old friend."],"conversation":[["Alex","Can you help me understand 'encounter'?"],["Jamie","I encountered a problem while installing the software."]],"tip":"Can be used for problems, people, or situations."},
+      {"word":"essentially","part":"adverb","phonetic":"","definition":"Basically; in the most important sense.","examples":["Essentially, we need a clearer plan.","The two versions are essentially the same."],"conversation":[["Alex","Can you help me understand 'essentially'?"],["Jamie","Essentially, we need a clearer plan."]],"tip":"Useful for summarizing the main point."},
+      {"word":"flexibly","part":"adverb","phonetic":"","definition":"In a way that can change to suit circumstances.","examples":["We can work flexibly around the deadline.","The team responds flexibly to new requests."],"conversation":[["Alex","Can you help me understand 'flexibly'?"],["Jamie","We can work flexibly around the deadline."]],"tip":"Adverb form of “flexible”."},
+      {"word":"hesitation","part":"noun","phonetic":"","definition":"A pause caused by uncertainty or doubt.","examples":["After a brief hesitation, she answered.","Do not let hesitation stop you from asking questions."],"conversation":[["Alex","Can you help me understand 'hesitation'?"],["Jamie","After a brief hesitation, she answered."]],"tip":"Related verb: hesitate."},
+      {"word":"motivate","part":"verb","phonetic":"","definition":"To give someone a reason or desire to act.","examples":["Small achievements motivate me to continue.","The coach motivated the team before the match."],"conversation":[["Alex","Can you help me understand 'motivate'?"],["Jamie","Small achievements motivate me to continue."]],"tip":"Motivate someone to do something."},
+      {"word":"motivation","part":"noun","phonetic":"","definition":"The reason or desire that makes someone want to act.","examples":["My motivation is to improve my animation skills.","Motivation can change from day to day."],"conversation":[["Alex","Can you help me understand 'motivation'?"],["Jamie","My motivation is to improve my animation skills."]],"tip":"Motivation may come from interest, goals, or support."},
+      {"word":"permission","part":"noun","phonetic":"","definition":"Approval to do something.","examples":["You need permission to use this room.","May I have permission to leave early?"],"conversation":[["Alex","Can you help me understand 'permission'?"],["Jamie","You need permission to use this room."]],"tip":"Ask for or give permission."},
+      {"word":"possibility","part":"noun","phonetic":"","definition":"Something that may happen or be true.","examples":["There is a possibility of rain tonight.","We should consider every possibility."],"conversation":[["Alex","Can you help me understand 'possibility'?"],["Jamie","There is a possibility of rain tonight."]],"tip":"“A possibility that…” or “the possibility of…”"},
+      {"word":"professional","part":"adjective / noun","phonetic":"","definition":"Relating to a job or career; a person with specialized training.","examples":["Please keep a professional tone in the email.","She is a professional artist."],"conversation":[["Alex","Can you help me understand 'professional'?"],["Jamie","Please keep a professional tone in the email."]],"tip":"Can describe conduct, standards, or a trained worker."},
+      {"word":"recognize","part":"verb","phonetic":"","definition":"To know someone or something because you have seen or learned it before.","examples":["I recognized her voice immediately.","It is important to recognize your own progress."],"conversation":[["Alex","Can you help me understand 'recognize'?"],["Jamie","I recognized her voice immediately."]],"tip":"British spelling: recognise."},
+      {"word":"relationship","part":"noun","phonetic":"","definition":"The way people or things are connected.","examples":["Good communication strengthens a relationship.","The relationship between sleep and focus is important."],"conversation":[["Alex","Can you help me understand 'relationship'?"],["Jamie","Good communication strengthens a relationship."]],"tip":"Can refer to personal, professional, or general connections."},
+      {"word":"strength","part":"noun","phonetic":"","definition":"The quality of being strong; a good ability or advantage.","examples":["Patience is one of her greatest strengths.","Knowing your strengths can help you choose a career."],"conversation":[["Alex","Can you help me understand 'strength'?"],["Jamie","Patience is one of her greatest strengths."]],"tip":"“Strength” can be physical, emotional, or a skill."},
+      {"word":"weakness","part":"noun","phonetic":"","definition":"A lack of strength or a quality that needs improvement.","examples":["Everyone has a weakness they can work on.","One weakness of this plan is its cost."],"conversation":[["Alex","Can you help me understand 'weakness'?"],["Jamie","Everyone has a weakness they can work on."]],"tip":"Can describe a personal limitation or a flaw in an argument/plan."},
+      {"word":"confidence","part":"noun","phonetic":"","definition":"A feeling of trust in your own ability or in someone else.","examples":["Practice has improved my confidence.","She spoke with confidence during the interview."],"conversation":[["Alex","Can you help me understand 'confidence'?"],["Jamie","Practice has improved my confidence."]],"tip":"Build, gain, or lose confidence."},
+      {"word":"opportunity cost","part":"noun","phonetic":"","definition":"The value of the best alternative you give up when choosing something.","examples":["The opportunity cost of overtime was missing dinner with friends.","Think about the opportunity cost before committing your time."],"conversation":[["Alex","Can you help me understand 'opportunity cost'?"],["Jamie","The opportunity cost of overtime was missing dinner with friends."]],"tip":"A common term in economics and decision-making."},
+    ];
+
+    const grid = document.getElementById("wordGrid");
+    const search = document.getElementById("search");
+    const count = document.getElementById("count");
+    const alphabet = document.getElementById("alphabet");
+    const savedFilter = document.getElementById("savedFilter");
+    const categoryButtons = [...document.querySelectorAll(".category-button")];
+    const previousPage = document.getElementById("previousPage");
+    const nextPage = document.getElementById("nextPage");
+    const pageStatus = document.getElementById("pageStatus");
+    const backdrop = document.getElementById("modalBackdrop");
+    const saved = new Set(readSaved());
+    let activeLetter = "";
+    let activeCategory = "all";
+    let currentPage = 1;
+    const pageSize = 100;
+    let onlySaved = false;
+    let activeWord = null;
+    let lastFocused = null;
+
+    function readSaved() {
+      try { return JSON.parse(localStorage.getItem("wordbook-saved") || "[]"); }
+      catch { return []; }
+    }
+    function persistSaved() {
+      try { localStorage.setItem("wordbook-saved", JSON.stringify([...saved])); }
+      catch { /* The dictionary still works if browser storage is unavailable. */ }
+    }
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, char => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[char]));
+    }
+    function makeAlphabet() {
+      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+      alphabet.innerHTML = "";
+      const all = document.createElement("button");
+      all.type = "button"; all.className = "letter active"; all.textContent = "All";
+      all.setAttribute("aria-pressed", "true");
+      all.addEventListener("click", () => { activeLetter = ""; currentPage = 1; updateLetterButtons(); render(); });
+      alphabet.appendChild(all);
+      letters.forEach(letter => {
+        const button = document.createElement("button");
+        button.type = "button"; button.className = "letter"; button.textContent = letter;
+        button.dataset.letter = letter;
+        button.disabled = !words.some(item => item.word.toUpperCase().startsWith(letter));
+        button.setAttribute("aria-pressed", "false");
+        button.addEventListener("click", () => {
+          activeLetter = activeLetter === letter ? "" : letter;
+          currentPage = 1;
+          updateLetterButtons(); render();
+        });
+        alphabet.appendChild(button);
+      });
+    }
+    function updateLetterButtons() {
+      alphabet.querySelectorAll("button").forEach(button => {
+        const isActive = button.dataset.letter ? button.dataset.letter === activeLetter : !activeLetter;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
+      });
+    }
+    function filteredWords() {
+      const query = search.value.trim().toLowerCase();
+      return words.filter(item => {
+        const matchesQuery = !query || [item.word, item.part, item.definition, ...item.examples].join(" ").toLowerCase().includes(query);
+        const matchesLetter = !activeLetter || item.word.toUpperCase().startsWith(activeLetter);
+        const parts = item.part.toLowerCase().split(/\s*\/\s*/).map(part => part.trim());
+        const matchesCategory = activeCategory === "all" || (activeCategory === "other" ? parts.length > 1 || !["noun","verb","adjective","adverb"].includes(parts[0]) : parts.includes(activeCategory));
+        const matchesSaved = !onlySaved || saved.has(item.word);
+        return matchesQuery && matchesLetter && matchesSaved && matchesCategory;
+      }).sort((a,b) => a.word.localeCompare(b.word));
+    }
+    function render() {
+      const list = filteredWords();
+      const pageCount = Math.max(1, Math.ceil(list.length / pageSize));
+      currentPage = Math.min(currentPage, pageCount);
+      const start = (currentPage - 1) * pageSize;
+      const pageWords = list.slice(start, start + pageSize);
+      count.textContent = `${list.length} ${list.length === 1 ? "word" : "words"}`;
+      pageStatus.textContent = `Page ${currentPage} of ${pageCount}`;
+      previousPage.disabled = currentPage <= 1;
+      nextPage.disabled = currentPage >= pageCount;
+      previousPage.style.visibility = pageCount > 1 ? "visible" : "hidden";
+      nextPage.style.visibility = pageCount > 1 ? "visible" : "hidden";
+      grid.innerHTML = "";
+      if (!pageWords.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = onlySaved && saved.size === 0 ? "You haven't saved any words yet. Open a word and select ☆ to save it." : "No matching words. Try a different search or filter.";
+        grid.appendChild(empty);
+        return;
+      }
+      pageWords.forEach(item => {
+        const button = document.createElement("button");
+        button.type = "button"; button.className = "word-card";
+        button.setAttribute("aria-label", `Learn ${item.word}`);
+        button.innerHTML = `<span class="word-name">${escapeHTML(item.word)}</span><span class="saved-mark" aria-label="${saved.has(item.word) ? "Saved" : ""}">${saved.has(item.word) ? "★" : ""}</span>`;
+        button.addEventListener("click", () => openWord(item, button));
+        grid.appendChild(button);
+      });
+    }
+    function openWord(item, trigger) {
+      activeWord = item;
+      lastFocused = trigger || document.activeElement;
+      document.getElementById("modalWord").textContent = item.word;
+      document.getElementById("modalPart").textContent = item.part;
+      document.getElementById("modalPhonetic").textContent = item.phonetic;
+      document.getElementById("modalPhonetic").style.display = item.phonetic ? "block" : "none";
+      document.getElementById("modalDefinition").textContent = item.definition;
+      const examples = document.getElementById("modalExamples");
+      examples.innerHTML = "";
+      item.examples.forEach(sentence => {
+        const li = document.createElement("li"); li.textContent = sentence; examples.appendChild(li);
+      });
+      const conversation = document.getElementById("modalConversation");
+      conversation.innerHTML = "";
+      item.conversation.forEach(([speaker, line]) => {
+        const p = document.createElement("p"); p.className = "dialogue-line";
+        const name = document.createElement("span"); name.className = "speaker"; name.textContent = speaker;
+        p.append(name, document.createTextNode(line)); conversation.appendChild(p);
+      });
+      document.getElementById("modalTip").textContent = item.tip;
+      updateSaveButton();
+      backdrop.classList.add("open");
+      document.body.style.overflow = "hidden";
+      document.getElementById("closeButton").focus();
+    }
+    function closeModal() {
+      backdrop.classList.remove("open");
+      document.body.style.overflow = "";
+      if (lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
+    }
+    function updateSaveButton() {
+      const isSaved = saved.has(activeWord.word);
+      const button = document.getElementById("saveButton");
+      button.textContent = isSaved ? "★" : "☆";
+      button.setAttribute("aria-label", isSaved ? "Remove saved word" : "Save word");
+      button.title = isSaved ? "Remove saved word" : "Save word";
+    }
+    function moveWord(direction) {
+      const list = filteredWords();
+      if (!list.length) return;
+      let index = list.findIndex(item => item.word === activeWord.word);
+      index = (index + direction + list.length) % list.length;
+      const targetPage = Math.floor(index / pageSize) + 1;
+      if (targetPage !== currentPage) {
+        currentPage = targetPage;
+        render();
+        const target = [...grid.querySelectorAll(".word-card")].find(button => button.getAttribute("aria-label") === `Learn ${list[index].word}`);
+        openWord(list[index], target || document.getElementById("closeButton"));
+      } else {
+        openWord(list[index], document.activeElement);
+      }
+    }
+    search.addEventListener("input", () => { currentPage = 1; render(); });
+    categoryButtons.forEach(button => button.addEventListener("click", () => {
+      activeCategory = button.dataset.category;
+      categoryButtons.forEach(item => { const active = item === button; item.classList.toggle("active", active); item.setAttribute("aria-pressed", String(active)); });
+      currentPage = 1; render();
+    }));
+    previousPage.addEventListener("click", () => { if (currentPage > 1) { currentPage--; render(); window.scrollTo({top: 0, behavior: "smooth"}); } });
+    nextPage.addEventListener("click", () => { const pageCount = Math.max(1, Math.ceil(filteredWords().length / pageSize)); if (currentPage < pageCount) { currentPage++; render(); window.scrollTo({top: 0, behavior: "smooth"}); } });
+    savedFilter.addEventListener("click", () => {
+      onlySaved = !onlySaved;
+      currentPage = 1;
+      savedFilter.setAttribute("aria-pressed", String(onlySaved));
+      savedFilter.textContent = onlySaved ? "★ Showing saved" : "☆ Saved words";
+      render();
+    });
+    document.getElementById("closeButton").addEventListener("click", closeModal);
+    // The dimmed backdrop intentionally blocks the word grid while the detail drawer is open.
+    backdrop.addEventListener("click", event => { if (event.target === backdrop) event.preventDefault(); });
+    document.getElementById("saveButton").addEventListener("click", () => {
+      if (!activeWord) return;
+      saved.has(activeWord.word) ? saved.delete(activeWord.word) : saved.add(activeWord.word);
+      persistSaved(); updateSaveButton(); render();
+    });
+    document.getElementById("previousButton").addEventListener("click", () => moveWord(-1));
+    document.getElementById("nextButton").addEventListener("click", () => moveWord(1));
+    document.addEventListener("keydown", event => {
+      if (!backdrop.classList.contains("open")) return;
+      if (event.key === "Escape") closeModal();
+      if (event.key === "ArrowRight") moveWord(1);
+      if (event.key === "ArrowLeft") moveWord(-1);
+    });
+
+    makeAlphabet();
+    render();
+  </script>
+</body>
+</html>
