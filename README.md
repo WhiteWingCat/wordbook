@@ -1,25 +1,20 @@
-# Wordbook — English Learning Dictionary
+# Wordbook — English Learning Dictionary (v4)
 
-Wordbook is a static, beginner-friendly English vocabulary website built with plain HTML, CSS, and JavaScript. It needs no framework or external service to run.
+A lightweight, static English vocabulary website designed for GitHub Pages.
 
-## Run locally
-1. Extract the ZIP file.
-2. Open `index.html` in a modern browser such as Chrome or Edge.
+## Improvements in v4
+- Search now matches **headwords only**, not definitions, examples, or dialogue.
+- Word cards show only the single headword and a saved-star indicator.
+- Removed the multiword entry `opportunity cost`; entries are restricted to one headword per card.
+- Replaced the repeated generic conversation prompt with varied dialogues.
+- Added an expanded set of vocabulary for body language, emotions, reactions, and expressive actions.
+- Highlights the headword (including common forms where applicable) in conversation lines.
+- Keeps category filtering, alphabet filtering, saved words, the sliding detail panel, and 100-word pagination.
 
-## Features
-- Expanded collection of everyday English vocabulary (including definitions, examples, dialogue, and usage tips).
-- Compact word-only grid designed to show many words at once.
-- Category filters for nouns, verbs, adjectives, adverbs, and other/multiple uses.
-- Search by spelling, part of speech, definition, and example sentences.
-- Alphabet filtering and saved-word filtering.
-- 100 words per page with Previous/Next controls when needed.
-- Sliding detail drawer from the left; the grid is blocked until the drawer is closed.
-- Saved words stored locally in the browser using localStorage.
-- Responsive layout and keyboard support (Escape to close; arrow keys to browse).
-- No external libraries, account, or internet connection required once downloaded.
-
-## Publish online
-The project is a static website, so it can be hosted for free on GitHub Pages or Netlify. The ZIP does not publish itself, and I cannot create a permanent public URL without access to an account/hosting project you control. See the steps I will provide in the chat.
+## Publish on GitHub Pages
+Upload the contents of this folder to the root of the repository (where `index.html` is located), commit the changes, and wait for GitHub Pages to redeploy.
 
 ## Notes
-This is a learning aid, not a complete or authoritative dictionary. Pronunciation is supplied only for the original starter words; entries added in the expanded set currently leave phonetic spelling blank rather than risk inventing pronunciation. Word definitions and example sentences should be reviewed and improved as the project grows.
+- Saved words use browser local storage and do not sync across devices.
+- Many added words have pronunciation fields left blank rather than using unverified phonetic spellings.
+- This is a static website; no external libraries or backend are required.
