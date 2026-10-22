@@ -1,20 +1,18 @@
-# SwiftDictionary v6
+# SwiftDictionary v7 — Character-first Chinese learning
 
-A static bilingual vocabulary learning website for English and Simplified Chinese.
+A static, GitHub Pages-compatible English and Simplified Chinese vocabulary dictionary.
 
-## Features
-- Switch the learning course between English and Simplified Chinese.
-- Choose English or Simplified Chinese for the definition display.
-- Chinese course: tone-marked pinyin, common context, character structure notes, and related words/pinyin.
-- Square Chinese word cards and up to 144 entries per page.
-- English vocabulary collection retained from the previous release.
-- Search, English alphabetical filters, saved entries (local browser storage), and feedback page.
-- No everyday-conversation feature.
+## What's updated
+- Removed multi-character Chinese terms from the Chinese grid: each Chinese grid tile is exactly one Han character.
+- Multi-character vocabulary is attached to related-word lists for characters it contains.
+- Expanded the Chinese single-character collection and added more English vocabulary.
+- Increased expanded-detail typography and retained vertical scrolling for longer entries.
+- Added pinyin lines beneath Chinese examples, related terms, and Chinese definitions where character readings are available.
+- Chinese search accepts tone-marked or unmarked pinyin (for example, `shuǐ` or `shui`).
+- Reframed character breakdowns around a learner-friendly method: identify the radical/semantic component, look for a possible phonetic component, then learn the character in words. Components are clues, not guaranteed definitions or exact pronunciation rules.
+
+## Important learning note
+Pinyin coverage in multi-character example text is based on the site's single-character pronunciation data and may be incomplete for some characters. Entries marked as unverified should be checked before relying on them. Character etymology and component explanations are concise learner aids, not exhaustive historical claims.
 
 ## Publish on GitHub Pages
-Upload `index.html`, `feedback.html`, `banner.svg`, and `README.md` to the repository root and commit. Keep the files in the same folder.
-
-## Notes
-- Chinese entries focus on common Simplified Chinese vocabulary and Mandarin pinyin. Character-structure notes are learner-oriented and simplified; they are not a substitute for specialist paleographic etymology.
-- Some English entries do not yet have a Chinese definition. The interface explicitly indicates when a translation is not available rather than inventing one.
-- This is a static site. The feedback page prepares a GitHub issue; visitors need a GitHub account to submit it.
+Keep `index.html`, `feedback.html`, `banner.svg`, and `README.md` in the same repository directory. Upload/replace the files and commit the changes. The site uses relative asset links and does not require a server.
