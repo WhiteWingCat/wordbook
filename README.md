@@ -1,19 +1,20 @@
-# SwiftDictionary
+# SwiftDictionary v6
 
-A static, mobile-friendly English vocabulary dictionary with definitions, examples, everyday conversations, category filters, alphabetical browsing, saved words, and a feedback page.
+A static bilingual vocabulary learning website for English and Simplified Chinese.
 
-## Files
-- `index.html` — main dictionary app and vocabulary data
-- `feedback.html` — feedback form that prepares a GitHub issue; the visitor needs a GitHub account to submit it
-- `banner.svg` — custom illustrated nature banner
+## Features
+- Switch the learning course between English and Simplified Chinese.
+- Choose English or Simplified Chinese for the definition display.
+- Chinese course: tone-marked pinyin, common context, character structure notes, and related words/pinyin.
+- Square Chinese word cards and up to 144 entries per page.
+- English vocabulary collection retained from the previous release.
+- Search, English alphabetical filters, saved entries (local browser storage), and feedback page.
+- No everyday-conversation feature.
 
 ## Publish on GitHub Pages
-1. Open the repository that currently hosts your dictionary.
-2. Upload/replace `index.html` and `README.md`, and add `feedback.html` and `banner.svg` at the same repository location.
-3. Commit the changes. Keep the four files together in the same folder.
-4. Refresh the published site after GitHub Pages finishes deploying. The existing website URL should remain the same.
+Upload `index.html`, `feedback.html`, `banner.svg`, and `README.md` to the repository root and commit. Keep the files in the same folder.
 
 ## Notes
-- Pronunciation guides are approximate General American IPA where available; pronunciations can vary by accent. A few uncommon words may not have an automatic pronunciation guide.
-- Saved words are stored locally in the visitor’s browser and are not synced between devices.
-- Since this is a static site with no backend, the feedback form opens a prefilled GitHub issue rather than storing submissions itself.
+- Chinese entries focus on common Simplified Chinese vocabulary and Mandarin pinyin. Character-structure notes are learner-oriented and simplified; they are not a substitute for specialist paleographic etymology.
+- Some English entries do not yet have a Chinese definition. The interface explicitly indicates when a translation is not available rather than inventing one.
+- This is a static site. The feedback page prepares a GitHub issue; visitors need a GitHub account to submit it.
