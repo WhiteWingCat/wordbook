@@ -48,8 +48,10 @@
     .course-controls label { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:.9rem; }
     .course-controls select { background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:9px; padding:9px 12px; }
     .word-grid.character-grid { grid-template-columns:repeat(auto-fill,minmax(66px,1fr)); gap:8px; }
-    .character-grid .word-card { min-height:66px; aspect-ratio:1 / 1; padding:5px; justify-content:center; text-align:center; }
-    .character-grid .word-name { font-size:1.65rem; font-weight:600; letter-spacing:0; }
+    .character-grid .word-card { position:relative; display:grid; place-items:center; min-height:66px; aspect-ratio:1 / 1; padding:5px; text-align:center; }
+    .character-grid .word-name { display:block; width:100%; font-size:1.65rem; font-weight:600; letter-spacing:0; line-height:1.25; text-align:center; }
+    .character-grid .saved-mark { position:absolute; top:4px; right:6px; font-size:.72rem; }
+    .category-row[hidden] { display:none; }
     .eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: .12em; font-size: .75rem; font-weight: 750; }
     h1 { margin: 7px 0 8px; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -.055em; line-height: 1.12; }
     .hero p { color: var(--muted); max-width: 650px; margin: 0; }
@@ -147,7 +149,7 @@
       <div class="hero-banner-content"><div class="eyebrow">English &amp; 简体中文 · Made clear</div><h1>SwiftDictionary</h1><p>Explore vocabulary, pinyin, meanings, examples, and character structure in one clean learning space.</p></div>
     </section>
     <section class="hero">
-      <div class="course-controls"><label>Learning course <select id="courseSelect"><option value="en">English</option><option value="zh">简体中文</option></select></label><label>Translate definitions into <select id="translationSelect"><option value="en">English</option><option value="zh">简体中文</option></select></label></div><div class="category-row" aria-label="Filter by part of speech">
+      <div class="course-controls"><label>Learning course <select id="courseSelect"><option value="en">English</option><option value="zh">简体中文</option></select></label><label>Translate definitions into <select id="translationSelect"><option value="en">English</option><option value="zh">简体中文</option></select></label></div><div id="categoryRow" class="category-row" aria-label="Filter by part of speech">
         <button class="category-button active" type="button" data-category="all" aria-pressed="true">All categories</button>
         <button class="category-button" type="button" data-category="noun" aria-pressed="false">Nouns</button>
         <button class="category-button" type="button" data-category="verb" aria-pressed="false">Verbs</button>
@@ -227,6 +229,7 @@
     const alphabet = document.getElementById("alphabet");
     const savedFilter = document.getElementById("savedFilter");
     const categoryButtons = [...document.querySelectorAll(".category-button")];
+    const categoryRow = document.getElementById("categoryRow");
     const previousPage = document.getElementById("previousPage");
     const nextPage = document.getElementById("nextPage");
     const pageStatus = document.getElementById("pageStatus");
@@ -290,7 +293,7 @@
         const matchesQuery = !query || item.word.toLowerCase().includes(query) || (course === "zh" && normalizedPinyin.includes(normalizedQuery)) || (translationLanguage === "zh" && (item.definitionZh || "").toLowerCase().includes(query));
         const matchesLetter = course === "zh" || !activeLetter || item.word.toUpperCase().startsWith(activeLetter);
         const parts = item.part.toLowerCase().split(/\s*\/\s*/).map(part => part.trim());
-        const matchesCategory = activeCategory === "all" || (activeCategory === "other" ? parts.length > 1 || !["noun","verb","adjective","adverb"].includes(parts[0]) : parts.includes(activeCategory));
+        const matchesCategory = course === "zh" || activeCategory === "all" || (activeCategory === "other" ? parts.length > 1 || !["noun","verb","adjective","adverb"].includes(parts[0]) : parts.includes(activeCategory));
         const matchesSaved = !onlySaved || saved.has(item.word);
         return matchesQuery && matchesLetter && matchesSaved && matchesCategory;
       }).sort((a,b) => a.word.localeCompare(b.word, course === "zh" ? "zh-CN" : "en"));
@@ -299,6 +302,7 @@
       const list = filteredWords();
       pageSize = course === "zh" ? 144 : 100;
       grid.classList.toggle("character-grid", course === "zh");
+      categoryRow.hidden = course === "zh";
       const pageCount = Math.max(1, Math.ceil(list.length / pageSize));
       currentPage = Math.min(currentPage, pageCount);
       const start = (currentPage - 1) * pageSize;
