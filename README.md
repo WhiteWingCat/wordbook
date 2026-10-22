@@ -1,20 +1,19 @@
-# Wordbook — English Learning Dictionary (v4)
+# SwiftDictionary
 
-A lightweight, static English vocabulary website designed for GitHub Pages.
+A static, mobile-friendly English vocabulary dictionary with definitions, examples, everyday conversations, category filters, alphabetical browsing, saved words, and a feedback page.
 
-## Improvements in v4
-- Search now matches **headwords only**, not definitions, examples, or dialogue.
-- Word cards show only the single headword and a saved-star indicator.
-- Removed the multiword entry `opportunity cost`; entries are restricted to one headword per card.
-- Replaced the repeated generic conversation prompt with varied dialogues.
-- Added an expanded set of vocabulary for body language, emotions, reactions, and expressive actions.
-- Highlights the headword (including common forms where applicable) in conversation lines.
-- Keeps category filtering, alphabet filtering, saved words, the sliding detail panel, and 100-word pagination.
+## Files
+- `index.html` — main dictionary app and vocabulary data
+- `feedback.html` — feedback form that prepares a GitHub issue; the visitor needs a GitHub account to submit it
+- `banner.svg` — custom illustrated nature banner
 
 ## Publish on GitHub Pages
-Upload the contents of this folder to the root of the repository (where `index.html` is located), commit the changes, and wait for GitHub Pages to redeploy.
+1. Open the repository that currently hosts your dictionary.
+2. Upload/replace `index.html` and `README.md`, and add `feedback.html` and `banner.svg` at the same repository location.
+3. Commit the changes. Keep the four files together in the same folder.
+4. Refresh the published site after GitHub Pages finishes deploying. The existing website URL should remain the same.
 
 ## Notes
-- Saved words use browser local storage and do not sync across devices.
-- Many added words have pronunciation fields left blank rather than using unverified phonetic spellings.
-- This is a static website; no external libraries or backend are required.
+- Pronunciation guides are approximate General American IPA where available; pronunciations can vary by accent. A few uncommon words may not have an automatic pronunciation guide.
+- Saved words are stored locally in the visitor’s browser and are not synced between devices.
+- Since this is a static site with no backend, the feedback form opens a prefilled GitHub issue rather than storing submissions itself.
