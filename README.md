@@ -22,3 +22,23 @@ Pinyin coverage in multi-character example text is based on the site's single-ch
 
 ## Publish on GitHub Pages
 Keep `index.html`, `feedback.html`, `banner.svg`, and `README.md` in the same repository directory. Upload/replace the files and commit the changes. The site uses relative asset links and does not require a server.
+
+## v9 update: learning details and account setup
+
+- Chinese character tiles use strict grid centering; the save star is positioned independently.
+- Chinese related words show the word/characters with pinyin on the line beneath, without repeating pinyin beside the word.
+- Chinese character structure now uses a visual lesson panel with the character, a short explanation, and component/radical cues where the current data provides one. Treat these as learning aids, not a complete etymological analysis.
+- English details hide Chinese-only sections. Verbs show Present, Past, and Future forms; non-verbs hide this section. Irregular forms are explicitly listed for common verbs; other verbs use a simple regular-form rule and should be reviewed for spelling exceptions.
+- English definitions use contextual Chinese glosses for a reviewed subset of common words. Unreviewed entries fall back to the existing Chinese gloss or a clearly marked literal-context fallback. This is not yet a full professional translation of every entry or example sentence.
+
+## Google account sign-in (requires owner setup)
+
+This is a static GitHub Pages site, so account authentication and cross-device data sync need an external auth/database service. The account interface is scaffolded for Supabase Auth with Google OAuth; it is **not active until configured**.
+
+1. Create a project at https://supabase.com/ and open **Project Settings → API**.
+2. Copy the Project URL and the publishable/anon key into `supabase-config.js`. Never use a `service_role` key in this public site.
+3. In Supabase **Authentication → Providers**, enable Google and follow Supabase's current Google provider setup guide to configure the Google OAuth client ID/secret.
+4. Add your GitHub Pages site URL to Supabase's **Authentication → URL Configuration** allowed redirect URLs (including the repository path if the site is published from a project repository).
+5. Test sign-in/sign-out on the deployed HTTPS site.
+
+Important: this version includes the Google sign-in connection scaffold, but does not yet sync saved words or browsing history to a cloud database. Until cloud data sync and access policies are implemented and tested, saved words remain in this browser's local storage. Do not advertise cross-device saving as available yet. The next account milestone is a user-scoped table for saved words and learning history with Row Level Security policies, followed by tested migration from local storage.
