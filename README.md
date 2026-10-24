@@ -42,3 +42,10 @@ This is a static GitHub Pages site, so account authentication and cross-device d
 5. Test sign-in/sign-out on the deployed HTTPS site.
 
 Important: this version includes the Google sign-in connection scaffold, but does not yet sync saved words or browsing history to a cloud database. Until cloud data sync and access policies are implemented and tested, saved words remain in this browser's local storage. Do not advertise cross-device saving as available yet. The next account milestone is a user-scoped table for saved words and learning history with Row Level Security policies, followed by tested migration from local storage.
+
+
+## Cloud saving setup (after creating `public.saved_words`)
+
+This release syncs saved words to Supabase for signed-in users and keeps local browser saving available. The table must have these columns: `id`, `user_id`, `word`, `course`, `created_at`; `course` must accept `en` and `zh`. Enable Row Level Security and add policies allowing authenticated users to select, insert, and delete only rows where `auth.uid() = user_id`. A unique constraint on `(user_id, course, word)` is required. Never add a service-role key to the public site.
+
+To publish the update, replace `index.html` and `README.md` in the GitHub Pages repository with this release. Keep your already-configured `supabase-config.js` on GitHub unchanged; the copy in this ZIP contains placeholders for safety. Then hard-refresh the site and test saving/unsaving a word while signed in.

@@ -266,6 +266,7 @@
     function persistSaved() {
       try { localStorage.setItem("swiftdictionary-saved", JSON.stringify([...saved])); }
       catch { /* The dictionary still works if browser storage is unavailable. */ }
+      // Cloud sync is handled separately so local saving remains available offline.
     }
     function escapeHTML(value) {
       return String(value).replace(/[&<>"']/g, char => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[char]));
@@ -475,7 +476,7 @@
         openWord(list[index], document.activeElement);
       }
     }
-    document.getElementById("courseSelect").addEventListener("change", e => { course=e.target.value; categoryRow.hidden = course === "zh"; grid.classList.toggle("character-grid", course === "zh"); words=course === "zh" ? chineseWords : englishWords; activeLetter=""; activeCategory="all"; onlySaved=false; savedFilter.setAttribute("aria-pressed","false"); savedFilter.textContent="☆ Saved words"; search.value=""; search.placeholder=course === "zh" ? "搜索汉字或拼音（可不标声调）…" : "Search a word..."; currentPage=1; makeAlphabet(); updateLetterButtons(); categoryButtons.forEach((b,i)=>{ const active=i===0; b.classList.toggle("active",active); b.setAttribute("aria-pressed",String(active)); }); render(); });
+    document.getElementById("courseSelect").addEventListener("change", e => { course=e.target.value; categoryRow.hidden = course === "zh"; grid.classList.toggle("character-grid", course === "zh"); words=course === "zh" ? chineseWords : englishWords; activeLetter=""; activeCategory="all"; onlySaved=false; savedFilter.setAttribute("aria-pressed","false"); savedFilter.textContent="☆ Saved words"; search.value=""; search.placeholder=course === "zh" ? "搜索汉字或拼音（可不标声调）…" : "Search a word..."; currentPage=1; makeAlphabet(); updateLetterButtons(); categoryButtons.forEach((b,i)=>{ const active=i===0; b.classList.toggle("active",active); b.setAttribute("aria-pressed",String(active)); }); render(); if (currentUser) syncCurrentCourseFromCloud({ mergeLocal: false }); });
     document.getElementById("translationSelect").addEventListener("change", e => { translationLanguage=e.target.value; if(activeWord) openWord(activeWord); });
     search.addEventListener("input", () => { currentPage = 1; render(); });
     categoryButtons.forEach(button => button.addEventListener("click", () => {
@@ -495,10 +496,23 @@
     document.getElementById("closeButton").addEventListener("click", closeModal);
     // The dimmed backdrop intentionally blocks the word grid while the detail drawer is open.
     backdrop.addEventListener("click", event => { if (event.target === backdrop) event.preventDefault(); });
-    document.getElementById("saveButton").addEventListener("click", () => {
+    document.getElementById("saveButton").addEventListener("click", async () => {
       if (!activeWord) return;
-      saved.has(activeWord.word) ? saved.delete(activeWord.word) : saved.add(activeWord.word);
+      const word = activeWord.word;
+      const wasSaved = saved.has(word);
+      wasSaved ? saved.delete(word) : saved.add(word);
       persistSaved(); updateSaveButton(); render();
+      if (currentUser && supabaseClient) {
+        const status = document.getElementById("accountStatus");
+        const { error } = wasSaved
+          ? await supabaseClient.from("saved_words").delete().eq("user_id", currentUser.id).eq("course", course).eq("word", word)
+          : await supabaseClient.from("saved_words").upsert({ user_id: currentUser.id, course, word }, { onConflict: "user_id,course,word", ignoreDuplicates: true });
+        if (error) {
+          status.textContent = `Cloud save failed: ${error.message}. Your change is still saved on this device.`;
+        } else {
+          status.textContent = `Signed in as ${currentUser.email}. Saved words are syncing to the cloud.`;
+        }
+      }
     });
     document.getElementById("previousButton").addEventListener("click", () => moveWord(-1));
     document.getElementById("nextButton").addEventListener("click", () => moveWord(1));
@@ -514,19 +528,81 @@
     categoryRow.hidden = course === "zh";
     render();
 
-    // Supabase Google sign-in scaffold. Configure in supabase-config.js before public launch.
+    // Supabase authentication and saved-word cloud sync.
     let supabaseClient = null, currentUser = null;
+    const accountStatus = document.getElementById("accountStatus");
+    async function syncCurrentCourseFromCloud({ mergeLocal = true } = {}) {
+      if (!supabaseClient || !currentUser) return;
+      accountStatus.textContent = "Syncing saved words…";
+      const { data: cloudRows, error } = await supabaseClient
+        .from("saved_words").select("word").eq("user_id", currentUser.id).eq("course", course);
+      if (error) {
+        accountStatus.textContent = `Cloud sync failed: ${error.message}. Local saved words remain available.`;
+        return;
+      }
+      const cloudWords = new Set((cloudRows || []).map(row => row.word));
+      if (mergeLocal) {
+        // Merge local saved words into the signed-in account rather than discarding them.
+        const rowsToUpload = [...saved].filter(word => !cloudWords.has(word)).map(word => ({ user_id: currentUser.id, course, word }));
+        if (rowsToUpload.length) {
+          const { error: uploadError } = await supabaseClient.from("saved_words").upsert(rowsToUpload, { onConflict: "user_id,course,word", ignoreDuplicates: true });
+          if (uploadError) {
+            accountStatus.textContent = `Signed in, but local words could not be uploaded: ${uploadError.message}`;
+            return;
+          }
+        }
+        cloudWords.forEach(word => saved.add(word));
+      } else {
+        // Keep the local list for the other course while replacing only this course's words.
+        const currentCourseWords = new Set((course === "zh" ? chineseWords : englishWords).map(item => item.word));
+        currentCourseWords.forEach(word => saved.delete(word));
+        cloudWords.forEach(word => saved.add(word));
+      }
+      persistSaved();
+      if (activeWord) updateSaveButton();
+      render();
+      accountStatus.textContent = `Signed in as ${currentUser.email}. Saved words for ${course === "zh" ? "Chinese" : "English"} are synced.`;
+    }
     async function initAccount() {
-      const status=document.getElementById("accountStatus"), btn=document.getElementById("accountButton"), google=document.getElementById("googleSignIn"), signout=document.getElementById("signOutButton");
-      const cfg=window.SWIFT_SUPABASE_CONFIG;
-      if (!cfg || !cfg.url || !cfg.anonKey || cfg.url.includes("YOUR_") || cfg.anonKey.includes("YOUR_")) { status.textContent="Not connected yet: the site owner must add Supabase project settings. Local saved words remain available on this device."; google.disabled=true; google.title="Configure Supabase first; see README.md"; return; }
-      if (!window.supabase) { status.textContent="Could not load the account service. Check your connection."; return; }
-      supabaseClient=window.supabase.createClient(cfg.url,cfg.anonKey);
-      const {data}=await supabaseClient.auth.getSession(); currentUser=data.session?.user||null;
-      async function refresh(){ const {data}=await supabaseClient.auth.getSession(); currentUser=data.session?.user||null; btn.textContent=currentUser?(currentUser.email||"Account"):"Sign in"; google.hidden=!!currentUser; signout.hidden=!currentUser; status.textContent=currentUser?`Signed in as ${currentUser.email}. Cloud sync can be enabled after the database table is configured.`:"Choose Google to sign in."; }
-      await refresh(); supabaseClient.auth.onAuthStateChange(()=>refresh());
-      google.addEventListener("click",async()=>{status.textContent="Opening Google sign-in…";const {error}=await supabaseClient.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.href}});if(error)status.textContent=error.message;});
-      signout.addEventListener("click",async()=>{await supabaseClient.auth.signOut();});
+      const btn = document.getElementById("accountButton");
+      const google = document.getElementById("googleSignIn");
+      const signout = document.getElementById("signOutButton");
+      const cfg = window.SWIFT_SUPABASE_CONFIG;
+      if (!cfg || !cfg.url || !cfg.anonKey || cfg.url.includes("YOUR_") || cfg.anonKey.includes("YOUR_")) {
+        accountStatus.textContent = "Not connected yet: add the Supabase project URL and publishable/anon key. Local saved words still work on this device.";
+        google.disabled = true;
+        return;
+      }
+      if (!window.supabase) {
+        accountStatus.textContent = "Could not load the account service. Check your internet connection.";
+        return;
+      }
+      supabaseClient = window.supabase.createClient(cfg.url, cfg.anonKey);
+      async function refreshAccount() {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) accountStatus.textContent = `Could not check sign-in: ${error.message}`;
+        currentUser = data?.session?.user || null;
+        btn.textContent = currentUser ? (currentUser.email || "Account") : "Sign in";
+        google.hidden = !!currentUser;
+        signout.hidden = !currentUser;
+        if (currentUser) await syncCurrentCourseFromCloud({ mergeLocal: true });
+        else accountStatus.textContent = "Choose Google to sign in. Saved words remain available on this device.";
+      }
+      await refreshAccount();
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        currentUser = session?.user || null;
+        // Defer database work outside the auth callback to avoid locking auth state changes.
+        setTimeout(() => refreshAccount(), 0);
+      });
+      google.addEventListener("click", async () => {
+        accountStatus.textContent = "Opening Google sign-in…";
+        const { error } = await supabaseClient.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.href } });
+        if (error) accountStatus.textContent = error.message;
+      });
+      signout.addEventListener("click", async () => {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) accountStatus.textContent = `Sign-out failed: ${error.message}`;
+      });
     }
     document.getElementById("accountButton").addEventListener("click",()=>{document.getElementById("accountDialog").classList.add("open");});
     document.getElementById("accountClose").addEventListener("click",()=>document.getElementById("accountDialog").classList.remove("open"));
