@@ -264,9 +264,15 @@
       catch { return []; }
     }
     function persistSaved() {
-      try { localStorage.setItem("swiftdictionary-saved", JSON.stringify([...saved])); }
-      catch { /* The dictionary still works if browser storage is unavailable. */ }
-      // Cloud sync is handled separately so local saving remains available offline.
+      // Signed-in favorites live in Supabase. Do not cache them in a shared local
+      // storage key, which could leak one account's favorites into another account.
+      try {
+        if (typeof currentUser !== "undefined" && currentUser) {
+          localStorage.removeItem("swiftdictionary-saved");
+        } else {
+          localStorage.setItem("swiftdictionary-saved", JSON.stringify([...saved]));
+        }
+      } catch { /* The dictionary still works if browser storage is unavailable. */ }
     }
     function escapeHTML(value) {
       return String(value).replace(/[&<>"']/g, char => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[char]));
@@ -581,16 +587,46 @@
       async function refreshAccount() {
         const { data, error } = await supabaseClient.auth.getSession();
         if (error) accountStatus.textContent = `Could not check sign-in: ${error.message}`;
-        currentUser = data?.session?.user || null;
+        const nextUser = data?.session?.user || null;
+        const previousUserId = currentUser?.id || null;
+        currentUser = nextUser;
         btn.textContent = currentUser ? (currentUser.email || "Account") : "Sign in";
         google.hidden = !!currentUser;
         signout.hidden = !currentUser;
-        if (currentUser) await syncCurrentCourseFromCloud({ mergeLocal: true });
-        else accountStatus.textContent = "Choose Google to sign in. Saved words remain available on this device.";
+
+        if (currentUser) {
+          // On first sign-in or account change, discard the shared anonymous cache.
+          // This prevents local favorites from another session/course leaking into
+          // the signed-in account. Cloud data is loaded below as the source of truth.
+          if (!previousUserId || previousUserId !== currentUser.id) {
+            saved.clear();
+            try { localStorage.removeItem("swiftdictionary-saved"); } catch {}
+          }
+          // Never merge shared browser-local favorites into an account: that can
+          // re-upload a word that was just unfavorited on another device.
+          await syncCurrentCourseFromCloud({ mergeLocal: false });
+        } else {
+          // Signed-out mode starts with no account favorites displayed.
+          // This prevents one account's cached favorites from appearing for another.
+          saved.clear();
+          try { localStorage.removeItem("swiftdictionary-saved"); } catch {}
+          if (activeWord) updateSaveButton();
+          render();
+          accountStatus.textContent = "Signed out. Sign in to load your cloud-saved words.";
+        }
       }
       await refreshAccount();
       supabaseClient.auth.onAuthStateChange((event, session) => {
-        currentUser = session?.user || null;
+        const nextUser = session?.user || null;
+        const previousUserId = currentUser?.id || null;
+        currentUser = nextUser;
+        // Clear cached favorites immediately on sign-out or account change.
+        if (!nextUser || (previousUserId && previousUserId !== nextUser.id)) {
+          saved.clear();
+          try { localStorage.removeItem("swiftdictionary-saved"); } catch {}
+          if (activeWord) updateSaveButton();
+          render();
+        }
         // Defer database work outside the auth callback to avoid locking auth state changes.
         setTimeout(() => refreshAccount(), 0);
       });
