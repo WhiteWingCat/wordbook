@@ -1,51 +1,65 @@
-# SwiftDictionary v7 — Character-first Chinese learning
+# SwiftDictionary v13 — Advanced English Vocabulary Expansion
 
-A static, GitHub Pages-compatible English and Simplified Chinese vocabulary dictionary.
+SwiftDictionary is a lightweight, GitHub Pages-compatible vocabulary-learning website for English and Simplified Chinese. This release expands the English course with less-common scientific, technical, historical, academic, and professional vocabulary. The Chinese character collection is intentionally unchanged in v13.
 
-## What's updated
-- Removed multi-character Chinese terms from the Chinese grid: each Chinese grid tile is exactly one Han character.
-- Multi-character vocabulary is attached to related-word lists for characters it contains.
-- Expanded the Chinese single-character collection and added more English vocabulary.
-- Increased expanded-detail typography and retained vertical scrolling for longer entries.
-- Added pinyin lines beneath Chinese examples, related terms, and Chinese definitions where character readings are available.
-- Chinese search accepts tone-marked or unmarked pinyin (for example, `shuǐ` or `shui`).
-- Reframed character breakdowns around a learner-friendly method: identify the radical/semantic component, look for a possible phonetic component, then learn the character in words. Components are clues, not guaranteed definitions or exact pronunciation rules.
+## What's new in v13
 
-## Quality-and-structure update (v8)
-- Corrected Chinese character tiles to use true grid-based centering; saved-star indicators sit in the corner and no longer push characters off-center.
-- Hidden the English parts-of-speech filter row while the Simplified Chinese course is active. The filter remains available for English.
-- Chinese filtering now explicitly ignores the English category state, preventing stale category selections from affecting Chinese results.
-- Kept the Chinese grid character-first: only single Han characters are shown as tiles, while multi-character vocabulary stays in related-word content.
+- Expanded the English dictionary from **550 to 631 entries** with 81 additional terms.
+- Added vocabulary across biology, ecology, chemistry, geology, statistics, research methods, computing-related concepts, philosophy, history, law, finance, literary theory, and professional communication.
+- Added an original learner-oriented definition, pronunciation guide, example sentence, usage tip, and Chinese gloss for each new entry.
+- Kept the existing Chinese course and its **106 single-character entries** unchanged.
+- Retained the existing search, course switching, word details, saved-word interface, and account features.
+- Added a Google account chooser prompt at sign-in so people sharing a device can more easily select a different account.
 
-## Important learning note
-Pinyin coverage in multi-character example text is based on the site's single-character pronunciation data and may be incomplete or incorrect for polyphonic characters and context-dependent readings. This release improves layout and course-filter behavior; it is not a complete expert linguistic audit. Verify pronunciations, definitions, example naturalness, and character-component explanations with trusted dictionaries or a qualified Mandarin reviewer before treating every entry as authoritative. Character etymology and component explanations are concise learner aids, not exhaustive historical claims.
+## Main features
 
-## Publish on GitHub Pages
-Keep `index.html`, `feedback.html`, `banner.svg`, and `README.md` in the same repository directory. Upload/replace the files and commit the changes. The site uses relative asset links and does not require a server.
+- English vocabulary grid with search and part-of-speech filters.
+- Simplified Chinese character grid, with one Han character per tile and pinyin-aware search.
+- Expanded entry details, examples, usage notes, and Chinese glosses where available.
+- Saved words and account-based cloud synchronization when Supabase is correctly configured.
+- Google sign-in and sign-out through Supabase Auth.
+- Feedback page, if `feedback.html` is included in the repository.
+- Responsive layout for desktop and mobile browsers.
 
-## v9 update: learning details and account setup
+## Publish or update on GitHub Pages
 
-- Chinese character tiles use strict grid centering; the save star is positioned independently.
-- Chinese related words show the word/characters with pinyin on the line beneath, without repeating pinyin beside the word.
-- Chinese character structure now uses a visual lesson panel with the character, a short explanation, and component/radical cues where the current data provides one. Treat these as learning aids, not a complete etymological analysis.
-- English details hide Chinese-only sections. Verbs show Present, Past, and Future forms; non-verbs hide this section. Irregular forms are explicitly listed for common verbs; other verbs use a simple regular-form rule and should be reviewed for spelling exceptions.
-- English definitions use contextual Chinese glosses for a reviewed subset of common words. Unreviewed entries fall back to the existing Chinese gloss or a clearly marked literal-context fallback. This is not yet a full professional translation of every entry or example sentence.
+1. Back up the current `index.html` and `README.md` before replacing them.
+2. Replace `index.html` with the one in this release.
+3. Replace `README.md` with this file if you want the repository documentation updated.
+4. **Keep your existing `supabase-config.js` unchanged.** It contains your project's public Supabase URL and publishable/anon key. Do not replace it with a placeholder configuration.
+5. Keep the other existing site assets and pages, such as `feedback.html` and `banner.svg`, in their current locations.
+6. Commit the changes and wait for GitHub Pages to finish deploying.
+7. Open the published site and hard-refresh it (`Ctrl + F5` on Windows) if the old version remains cached.
 
-## Google account sign-in (requires owner setup)
+The website's publishing folder must contain `index.html` at its root. If GitHub Pages is configured to publish from a subfolder, place the files in that configured folder instead.
 
-This is a static GitHub Pages site, so account authentication and cross-device data sync need an external auth/database service. The account interface is scaffolded for Supabase Auth with Google OAuth; it is **not active until configured**.
+## Supabase and account privacy
 
-1. Create a project at https://supabase.com/ and open **Project Settings → API**.
-2. Copy the Project URL and the publishable/anon key into `supabase-config.js`. Never use a `service_role` key in this public site.
-3. In Supabase **Authentication → Providers**, enable Google and follow Supabase's current Google provider setup guide to configure the Google OAuth client ID/secret.
-4. Add your GitHub Pages site URL to Supabase's **Authentication → URL Configuration** allowed redirect URLs (including the repository path if the site is published from a project repository).
-5. Test sign-in/sign-out on the deployed HTTPS site.
+The site uses a public frontend, so only a Supabase **publishable/anon key** belongs in the browser configuration. Never put a Supabase `service_role` key or Google OAuth client secret in this repository.
 
-Important: this version includes the Google sign-in connection scaffold, but does not yet sync saved words or browsing history to a cloud database. Until cloud data sync and access policies are implemented and tested, saved words remain in this browser's local storage. Do not advertise cross-device saving as available yet. The next account milestone is a user-scoped table for saved words and learning history with Row Level Security policies, followed by tested migration from local storage.
+For saved-word cloud sync, the Supabase table must have Row Level Security (RLS) enabled and policies that restrict each authenticated user to their own rows. Do not remove or weaken these policies. Signing out should clear the active account's words from the current interface; signing into another Google account should load that account's saved words, not the previous account's.
 
+The Google account chooser asks Google to show an account-selection step during sign-in. Google may still remember accounts on the device; SwiftDictionary sign-out ends the SwiftDictionary session, not necessarily the Google browser session itself. Users should choose their own account on shared devices and sign out when finished.
 
-## Cloud saving setup (after creating `public.saved_words`)
+## Vocabulary and learning accuracy
 
-This release syncs saved words to Supabase for signed-in users and keeps local browser saving available. The table must have these columns: `id`, `user_id`, `word`, `course`, `created_at`; `course` must accept `en` and `zh`. Enable Row Level Security and add policies allowing authenticated users to select, insert, and delete only rows where `auth.uid() = user_id`. A unique constraint on `(user_id, course, word)` is required. Never add a service-role key to the public site.
+The English entries and example sentences in this expansion were written as learner-oriented explanations rather than copied from a proprietary dictionary. Specialized terminology can have different meanings depending on the discipline, and the included Chinese glosses are concise learning aids rather than certified translations. Verify high-stakes legal, medical, scientific, or professional usage against authoritative references before relying on it in formal work.
 
-To publish the update, replace `index.html` and `README.md` in the GitHub Pages repository with this release. Keep your already-configured `supabase-config.js` on GitHub unchanged; the copy in this ZIP contains placeholders for safety. Then hard-refresh the site and test saving/unsaving a word while signed in.
+The Chinese character component explanations and pinyin aids in the existing course are also intended for learning support, not as a complete expert linguistic or etymological audit. Context-dependent readings and specialist definitions may require further review.
+
+## Privacy and limitations
+
+- GitHub Pages serves the public frontend; it does not itself provide private server-side storage.
+- Account authentication and cross-device saved-word synchronization depend on the configured Supabase project and its access policies.
+- Never place private credentials, service-role keys, or OAuth client secrets in public files.
+- This project is an educational vocabulary resource, not a substitute for professional medical, legal, financial, or scientific advice.
+
+## Legal and content notes
+
+Vocabulary words and technical terms can generally be listed, but definitions, example sentences, translations, images, audio, and third-party datasets may be protected or licensed separately. Use independently written content or material with a license that permits the intended use, and retain attribution or license notices where required. Reassess licensing if the project later adds third-party datasets or paid learning features.
+
+## Release history
+
+- **v13:** Added 81 advanced English vocabulary entries (631 English entries total); preserved the 106-entry Chinese character course; prompts Google sign-in users to choose an account.
+- **v12:** Added 97 less-common English terms (550 English entries total); Chinese course unchanged.
+- **Earlier releases:** Built the English and Simplified Chinese courses, character-first Chinese grid, pinyin-aware search, expanded entry details, saved words, and Supabase-based account support.
