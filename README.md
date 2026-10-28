@@ -1,21 +1,21 @@
-# SwiftDictionary v14 — J, K, L, Q, X, Y, and Z Vocabulary Expansion
+# SwiftDictionary v15 — Pinyin Rendering Correction
 
 SwiftDictionary is a lightweight, GitHub Pages-compatible vocabulary-learning website for English and Simplified Chinese. This release expands the English course with less-common scientific, technical, historical, academic, and professional vocabulary. The Chinese character collection is intentionally unchanged in v14.
 
-## What's new in v14
+## What's new in v15 (Step 1: pinyin rendering)
 
-- Expanded the English dictionary from **631 to 692 entries** with 61 additional terms.
-- Focused the new vocabulary on the underrepresented starting letters **J, K, L, Q, X, Y, and Z**, including terms from physics, biology, linguistics, ecology, computing, statistics, history, and professional communication.
-- Added learner-oriented definitions, pronunciation guides, example sentences, usage tips, and Chinese glosses for the new entries.
-- Kept the existing Chinese course and its **106 single-character entries** unchanged.
-- Retained the existing search, course switching, word details, saved-word interface, and account features.
-- Added a Google account chooser prompt at sign-in so people sharing a device can more easily select a different account.
+- Preserved pinyin already supplied in related-word strings instead of discarding it and rebuilding pinyin from individual characters.
+- Expanded the pinyin fallback map to cover Chinese characters beyond the 106 Chinese headwords.
+- Added phrase-level pinyin for all 106 Chinese entries’ definition and example lines, plus context corrections for several clear polyphonic/tone-sandhi cases.
+- Kept the 692 English entries and 106 Chinese entries unchanged.
+- Retained existing search, course switching, saved-word interface, Supabase authentication, and account features.
 
 ## Main features
 
 - English vocabulary grid with search and part-of-speech filters.
 - Simplified Chinese character grid, with one Han character per tile and pinyin-aware search.
 - Expanded entry details, examples, usage notes, and Chinese glosses where available.
+- Pinyin is generated offline with ICU Han-Latin transliteration for lines that do not already supply pinyin. This improves coverage, but automated transliteration is not a substitute for a full linguistic review of every tone, polyphonic reading, or spacing choice; that review remains a separate quality-control task.
 - Saved words and account-based cloud synchronization when Supabase is correctly configured.
 - Google sign-in and sign-out through Supabase Auth.
 - Feedback page, if `feedback.html` is included in the repository.
