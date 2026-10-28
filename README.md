@@ -1,12 +1,12 @@
-# SwiftDictionary v13 — Advanced English Vocabulary Expansion
+# SwiftDictionary v14 — J, K, L, Q, X, Y, and Z Vocabulary Expansion
 
-SwiftDictionary is a lightweight, GitHub Pages-compatible vocabulary-learning website for English and Simplified Chinese. This release expands the English course with less-common scientific, technical, historical, academic, and professional vocabulary. The Chinese character collection is intentionally unchanged in v13.
+SwiftDictionary is a lightweight, GitHub Pages-compatible vocabulary-learning website for English and Simplified Chinese. This release expands the English course with less-common scientific, technical, historical, academic, and professional vocabulary. The Chinese character collection is intentionally unchanged in v14.
 
-## What's new in v13
+## What's new in v14
 
-- Expanded the English dictionary from **550 to 631 entries** with 81 additional terms.
-- Added vocabulary across biology, ecology, chemistry, geology, statistics, research methods, computing-related concepts, philosophy, history, law, finance, literary theory, and professional communication.
-- Added an original learner-oriented definition, pronunciation guide, example sentence, usage tip, and Chinese gloss for each new entry.
+- Expanded the English dictionary from **631 to 692 entries** with 61 additional terms.
+- Focused the new vocabulary on the underrepresented starting letters **J, K, L, Q, X, Y, and Z**, including terms from physics, biology, linguistics, ecology, computing, statistics, history, and professional communication.
+- Added learner-oriented definitions, pronunciation guides, example sentences, usage tips, and Chinese glosses for the new entries.
 - Kept the existing Chinese course and its **106 single-character entries** unchanged.
 - Retained the existing search, course switching, word details, saved-word interface, and account features.
 - Added a Google account chooser prompt at sign-in so people sharing a device can more easily select a different account.
@@ -60,6 +60,7 @@ Vocabulary words and technical terms can generally be listed, but definitions, e
 
 ## Release history
 
+- **v14:** Added 61 English vocabulary entries focused on J, K, L, Q, X, Y, and Z (692 English entries total); preserved the 106-entry Chinese character course and account features.
 - **v13:** Added 81 advanced English vocabulary entries (631 English entries total); preserved the 106-entry Chinese character course; prompts Google sign-in users to choose an account.
 - **v12:** Added 97 less-common English terms (550 English entries total); Chinese course unchanged.
 - **Earlier releases:** Built the English and Simplified Chinese courses, character-first Chinese grid, pinyin-aware search, expanded entry details, saved words, and Supabase-based account support.
