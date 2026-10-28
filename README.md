@@ -1,12 +1,12 @@
-# SwiftDictionary v15 — Pinyin Rendering Correction
+# SwiftDictionary v16 — English IPA Correction
 
 SwiftDictionary is a lightweight, GitHub Pages-compatible vocabulary-learning website for English and Simplified Chinese. This release expands the English course with less-common scientific, technical, historical, academic, and professional vocabulary. The Chinese character collection is intentionally unchanged in v14.
 
-## What's new in v15 (Step 1: pinyin rendering)
+## What's new in v16 (Step 2: English pronunciation)
 
-- Preserved pinyin already supplied in related-word strings instead of discarding it and rebuilding pinyin from individual characters.
-- Expanded the pinyin fallback map to cover Chinese characters beyond the 106 Chinese headwords.
-- Added phrase-level pinyin for all 106 Chinese entries’ definition and example lines, plus context corrections for several clear polyphonic/tone-sandhi cases.
+- Step 1: preserved supplied pinyin in related-word strings and expanded Chinese pinyin coverage for definitions and examples.
+- Step 2: filled the six previously blank English pronunciation fields: interpret, pattern, precise, process, relevant, and strategy.
+- Cross-checked those six additions and corrected five clearly inconsistent existing IPA fields: ability, accurate, actually, achievable, and adaptable.
 - Kept the 692 English entries and 106 Chinese entries unchanged.
 - Retained existing search, course switching, saved-word interface, Supabase authentication, and account features.
 
@@ -59,6 +59,8 @@ The Chinese character component explanations and pinyin aids in the existing cou
 Vocabulary words and technical terms can generally be listed, but definitions, example sentences, translations, images, audio, and third-party datasets may be protected or licensed separately. Use independently written content or material with a license that permits the intended use, and retain attribution or license notices where required. Reassess licensing if the project later adds third-party datasets or paid learning features.
 
 ## Release history
+
+- **v16:** Filled six missing English IPA fields and corrected five existing transcriptions after a focused Cambridge Dictionary check; includes the v15 pinyin-rendering correction.
 
 - **v14:** Added 61 English vocabulary entries focused on J, K, L, Q, X, Y, and Z (692 English entries total); preserved the 106-entry Chinese character course and account features.
 - **v13:** Added 81 advanced English vocabulary entries (631 English entries total); preserved the 106-entry Chinese character course; prompts Google sign-in users to choose an account.
