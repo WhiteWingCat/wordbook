@@ -66,6 +66,34 @@
     .tense-card { padding:12px; border-radius:10px; background:#20242d; border:1px solid var(--border); }
     .tense-card strong { display:block; color:var(--accent); font-size:.76rem; text-transform:uppercase; letter-spacing:.07em; }
     .account-status { color:var(--muted); font-size:.85rem; }
+
+    .primary-nav { display:flex; gap:8px; align-items:center; overflow-x:auto; padding:0 0 12px; scrollbar-width:thin; }
+    .primary-nav button { flex:0 0 auto; border:1px solid transparent; border-radius:10px; background:transparent; color:var(--muted); padding:9px 14px; }
+    .primary-nav button[aria-current="page"] { color:var(--accent); background:var(--accent-bg); border-color:#4c5b8b; }
+    .top-actions { flex-wrap:wrap; justify-content:flex-end; }
+    .course-controls { margin:0; gap:8px; }
+    .course-controls label { font-size:.82rem; }
+    .course-controls select { padding:7px 9px; max-width:150px; }
+    .page-panel { padding:34px 0 54px; min-height:55vh; }
+    .page-panel[hidden], #dictionaryPage[hidden] { display:none !important; }
+    .page-intro { color:var(--muted); max-width:720px; }
+    .coming-card, .profile-card { border:1px solid var(--border); background:var(--panel); border-radius:16px; padding:22px; margin:18px 0; box-shadow:var(--shadow); }
+    .coming-card { text-align:center; padding:54px 22px; }
+    .coming-card .coming-label { display:inline-block; color:var(--accent); background:var(--accent-bg); border:1px solid #4c5b8b; border-radius:999px; padding:5px 12px; font-size:.8rem; font-weight:700; }
+    .profile-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+    .stat-card { border:1px solid var(--border); border-radius:13px; padding:16px; background:var(--panel-hover); }
+    .stat-card strong { display:block; color:var(--accent); font-size:1.7rem; }
+    .stat-card span { color:var(--muted); font-size:.88rem; }
+    .profile-card h3 { margin-top:0; }
+    .profile-card details { border-top:1px solid var(--border); padding:12px 0; }
+    .profile-card summary { cursor:pointer; font-weight:650; }
+    .preference-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .preference-form label { display:grid; gap:6px; color:var(--muted); font-size:.9rem; }
+    .preference-form input, .preference-form select { width:100%; border:1px solid var(--border); border-radius:9px; padding:10px 11px; background:#11151d; color:var(--text); }
+    .profile-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px; }
+    .muted-note { color:var(--muted); font-size:.88rem; }
+    @media(max-width:760px){ .topbar{align-items:flex-start;padding:13px 0;flex-direction:column}.top-actions{width:100%;justify-content:space-between;align-items:flex-start}.course-controls{flex-wrap:wrap}.course-controls label{display:grid;gap:3px}.profile-grid{grid-template-columns:1fr}.preference-form{grid-template-columns:1fr}.primary-nav{margin-top:0} }
+
     @media(max-width:650px){.top-actions{align-items:flex-end;flex-direction:column;gap:6px}.visual-lesson{grid-template-columns:75px 1fr}.visual-glyph{min-height:75px;font-size:2.5rem}.tense-grid{grid-template-columns:1fr;} }
     .hero { padding: 28px 0 26px; }
     .course-controls { display:flex; flex-wrap:wrap; gap:12px; margin:22px 0 6px; }
@@ -167,16 +195,24 @@
   <header>
     <div class="wrap topbar">
       <div class="brand"><div class="brand-icon">S</div><span>SwiftDictionary</span></div>
-      <div class="top-actions"><div class="top-note">A small step toward a bigger vocabulary.</div><button id="accountButton" class="filter-button" type="button">Sign in</button></div>
+      <div class="top-actions"><div class="course-controls" id="globalCourseControls"><label>Learning course <select id="courseSelect"><option value="en">English</option><option value="zh">简体中文</option></select></label><label>Translate into <select id="translationSelect"><option value="en">English</option><option value="zh">简体中文</option></select></label></div><button id="accountButton" class="filter-button" type="button">Sign in</button></div>
     </div>
+    <nav class="wrap primary-nav" aria-label="Main navigation">
+      <button type="button" data-page="dictionary" aria-current="page">Dictionary</button>
+      <button type="button" data-page="lessons">Lessons</button>
+      <button type="button" data-page="quiz">Quiz</button>
+      <button type="button" data-page="flashcards">Flashcards</button>
+      <button type="button" data-page="profile">Profile</button>
+    </nav>
   </header>
 
   <main class="wrap">
+    <div id="dictionaryPage">
     <section class="hero-banner" aria-label="Nature landscape banner">
       <div class="hero-banner-content"><div class="eyebrow">English &amp; 简体中文 · Made clear</div><h1>SwiftDictionary</h1><p>Explore vocabulary, pinyin, meanings, examples, and character structure in one clean learning space.</p></div>
     </section>
     <section class="hero">
-      <div class="course-controls"><label>Learning course <select id="courseSelect"><option value="en">English</option><option value="zh">简体中文</option></select></label><label>Translate definitions into <select id="translationSelect"><option value="en">English</option><option value="zh">简体中文</option></select></label></div><div id="categoryRow" class="category-row" aria-label="Filter by part of speech">
+      <div id="categoryRow" class="category-row" aria-label="Filter by part of speech">
         <button class="category-button active" type="button" data-category="all" aria-pressed="true">All categories</button>
         <button class="category-button" type="button" data-category="noun" aria-pressed="false">Nouns</button>
         <button class="category-button" type="button" data-category="verb" aria-pressed="false">Verbs</button>
@@ -206,9 +242,49 @@
         <button id="nextPage" class="primary-button" type="button">Next →</button>
       </nav>
     </section>
+    </div>
+
+    <section id="lessonsPage" class="page-panel" hidden aria-labelledby="lessonsHeading">
+      <h1 id="lessonsHeading">Lessons</h1><p class="page-intro">Structured lessons will help you build language skills step by step.</p>
+      <div class="coming-card"><span class="coming-label">Coming Soon</span><h2>Lessons are being prepared</h2><p class="page-intro" style="margin:0 auto">Lesson content and learning activities are planned for a future SwiftDictionary update.</p></div>
+    </section>
+    <section id="quizPage" class="page-panel" hidden aria-labelledby="quizHeading">
+      <h1 id="quizHeading">Quiz</h1><p class="page-intro">Test your understanding and reinforce what you have learned.</p>
+      <div class="coming-card"><span class="coming-label">Coming Soon</span><h2>Quiz is being prepared</h2><p class="page-intro" style="margin:0 auto">Quiz sessions will be introduced in a future SwiftDictionary update.</p></div>
+    </section>
+    <section id="flashcardsPage" class="page-panel" hidden aria-labelledby="flashcardsHeading">
+      <h1 id="flashcardsHeading">Flashcards</h1><p class="page-intro">Review vocabulary with focused recall practice.</p>
+      <div class="coming-card"><span class="coming-label">Coming Soon</span><h2>Flashcards are being prepared</h2><p class="page-intro" style="margin:0 auto">Flashcard practice will be introduced in a future SwiftDictionary update.</p></div>
+    </section>
+    <section id="profilePage" class="page-panel" hidden aria-labelledby="profileHeading">
+      <h1 id="profileHeading">Your Profile</h1><p id="profileWelcome" class="page-intro">Your learning progress and account preferences.</p>
+      <div id="profileSignedOut" class="coming-card" hidden><h2>Sign in to view your Profile</h2><p class="page-intro" style="margin:0 auto 16px">Your profile and learning progress are available after signing in.</p><button type="button" class="primary-button" id="profileSignIn">Sign in</button></div>
+      <div id="profileContent" hidden>
+        <div class="profile-grid">
+          <div class="stat-card"><strong id="totalActivity">0</strong><span>Total learning sessions</span></div>
+          <div class="stat-card"><strong id="todayActivity">0</strong><span>Sessions today</span></div>
+          <div class="stat-card"><strong id="activeLanguages">0</strong><span>Learning languages</span></div>
+        </div>
+        <section class="profile-card"><h3>Learning progress</h3><p class="muted-note">Your progress is based on recorded lesson, quiz, and flashcard session starts. Dictionary searches and saved words are not restricted or counted as lesson activity.</p>
+          <details open><summary>Activity overview</summary><div id="progressDetails" class="muted-note">No learning activity recorded yet.</div></details>
+          <details><summary>Daily allowance</summary><div id="allowanceDetails" class="muted-note">Daily allowances will appear here.</div></details>
+        </section>
+        <section class="profile-card"><h3>Account preferences</h3>
+          <form id="preferencesForm" class="preference-form">
+            <label>Display name <input id="displayNameInput" type="text" maxlength="80" autocomplete="name" placeholder="Optional display name"></label>
+            <label>Learning language <select id="preferenceLearning"><option value="en">English</option><option value="zh">简体中文</option></select></label>
+            <label>Translation language <select id="preferenceTranslation"><option value="en">English</option><option value="zh">简体中文</option></select></label>
+            <label>Timezone (IANA) <input id="preferenceTimezone" type="text" maxlength="64" placeholder="e.g. Asia/Kuala_Lumpur" required></label>
+          </form>
+          <div class="profile-actions"><button type="button" id="savePreferences" class="primary-button">Save preferences</button><span id="preferenceStatus" class="muted-note" aria-live="polite"></span></div>
+          <p class="muted-note">Your timezone determines when daily learning allowances reset. It is a timezone setting, not a precise location.</p>
+        </section>
+        <section class="profile-card"><h3>Account</h3><p id="profileEmail" class="muted-note"></p><button type="button" id="profileSignOut" class="secondary-button">Sign out</button></section>
+      </div>
+    </section>
   </main>
 
-  <footer><div class="wrap">SwiftDictionary · English and Simplified Chinese vocabulary · Saved words stay in this browser. <span aria-hidden="true">·</span> <a href="feedback.html">Feedback &amp; suggestions</a></div></footer>
+  <footer><div class="wrap">SwiftDictionary · English and Simplified Chinese vocabulary · Sign in to sync saved words across devices. <span aria-hidden="true">·</span> <a href="feedback.html">Feedback &amp; suggestions</a></div></footer>
 
   <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalWord">
     <article class="modal">
@@ -17359,8 +17435,8 @@
         openWord(list[index], document.activeElement);
       }
     }
-    document.getElementById("courseSelect").addEventListener("change", e => { course=e.target.value; categoryRow.hidden = course === "zh"; grid.classList.toggle("character-grid", course === "zh"); words=course === "zh" ? chineseWords : englishWords; activeLetter=""; activeCategory="all"; onlySaved=false; savedFilter.setAttribute("aria-pressed","false"); savedFilter.textContent="☆ Saved words"; search.value=""; search.placeholder=course === "zh" ? "搜索汉字或拼音（可不标声调）…" : "Search a word..."; currentPage=1; makeAlphabet(); updateLetterButtons(); categoryButtons.forEach((b,i)=>{ const active=i===0; b.classList.toggle("active",active); b.setAttribute("aria-pressed",String(active)); }); render(); if (currentUser) syncCurrentCourseFromCloud({ mergeLocal: false }); });
-    document.getElementById("translationSelect").addEventListener("change", e => { translationLanguage=e.target.value; if(activeWord) openWord(activeWord); });
+    document.getElementById("courseSelect").addEventListener("change", e => { document.getElementById("preferenceLearning").value=e.target.value; course=e.target.value; categoryRow.hidden = course === "zh"; grid.classList.toggle("character-grid", course === "zh"); words=course === "zh" ? chineseWords : englishWords; activeLetter=""; activeCategory="all"; onlySaved=false; savedFilter.setAttribute("aria-pressed","false"); savedFilter.textContent="☆ Saved words"; search.value=""; search.placeholder=course === "zh" ? "搜索汉字或拼音（可不标声调）…" : "Search a word..."; currentPage=1; makeAlphabet(); updateLetterButtons(); categoryButtons.forEach((b,i)=>{ const active=i===0; b.classList.toggle("active",active); b.setAttribute("aria-pressed",String(active)); }); render(); if (currentUser) syncCurrentCourseFromCloud({ mergeLocal: false }); });
+    document.getElementById("translationSelect").addEventListener("change", e => { document.getElementById("preferenceTranslation").value=e.target.value; translationLanguage=e.target.value; if(activeWord) openWord(activeWord); });
     search.addEventListener("input", () => { currentPage = 1; render(); });
     categoryButtons.forEach(button => button.addEventListener("click", () => {
       activeCategory = button.dataset.category;
@@ -17490,6 +17566,7 @@
           // Never merge shared browser-local favorites into an account: that can
           // re-upload a word that was just unfavorited on another device.
           await syncCurrentCourseFromCloud({ mergeLocal: false });
+          if (typeof loadProfileData === "function") await loadProfileData();
         } else {
           // Signed-out mode starts with no account favorites displayed.
           // This prevents one account's cached favorites from appearing for another.
@@ -17498,6 +17575,9 @@
           if (activeWord) updateSaveButton();
           render();
           accountStatus.textContent = "Signed out. Sign in to load your cloud-saved words.";
+          if (document.getElementById("profilePage")) showPage("dictionary");
+          document.getElementById("profileContent").hidden = true;
+          document.getElementById("profileSignedOut").hidden = false;
         }
       }
       await refreshAccount();
@@ -17537,7 +17617,142 @@
     document.getElementById("accountButton").addEventListener("click",()=>{document.getElementById("accountDialog").classList.add("open");});
     document.getElementById("accountClose").addEventListener("click",()=>document.getElementById("accountDialog").classList.remove("open"));
     document.getElementById("accountDialog").addEventListener("click",e=>{if(e.target.id==="accountDialog")e.currentTarget.classList.remove("open")});
-    initAccount();
+
+    // Update 2.1.0: shared page navigation and signed-in Profile foundation.
+    const pageButtons = [...document.querySelectorAll("[data-page]")];
+    const pageIds = { dictionary:"dictionaryPage", lessons:"lessonsPage", quiz:"quizPage", flashcards:"flashcardsPage", profile:"profilePage" };
+    let profilePreferences = null;
+    function showPage(page, updateHash = true) {
+      if (page === "profile" && !currentUser) page = "dictionary";
+      if (!pageIds[page]) page = "dictionary";
+      if (updateHash && location.hash !== `#${page}`) history.pushState(null, "", `#${page}`);
+      Object.entries(pageIds).forEach(([key,id]) => document.getElementById(id).hidden = key !== page);
+      pageButtons.forEach(button => {
+        if (button.dataset.page === page) button.setAttribute("aria-current","page");
+        else button.removeAttribute("aria-current");
+      });
+      if (page === "profile" && currentUser) loadProfileData();
+      window.scrollTo({top:0,behavior:"instant"});
+    }
+    pageButtons.forEach(button => button.addEventListener("click", () => showPage(button.dataset.page)));
+    function showHashPage() {
+      const requested = (location.hash || "#dictionary").slice(1).toLowerCase();
+      showPage(pageIds[requested] ? requested : "dictionary", false);
+      if (requested === "profile" && !currentUser) history.replaceState(null, "", "#dictionary");
+    }
+    window.addEventListener("hashchange", showHashPage);
+    window.addEventListener("popstate", showHashPage);
+    document.getElementById("profileSignIn").addEventListener("click", () => document.getElementById("accountDialog").classList.add("open"));
+    document.getElementById("profileSignOut").addEventListener("click", async () => {
+      if (supabaseClient) { const {error} = await supabaseClient.auth.signOut(); if (error) document.getElementById("preferenceStatus").textContent = error.message; }
+    });
+
+    function browserTimezone() {
+      try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch { return "UTC"; }
+    }
+    function localDayStart(timezone) {
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat("en-CA",{timeZone:timezone,year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(now);
+      const part = Object.fromEntries(parts.map(p=>[p.type,p.value]));
+      return `${part.year}-${part.month}-${part.day}`;
+    }
+    async function ensureProfileRows() {
+      if (!supabaseClient || !currentUser) return;
+      const userId = currentUser.id;
+      const displayName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || null;
+      const [profileResult, prefResult] = await Promise.all([
+        supabaseClient.from("profiles").upsert({user_id:userId,display_name:displayName},{onConflict:"user_id",ignoreDuplicates:true}),
+        supabaseClient.from("user_preferences").upsert({user_id:userId,learning_language:course,translation_language:translationLanguage,timezone:browserTimezone()},{onConflict:"user_id",ignoreDuplicates:true})
+      ]);
+      if (profileResult.error) throw profileResult.error;
+      if (prefResult.error) throw prefResult.error;
+    }
+    async function loadProfileData() {
+      if (!supabaseClient || !currentUser) return;
+      const signedOut = document.getElementById("profileSignedOut");
+      const content = document.getElementById("profileContent");
+      signedOut.hidden = true; content.hidden = false;
+      document.getElementById("profileEmail").textContent = currentUser.email || "Signed-in account";
+      try {
+        await ensureProfileRows();
+        const [profileQ,prefsQ,activityQ,entitlementQ,limitsQ] = await Promise.all([
+          supabaseClient.from("profiles").select("display_name").eq("user_id",currentUser.id).maybeSingle(),
+          supabaseClient.from("user_preferences").select("learning_language,translation_language,timezone").eq("user_id",currentUser.id).maybeSingle(),
+          supabaseClient.from("learning_activity_log").select("activity_type,language_code,created_at").eq("user_id",currentUser.id),
+          supabaseClient.from("user_entitlements").select("plan_code,status,valid_until").eq("user_id",currentUser.id).maybeSingle(),
+          supabaseClient.from("learning_plan_limits").select("plan_code,activity_type,daily_limit,is_enabled")
+        ]);
+        for (const q of [profileQ,prefsQ,activityQ,entitlementQ,limitsQ]) if (q.error) throw q.error;
+        const prefs = prefsQ.data || {learning_language:course,translation_language:translationLanguage,timezone:browserTimezone()};
+        profilePreferences = prefs;
+        const courseChanged = course !== prefs.learning_language;
+        course = prefs.learning_language;
+        translationLanguage = prefs.translation_language;
+        words = course === "zh" ? chineseWords : englishWords;
+        document.getElementById("categoryRow").hidden = course === "zh";
+        grid.classList.toggle("character-grid", course === "zh");
+        search.placeholder = course === "zh" ? "搜索汉字或拼音（可不标声调）…" : "Search a word...";
+        if (courseChanged) { activeLetter=""; activeCategory="all"; onlySaved=false; savedFilter.setAttribute("aria-pressed","false"); savedFilter.textContent="☆ Saved words"; currentPage=1; makeAlphabet(); updateLetterButtons(); render(); }
+        document.getElementById("displayNameInput").value = profileQ.data?.display_name || "";
+        document.getElementById("preferenceLearning").value = prefs.learning_language;
+        document.getElementById("preferenceTranslation").value = prefs.translation_language;
+        document.getElementById("preferenceTimezone").value = prefs.timezone;
+        document.getElementById("courseSelect").value = prefs.learning_language;
+        document.getElementById("translationSelect").value = prefs.translation_language;
+        const activity = activityQ.data || [];
+        const tz = prefs.timezone || "UTC";
+        const today = localDayStart(tz);
+        const todayRows = activity.filter(row => new Intl.DateTimeFormat("en-CA",{timeZone:tz,year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(row.created_at)) === today);
+        const types = ["lesson","quiz","flashcard"];
+        const plan = entitlementQ.data?.status === "active" ? entitlementQ.data.plan_code : "free";
+        const limits = limitsQ.data || [];
+        document.getElementById("totalActivity").textContent = activity.length;
+        document.getElementById("todayActivity").textContent = todayRows.length;
+        document.getElementById("activeLanguages").textContent = new Set(activity.map(row=>row.language_code)).size;
+        const counts = Object.fromEntries(types.map(type=>[type,activity.filter(row=>row.activity_type===type).length]));
+        document.getElementById("progressDetails").textContent = activity.length ? types.map(type=>`${type[0].toUpperCase()+type.slice(1)}: ${counts[type]} session(s)`).join(" · ") : "No learning activity recorded yet. Your progress will appear here when Lessons, Quiz, and Flashcards are released.";
+        const limitText = types.map(type=>{const row=limits.find(item=>item.plan_code===plan&&item.activity_type===type);const used=todayRows.filter(item=>item.activity_type===type).length;return `${type[0].toUpperCase()+type.slice(1)}: ${row?.is_enabled ? Math.max(0,row.daily_limit-used)+" of "+row.daily_limit+" remaining" : "Unavailable"}`;});
+        document.getElementById("allowanceDetails").textContent = `${plan === "premium" ? "Premium" : "Free"} plan · ${limitText.join(" · ")} · Resets at midnight (${tz}).`;
+        document.getElementById("profileWelcome").textContent = `Welcome${profileQ.data?.display_name ? ", "+profileQ.data.display_name : ""}. Here is your learning overview.`;
+      } catch (error) {
+        document.getElementById("preferenceStatus").textContent = `Could not load profile data: ${error.message}`;
+      }
+    }
+    document.getElementById("savePreferences").addEventListener("click", async () => {
+      if (!supabaseClient || !currentUser) return;
+      const status = document.getElementById("preferenceStatus");
+      const displayName = document.getElementById("displayNameInput").value.trim();
+      const learning = document.getElementById("preferenceLearning").value;
+      const translation = document.getElementById("preferenceTranslation").value;
+      const timezone = document.getElementById("preferenceTimezone").value.trim();
+      try {
+        new Intl.DateTimeFormat("en-US",{timeZone:timezone});
+        status.textContent = "Saving…";
+        const [profileSave,prefSave] = await Promise.all([
+          supabaseClient.from("profiles").upsert({user_id:currentUser.id,display_name:displayName||null},{onConflict:"user_id"}),
+          supabaseClient.from("user_preferences").upsert({user_id:currentUser.id,learning_language:learning,translation_language:translation,timezone},{onConflict:"user_id"})
+        ]);
+        if (profileSave.error) throw profileSave.error;
+        if (prefSave.error) throw prefSave.error;
+        course=learning; translationLanguage=translation; words=course==="zh"?chineseWords:englishWords;
+        document.getElementById("courseSelect").value=learning;
+        document.getElementById("translationSelect").value=translation;
+        document.getElementById("categoryRow").hidden=course==="zh";
+        grid.classList.toggle("character-grid",course==="zh");
+        search.value=""; search.placeholder=course==="zh"?"搜索汉字或拼音（可不标声调）…":"Search a word...";
+        activeLetter=""; activeCategory="all"; currentPage=1; makeAlphabet(); updateLetterButtons(); render();
+        profilePreferences={learning_language:learning,translation_language:translation,timezone};
+        status.textContent="Preferences saved.";
+        await syncCurrentCourseFromCloud({mergeLocal:false});
+        await loadProfileData();
+      } catch (error) { status.textContent = `Could not save preferences: ${error.message}`; }
+    });
+
+    // Keep the profile route inaccessible to signed-out visitors.
+    initAccount().then(() => showHashPage()).catch(error => {
+      document.getElementById("accountStatus").textContent = `Account initialization failed: ${error.message}`;
+      showHashPage();
+    });
   </script>
 </body>
 </html>
