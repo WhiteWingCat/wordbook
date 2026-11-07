@@ -1,23 +1,31 @@
-# SwiftDictionary v19 — Chinese Learning Review & Stroke Order
+# SwiftDictionary Update 1.1.0
 
-SwiftDictionary is a GitHub Pages-compatible vocabulary-learning website for English and Simplified Chinese. This release consolidates the Chinese pinyin and character-structure review, adds interactive stroke-order lessons, and retains the existing English vocabulary, dictionary search, saved words, and Supabase account workflow.
+SwiftDictionary is a GitHub Pages-compatible vocabulary-learning website for English and Simplified Chinese. This update expands the everyday English vocabulary and single-character Chinese course while retaining the v19 learning interface, stroke-order lesson, account workflow, and saved-word synchronization.
 
-## What is included in this release
+## Release contents
 
-- `index.html` — the updated application.
+- `index.html` — the application and vocabulary data.
 - `feedback.html` — the feedback page.
 - `THIRD_PARTY_NOTICES.md` — third-party attribution and license summary.
 - `ARPHICPL.TXT` — the unmodified Arphic Public License text associated with the Hanzi Writer stroke-data project.
-- `RELEASE-QA.md` — the review scope, test results, and items that still need live-site verification.
+- `RELEASE-QA.md` — static review results and remaining live-site checks.
 
-## Main learning features
+## What's new
 
-- English vocabulary course with 692 entries, IPA/pronunciation fields, Chinese glosses, examples, and word-only search.
-- Simplified Chinese course with 106 single-character entries, pinyin-aware search, contextual phrase pinyin, related words, and character-structure explanations.
-- Chinese stroke-order lesson with animated playback, pause/resume, replay, previous/next stroke controls, and a stroke progress indicator.
-- Translation-language switching in the entry detail panel.
+- English course expanded from 692 to **792 entries**, including 100 additional common, practical words for greetings, everyday communication, actions, objects, places, and daily situations.
+- The new English entries include IPA, Chinese glosses, distinct common senses, contextual examples, and usage notes.
+- Simplified Chinese course expanded from 106 to **206 unique single-character entries**, adding 100 characters.
+- Added character-level and phrase-level pinyin coverage for the new Chinese content, including a context-specific reading for `背` in the schoolbag example.
+- Added examples to every individual English sense so meanings are illustrated separately.
+
+## Retained features
+
+- English word-only search; searching does not match definitions or Chinese translations.
+- Chinese character search and pinyin search without tone marks.
+- Translation-language switching in the detail panel.
+- Chinese character structure lessons and runtime stroke-order animation with pause/resume, replay, previous/next stroke controls, and progress display.
 - Saved words, Google sign-in, sign-out, and account-based cloud synchronization through Supabase.
-- Responsive interface for desktop and mobile browsers.
+- Responsive desktop and mobile interface.
 
 ## Updating the existing GitHub Pages project
 
@@ -46,9 +54,9 @@ This is a practical licensing check, not formal legal advice. Before bundling st
 
 ## Vocabulary and learning accuracy
 
-Definitions, Chinese glosses, example sentences, and character notes are learner-oriented explanations, not certified translations or specialist references. Context-dependent readings and specialized terminology can require further review. Do not rely on the content as the sole source for legal, medical, financial, or other high-stakes decisions.
+Definitions, Chinese glosses, example sentences, and character notes are learner-oriented explanations, not certified translations or specialist references. Phrase pinyin was expanded using character-level readings and automated Han-Latin transliteration, with known context-sensitive readings corrected where identified. Automated transliteration is not a substitute for a full native-speaker linguistic review; polyphonic characters and unusual contexts should be checked during ongoing content QA. Do not rely on the content as the sole source for legal, medical, financial, or other high-stakes decisions.
 
 ## Release history
 
-- **v19:** Consolidates the Step 4 Chinese linguistic review and interactive stroke-order lesson; retains the 692-entry English course and 106-entry Chinese course; includes pinyin phrase corrections and third-party notices.
-- **v18 and earlier:** Earlier vocabulary, pronunciation, gloss, account, and synchronization improvements are retained as the baseline for this release.
+- **SwiftDictionary Update 1.1.0:** Adds 100 common English entries and 100 Chinese characters; expands per-sense examples and pinyin coverage; retains v19 authentication, saved-word, search, translation, and stroke-order functionality.
+- **v19:** Consolidated the Chinese linguistic review and interactive stroke-order lesson, with 692 English entries and 106 Chinese entries.

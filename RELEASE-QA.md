@@ -1,48 +1,60 @@
-# SwiftDictionary v19 — Final Review & QA Record
+# SwiftDictionary Update 1.1.0 — Consolidated QA Record
 
-## Source and content checks
+## Content scope and counts
 
-- 692 English entries and 106 Chinese entries were parsed from the release source.
-- Every English entry has a word, pronunciation field, English definition, and Chinese gloss. Six English entries have no `related` value; this field is optional and is not required for every entry.
-- All 106 Chinese headwords are unique and exactly one character long.
-- All Chinese definition/example lines containing Han characters have phrase-level pinyin entries after the two final corrections in v19.
-- All related-word segments in the Chinese course contain supplied pinyin; the renderer passes that pinyin through rather than replacing it with a per-character default reading.
-- The source retains phrase-specific pinyin handling for polyphonic readings and contextual tone changes.
-- The Chinese structure notes remain alongside the stroke-order lesson.
+- English course: **792 unique entries**, up from 692 in v19 (+100).
+- Simplified Chinese course: **206 unique single-character entries**, up from 106 in v19 (+100).
+- No duplicate English headwords or Chinese headwords were found.
+- No multi-character Chinese headwords were found in the Chinese grid dataset.
+- All English entries have a word, pronunciation field, English definition, Chinese gloss, and examples.
+- All Chinese entries have a character, pinyin field, English definition, Chinese definition, examples, and a structure note.
+- The 100 English entries with multiple-sense data contain 244 individual senses. Every sense has its own definition, Chinese gloss, and contextual examples after this audit correction.
+- The 35 senses in the first 14 entries that lacked per-sense examples were supplied with separate contextual examples.
 
-## Feature and compatibility checks
+## Pinyin review
 
-- Hanzi Writer 3.7.3 is loaded from jsDelivr; character data is requested from `hanzi-writer-data@2.0.1` when a Chinese detail opens.
-- The stroke lesson includes playback, pause/resume, replay, previous/next stroke controls, and a stroke progress display.
-- The source retains the `supabase-config.js` external script reference; the project-specific configuration file is deliberately not included in this patch ZIP.
-- The authentication/saved-word code lines referencing Supabase auth, `saved_words`, cloud sync, account changes, and sign-out are byte-for-byte identical to the v18 baseline source.
-- No service-role key or Google OAuth client secret was added.
+- All characters appearing in Chinese-course definition and example text have a character-level pinyin mapping, so the detail renderer can show a pinyin line rather than silently dropping unmapped characters.
+- Added phrase-level pinyin for 198 Chinese definition/example lines in the 100 new Chinese entries.
+- Added/updated 100 new headword readings in the character map; the new character entries' explicit pinyin fields were used as the source for their headword mappings.
+- Added a context-specific phrase reading for `他背着书包去学校。` (`bēi` for 背, meaning to carry).
+- Automated Han-Latin transliteration was used to fill missing phrase and character readings. This is a coverage improvement, not a complete expert linguistic certification. Polyphonic characters and context-dependent readings still warrant native-speaker spot-checking.
+- Related-word rendering continues to preserve pinyin supplied in related-word strings.
 
-## Automated static checks
+## Static code and compatibility checks
 
+- HTML parser: passed.
 - Inline JavaScript syntax check with Node.js: passed.
-- HTML parsing: passed.
-- Duplicate element IDs: none found.
-- English entries: 692; no blank pronunciation or Chinese-gloss fields.
-- Chinese entries: 106; unique and single-character.
-- Contextual Chinese pinyin coverage: no missing phrase-map entries for Chinese definition/example lines.
-- Related-word pinyin format: no missing supplied readings.
-- Release archive integrity and required file presence: checked before delivery.
+- Duplicate HTML element IDs: none found.
+- Required English fields: no missing values.
+- Required Chinese fields: no missing values.
+- English sense examples: no missing values.
+- Chinese character grid: all headwords are exactly one character.
+- Displayed Chinese definition/example text: no Han characters remain without a character-level pinyin mapping.
+- English search predicate remains word-only; Chinese pinyin matching remains enabled.
+- External `supabase-config.js` script reference remains present; the project-specific config is deliberately not included in the release archive.
+- The saved-word persistence code and Supabase auth-state listener sections checked against v19 are byte-for-byte identical to the v19 source.
+- No new third-party JavaScript library or local stroke-data bundle was added.
 
-## User-reported local browser checks
+## Existing feature preservation
 
-The user reported that the following tests passed on the local HTML copy:
+The source retains the v19 implementation for translation-language switching, Chinese character structure lessons, Hanzi Writer stroke-order controls, saved words, Supabase authentication, account switching, and cloud synchronization. The authentication listener and saved-word persistence sections compared during this audit match v19 byte-for-byte.
 
-- Stroke-order lesson and the stroke-data checker.
-- Translation-language switching; the character, pinyin, example, and structure lesson remained intact.
-- English word-only search.
-- Chinese character search.
-- Chinese pinyin search without tone marks.
+## Not verified in this static review
 
-## Live-site checks still required after the user uploads v19
+No live browser session was available for this review. The following must be checked by the site owner after uploading the release to GitHub Pages:
 
-- Save English words and Chinese characters, refresh the live site, and confirm both sets persist without duplicates.
-- Sign out and sign in to another Google account; confirm saved words remain isolated and account switching works in the updated release.
-- Recheck the mobile layout and live CDN stroke-data loading on the deployed version if possible.
+1. Open English and Chinese details; verify text layout, scrolling, per-sense examples, and pinyin placement.
+2. Switch translation language in both courses and confirm the selected language is reflected in definitions.
+3. Search English words and confirm matches are based on the word only; search Chinese by character and pinyin without tone marks.
+4. Open several newly added Chinese characters and verify stroke data loads from the CDN; test play, pause/resume, replay, previous/next, and progress controls.
+5. Save English words and Chinese characters, refresh, and confirm saved words persist without duplicates.
+6. Sign out, sign into a different Google account, and confirm each account sees only its own saved words. Repeat on a shared device if possible.
+7. Recheck the mobile layout and account switching on the live GitHub Pages URL.
 
-The user's earlier account-switching test on the existing live site passed, but the updated v19 release still requires a fresh live-site check. No deployment has been performed by this review.
+## Release packaging and legal notes
+
+- `supabase-config.js` is intentionally excluded; retain the existing working file unchanged beside `index.html`.
+- Existing external assets and repository files not included in this ZIP should be retained.
+- Hanzi Writer remains loaded from jsDelivr and stroke data remains fetched at runtime. Attribution and the Arphic license text are included.
+- Definitions, glosses, examples, and automated pinyin are educational content and should continue to receive linguistic review. Recheck third-party licensing before bundling data locally or introducing monetized features that depend on it.
+- No deployment was performed as part of this QA.
