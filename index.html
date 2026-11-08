@@ -44,6 +44,18 @@
     .brand-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; background: var(--accent-bg); color: var(--accent); font-weight: 800; }
     .top-note { color: var(--muted); font-size: .88rem; }
     .top-actions { display:flex; align-items:center; gap:12px; }
+    .account-menu-wrap { position:relative; flex:0 0 auto; }
+    .account-menu-trigger { display:flex; align-items:center; gap:8px; border:1px solid var(--border); border-radius:999px; background:var(--panel); color:var(--text); padding:6px 11px 6px 7px; min-height:42px; }
+    .account-avatar { width:30px; height:30px; display:grid; place-items:center; border-radius:50%; background:var(--accent-bg); font-size:1.15rem; }
+    .account-menu { position:absolute; z-index:30; top:calc(100% + 9px); right:0; width:min(270px, calc(100vw - 36px)); padding:8px; border:1px solid var(--border); border-radius:14px; background:var(--panel); box-shadow:var(--shadow); }
+    .account-menu[hidden] { display:none !important; }
+    .account-menu button { display:flex; width:100%; align-items:center; gap:10px; border:0; border-radius:9px; padding:10px 11px; background:transparent; color:var(--text); text-align:left; }
+    .account-menu button:hover, .avatar-choice:hover { background:var(--panel-hover); }
+    .account-menu .menu-email { padding:8px 11px 10px; color:var(--muted); font-size:.82rem; overflow-wrap:anywhere; }
+    .account-menu .menu-divider { height:1px; margin:5px 4px; background:var(--border); }
+    .avatar-picker { display:flex; flex-wrap:wrap; gap:6px; padding:8px 9px 10px; }
+    .avatar-choice { width:34px !important; height:34px; justify-content:center; padding:3px !important; border:1px solid var(--border) !important; border-radius:50% !important; font-size:1.1rem; }
+    .avatar-choice[aria-pressed="true"] { border-color:var(--accent) !important; background:var(--accent-bg) !important; }
     .character-grid .word-card { display:grid; grid-template:1fr / 1fr; place-items:center; text-align:center; }
     .character-grid .word-name { grid-area:1 / 1; justify-self:center; align-self:center; margin:0; transform:none; }
     .character-grid .saved-mark { z-index:1; }
@@ -195,14 +207,29 @@
   <header>
     <div class="wrap topbar">
       <div class="brand"><div class="brand-icon">S</div><span>SwiftDictionary</span></div>
-      <div class="top-actions"><div class="course-controls" id="globalCourseControls"><label>Learning course <select id="courseSelect"><option value="en">English</option><option value="zh">简体中文</option></select></label><label>Translate into <select id="translationSelect"><option value="en">English</option><option value="zh">简体中文</option></select></label></div><button id="accountButton" class="filter-button" type="button">Sign in</button></div>
+      <div class="top-actions"><div class="course-controls" id="globalCourseControls"><label>Learning course <select id="courseSelect"><option value="en">English</option><option value="zh">简体中文</option></select></label><label>Translate into <select id="translationSelect"><option value="en">English</option><option value="zh">简体中文</option></select></label></div>
+        <div class="account-menu-wrap"><button id="accountButton" class="account-menu-trigger" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="accountMenu"><span id="accountAvatar" class="account-avatar" aria-hidden="true">🐦</span><span id="accountButtonLabel">Account</span><span aria-hidden="true">⌄</span></button>
+          <div id="accountMenu" class="account-menu" hidden>
+            <div id="accountMenuEmail" class="menu-email">Not signed in</div>
+            <div class="menu-divider"></div>
+            <div class="menu-email">Choose profile icon</div>
+            <div id="avatarPicker" class="avatar-picker" aria-label="Choose profile icon">
+              <button type="button" class="avatar-choice" data-avatar="🐦" aria-label="Bird icon" aria-pressed="true">🐦</button><button type="button" class="avatar-choice" data-avatar="🐱" aria-label="Cat icon" aria-pressed="false">🐱</button><button type="button" class="avatar-choice" data-avatar="🦊" aria-label="Fox icon" aria-pressed="false">🦊</button><button type="button" class="avatar-choice" data-avatar="🐼" aria-label="Panda icon" aria-pressed="false">🐼</button><button type="button" class="avatar-choice" data-avatar="🐸" aria-label="Frog icon" aria-pressed="false">🐸</button><button type="button" class="avatar-choice" data-avatar="🦉" aria-label="Owl icon" aria-pressed="false">🦉</button><button type="button" class="avatar-choice" data-avatar="🐢" aria-label="Turtle icon" aria-pressed="false">🐢</button><button type="button" class="avatar-choice" data-avatar="🦋" aria-label="Butterfly icon" aria-pressed="false">🦋</button><button type="button" class="avatar-choice" data-avatar="🌿" aria-label="Leaf icon" aria-pressed="false">🌿</button><button type="button" class="avatar-choice" data-avatar="⭐" aria-label="Star icon" aria-pressed="false">⭐</button><button type="button" class="avatar-choice" data-avatar="🌙" aria-label="Moon icon" aria-pressed="false">🌙</button><button type="button" class="avatar-choice" data-avatar="🌸" aria-label="Flower icon" aria-pressed="false">🌸</button>
+            </div>
+            <div class="menu-divider"></div>
+            <button type="button" id="menuSignIn">↗ <span>Sign in</span></button>
+            <button type="button" id="menuProfile">◉ <span>Profile</span></button>
+            <button type="button" id="menuPreferences">⚙ <span>Preferences</span></button>
+            <button type="button" id="menuSwitchAccount">⇄ <span>Switch account</span></button>
+            <button type="button" id="menuSignOut">↪ <span>Sign out</span></button>
+          </div>
+        </div></div>
     </div>
     <nav class="wrap primary-nav" aria-label="Main navigation">
       <button type="button" data-page="dictionary" aria-current="page">Dictionary</button>
       <button type="button" data-page="lessons">Lessons</button>
       <button type="button" data-page="quiz">Quiz</button>
       <button type="button" data-page="flashcards">Flashcards</button>
-      <button type="button" data-page="profile">Profile</button>
     </nav>
   </header>
 
@@ -16983,9 +17010,15 @@
     "course": "zh"
   }
 ];
-    let course = "en";
-    let translationLanguage = "en";
-    let words = englishWords;
+    const preferenceStorageKey = "swiftdictionary-course-preferences";
+    let storedCoursePreferences = {};
+    try { storedCoursePreferences = JSON.parse(localStorage.getItem(preferenceStorageKey) || "{}"); } catch {}
+    let course = storedCoursePreferences.learning_language === "zh" ? "zh" : "en";
+    let translationLanguage = storedCoursePreferences.translation_language === "zh" ? "zh" : "en";
+    let words = course === "zh" ? chineseWords : englishWords;
+    let preferenceWriteQueue = Promise.resolve();
+    let selectedAvatar = "🐦";
+    try { selectedAvatar = localStorage.getItem("swiftdictionary-avatar") || "🐦"; } catch {}
 
     const grid = document.getElementById("wordGrid");
     const search = document.getElementById("search");
@@ -17435,8 +17468,25 @@
         openWord(list[index], document.activeElement);
       }
     }
-    document.getElementById("courseSelect").addEventListener("change", e => { document.getElementById("preferenceLearning").value=e.target.value; course=e.target.value; categoryRow.hidden = course === "zh"; grid.classList.toggle("character-grid", course === "zh"); words=course === "zh" ? chineseWords : englishWords; activeLetter=""; activeCategory="all"; onlySaved=false; savedFilter.setAttribute("aria-pressed","false"); savedFilter.textContent="☆ Saved words"; search.value=""; search.placeholder=course === "zh" ? "搜索汉字或拼音（可不标声调）…" : "Search a word..."; currentPage=1; makeAlphabet(); updateLetterButtons(); categoryButtons.forEach((b,i)=>{ const active=i===0; b.classList.toggle("active",active); b.setAttribute("aria-pressed",String(active)); }); render(); if (currentUser) syncCurrentCourseFromCloud({ mergeLocal: false }); });
-    document.getElementById("translationSelect").addEventListener("change", e => { document.getElementById("preferenceTranslation").value=e.target.value; translationLanguage=e.target.value; if(activeWord) openWord(activeWord); });
+    function rememberCoursePreferences() {
+      const value = { learning_language: course, translation_language: translationLanguage };
+      try { localStorage.setItem(preferenceStorageKey, JSON.stringify(value)); } catch {}
+      if (currentUser && supabaseClient) {
+        const preferenceUserId = currentUser.id;
+        const preferenceClient = supabaseClient;
+        preferenceWriteQueue = preferenceWriteQueue.then(async () => {
+          const { error } = await preferenceClient.from("user_preferences").upsert({
+            user_id: preferenceUserId,
+            learning_language: value.learning_language,
+            translation_language: value.translation_language,
+            timezone: document.getElementById("preferenceTimezone")?.value || browserTimezone()
+          }, { onConflict: "user_id" });
+          if (error) console.warn("Could not save course preferences:", error.message);
+        }).catch(error => console.warn("Could not save course preferences:", error));
+      }
+    }
+    document.getElementById("courseSelect").addEventListener("change", e => { document.getElementById("preferenceLearning").value=e.target.value; course=e.target.value; rememberCoursePreferences(); categoryRow.hidden = course === "zh"; grid.classList.toggle("character-grid", course === "zh"); words=course === "zh" ? chineseWords : englishWords; activeLetter=""; activeCategory="all"; onlySaved=false; savedFilter.setAttribute("aria-pressed","false"); savedFilter.textContent="☆ Saved words"; search.value=""; search.placeholder=course === "zh" ? "搜索汉字或拼音（可不标声调）…" : "Search a word..."; currentPage=1; makeAlphabet(); updateLetterButtons(); categoryButtons.forEach((b,i)=>{ const active=i===0; b.classList.toggle("active",active); b.setAttribute("aria-pressed",String(active)); }); render(); if (currentUser) syncCurrentCourseFromCloud({ mergeLocal: false }); });
+    document.getElementById("translationSelect").addEventListener("change", e => { document.getElementById("preferenceTranslation").value=e.target.value; translationLanguage=e.target.value; rememberCoursePreferences(); if(activeWord) openWord(activeWord); });
     search.addEventListener("input", () => { currentPage = 1; render(); });
     categoryButtons.forEach(button => button.addEventListener("click", () => {
       activeCategory = button.dataset.category;
@@ -17551,7 +17601,13 @@
         const nextUser = data?.session?.user || null;
         const previousUserId = currentUser?.id || null;
         currentUser = nextUser;
-        btn.textContent = currentUser ? (currentUser.email || "Account") : "Sign in";
+        document.getElementById("accountButtonLabel").textContent = currentUser ? "Account" : "Sign in";
+        document.getElementById("accountMenuEmail").textContent = currentUser ? (currentUser.email || "Signed-in account") : "Not signed in";
+        document.getElementById("menuSignIn").hidden = !!currentUser;
+        document.getElementById("menuProfile").hidden = !currentUser;
+        document.getElementById("menuPreferences").hidden = !currentUser;
+        document.getElementById("menuSwitchAccount").hidden = !currentUser;
+        document.getElementById("menuSignOut").hidden = !currentUser;
         google.hidden = !!currentUser;
         signout.hidden = !currentUser;
 
@@ -17614,7 +17670,32 @@
         if (error) accountStatus.textContent = `Sign-out failed: ${error.message}`;
       });
     }
-    document.getElementById("accountButton").addEventListener("click",()=>{document.getElementById("accountDialog").classList.add("open");});
+    const accountMenu = document.getElementById("accountMenu");
+    const accountButton = document.getElementById("accountButton");
+    function closeAccountMenu() { accountMenu.hidden = true; accountButton.setAttribute("aria-expanded","false"); }
+    function openAccountMenu() { accountMenu.hidden = false; accountButton.setAttribute("aria-expanded","true"); }
+    function updateAvatarDisplay() {
+      document.getElementById("accountAvatar").textContent = selectedAvatar;
+      document.querySelectorAll(".avatar-choice").forEach(button => button.setAttribute("aria-pressed",String(button.dataset.avatar===selectedAvatar)));
+    }
+    updateAvatarDisplay();
+    accountButton.addEventListener("click",()=>{ if(accountMenu.hidden) openAccountMenu(); else closeAccountMenu(); });
+    document.addEventListener("click",event=>{ if(!event.target.closest(".account-menu-wrap")) closeAccountMenu(); });
+    document.addEventListener("keydown",event=>{ if(event.key==="Escape") closeAccountMenu(); });
+    document.getElementById("avatarPicker").addEventListener("click",async event=>{
+      const choice=event.target.closest("[data-avatar]"); if(!choice) return;
+      selectedAvatar=choice.dataset.avatar; updateAvatarDisplay();
+      try { localStorage.setItem("swiftdictionary-avatar",selectedAvatar); } catch {}
+      if(currentUser && supabaseClient){
+        const {error}=await supabaseClient.from("profiles").upsert({user_id:currentUser.id,avatar_icon:selectedAvatar},{onConflict:"user_id"});
+        if(error) document.getElementById("accountStatus").textContent=`Could not save profile icon: ${error.message}`;
+      }
+    });
+    document.getElementById("menuSignIn").addEventListener("click",()=>{ closeAccountMenu(); document.getElementById("accountDialog").classList.add("open"); });
+    document.getElementById("menuProfile").addEventListener("click",()=>{ closeAccountMenu(); showPage("profile"); });
+    document.getElementById("menuPreferences").addEventListener("click",()=>{ closeAccountMenu(); showPage("profile"); setTimeout(()=>document.querySelector("#profilePage .profile-card:nth-of-type(2)")?.scrollIntoView({behavior:"smooth",block:"start"}),80); });
+    document.getElementById("menuSwitchAccount").addEventListener("click",async()=>{ closeAccountMenu(); if(supabaseClient){ const {error}=await supabaseClient.auth.signOut(); if(error){document.getElementById("accountStatus").textContent=`Sign-out failed: ${error.message}`;return;} } document.getElementById("accountDialog").classList.add("open"); });
+    document.getElementById("menuSignOut").addEventListener("click",async()=>{ closeAccountMenu(); if(supabaseClient){ const {error}=await supabaseClient.auth.signOut(); if(error) document.getElementById("accountStatus").textContent=`Sign-out failed: ${error.message}`; } });
     document.getElementById("accountClose").addEventListener("click",()=>document.getElementById("accountDialog").classList.remove("open"));
     document.getElementById("accountDialog").addEventListener("click",e=>{if(e.target.id==="accountDialog")e.currentTarget.classList.remove("open")});
 
@@ -17674,9 +17755,10 @@
       signedOut.hidden = true; content.hidden = false;
       document.getElementById("profileEmail").textContent = currentUser.email || "Signed-in account";
       try {
+        await preferenceWriteQueue;
         await ensureProfileRows();
         const [profileQ,prefsQ,activityQ,entitlementQ,limitsQ] = await Promise.all([
-          supabaseClient.from("profiles").select("display_name").eq("user_id",currentUser.id).maybeSingle(),
+          supabaseClient.from("profiles").select("display_name,avatar_icon").eq("user_id",currentUser.id).maybeSingle(),
           supabaseClient.from("user_preferences").select("learning_language,translation_language,timezone").eq("user_id",currentUser.id).maybeSingle(),
           supabaseClient.from("learning_activity_log").select("activity_type,language_code,created_at").eq("user_id",currentUser.id),
           supabaseClient.from("user_entitlements").select("plan_code,status,valid_until").eq("user_id",currentUser.id).maybeSingle(),
@@ -17688,11 +17770,14 @@
         const courseChanged = course !== prefs.learning_language;
         course = prefs.learning_language;
         translationLanguage = prefs.translation_language;
+        try { localStorage.setItem(preferenceStorageKey, JSON.stringify({learning_language:course,translation_language:translationLanguage})); } catch {}
         words = course === "zh" ? chineseWords : englishWords;
         document.getElementById("categoryRow").hidden = course === "zh";
         grid.classList.toggle("character-grid", course === "zh");
         search.placeholder = course === "zh" ? "搜索汉字或拼音（可不标声调）…" : "Search a word...";
         if (courseChanged) { activeLetter=""; activeCategory="all"; onlySaved=false; savedFilter.setAttribute("aria-pressed","false"); savedFilter.textContent="☆ Saved words"; currentPage=1; makeAlphabet(); updateLetterButtons(); render(); }
+        selectedAvatar = profileQ.data?.avatar_icon || selectedAvatar || "🐦";
+        updateAvatarDisplay();
         document.getElementById("displayNameInput").value = profileQ.data?.display_name || "";
         document.getElementById("preferenceLearning").value = prefs.learning_language;
         document.getElementById("preferenceTranslation").value = prefs.translation_language;
@@ -17729,7 +17814,7 @@
         new Intl.DateTimeFormat("en-US",{timeZone:timezone});
         status.textContent = "Saving…";
         const [profileSave,prefSave] = await Promise.all([
-          supabaseClient.from("profiles").upsert({user_id:currentUser.id,display_name:displayName||null},{onConflict:"user_id"}),
+          supabaseClient.from("profiles").upsert({user_id:currentUser.id,display_name:displayName||null,avatar_icon:selectedAvatar},{onConflict:"user_id"}),
           supabaseClient.from("user_preferences").upsert({user_id:currentUser.id,learning_language:learning,translation_language:translation,timezone},{onConflict:"user_id"})
         ]);
         if (profileSave.error) throw profileSave.error;
@@ -17742,6 +17827,7 @@
         search.value=""; search.placeholder=course==="zh"?"搜索汉字或拼音（可不标声调）…":"Search a word...";
         activeLetter=""; activeCategory="all"; currentPage=1; makeAlphabet(); updateLetterButtons(); render();
         profilePreferences={learning_language:learning,translation_language:translation,timezone};
+        rememberCoursePreferences();
         status.textContent="Preferences saved.";
         await syncCurrentCourseFromCloud({mergeLocal:false});
         await loadProfileData();

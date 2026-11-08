@@ -91,3 +91,14 @@ Definitions, Chinese glosses, example sentences, and character notes are learner
 - **SwiftDictionary Update 2.1.0:** Adds shared navigation, signed-in Profile, preferences, progress overview, configurable learning limits, and Coming Soon placeholders; adds the Supabase learning/profile foundation while preserving dictionary, authentication, and saved-word behavior.
 - **SwiftDictionary Update 1.1.0:** Adds 100 common English entries and 100 Chinese characters; expands per-sense examples and pinyin coverage; retains v19 authentication, saved-word, search, translation, and stroke-order functionality.
 - **v19:** Consolidated the Chinese linguistic review and interactive stroke-order lesson, with 692 English entries and 106 Chinese entries.
+
+
+## Update 2.1.0 interface refinements
+
+- The Profile entry is accessed from the top-right account menu rather than the main navigation row.
+- The account menu provides Sign in, Profile, Preferences, Switch account, and Sign out actions as appropriate to the current authentication state.
+- Users can choose from the built-in profile icons. Signed-in users' icon choice is stored with their profile; signed-out users' choice is kept locally on that browser.
+- Learning course and translation-language selections are remembered locally and, when signed in, synchronized to that account's `user_preferences` row immediately. This prevents page navigation from resetting the selectors. Preferences remain account-specific after sign-in.
+- The account menu closes on outside click or Escape.
+
+The avatar icon is a small profile preference, not an identity-verification feature. No additional activity tracking is introduced by these changes.

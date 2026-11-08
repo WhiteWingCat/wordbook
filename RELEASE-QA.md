@@ -128,3 +128,28 @@ No live browser session was available for this review. The following must be che
 - Hanzi Writer remains loaded from jsDelivr and stroke data remains fetched at runtime. Attribution and the Arphic license text are included.
 - Definitions, glosses, examples, and automated pinyin are educational content and should continue to receive linguistic review. Recheck third-party licensing before bundling data locally or introducing monetized features that depend on it.
 - No deployment was performed as part of this QA.
+
+
+## Follow-up fixes — account menu and selector persistence
+
+- [x] Profile removed from the horizontal primary navigation.
+- [x] Top-right account menu exposes Sign in when signed out; Profile, Preferences, Switch account, and Sign out when signed in.
+- [x] Profile icon picker offers 12 built-in icons and stores the selection per account in `profiles.avatar_icon`; signed-out selection is local to the browser.
+- [x] Menu supports outside-click and Escape dismissal and reports expanded state accessibly.
+- [x] Learning course and translation-language selectors restore their stored values on page load.
+- [x] Selector changes persist to local browser preferences and synchronize to the signed-in user's Supabase preferences row.
+- [x] Profile loading waits for pending preference writes before re-reading preferences.
+- [x] Existing `saved_words` table and policies remain untouched.
+
+### Manual browser checks still required
+
+1. Signed out: open the top-right menu, choose an icon, navigate between Dictionary and Coming Soon pages, and confirm the icon and course selectors remain selected after refresh.
+2. Signed in: choose an icon and confirm it remains after refresh and after signing out/in to the same account.
+3. Switch between two Google accounts and confirm each account retains its own icon, learning course, and translation language.
+4. Change course and translation language, open Profile, return to Dictionary, and confirm neither selector resets.
+5. Use Preferences from the account menu and confirm it opens Profile at Account preferences.
+6. Confirm Switch account signs out the current account and opens the Google sign-in dialog.
+7. Confirm direct `#profile` navigation still redirects signed-out visitors to Dictionary.
+8. Recheck mobile layout and account-menu dismissal.
+
+Static JavaScript syntax validation was run for this follow-up build. Live-browser testing is not claimed.
