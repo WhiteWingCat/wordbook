@@ -62,6 +62,36 @@ No live browser session or browser automation environment was available. The fol
 - The intended audience is 16+ and global; age and privacy rules vary by jurisdiction. This review is not a legal compliance certification.
 - No subscription checkout, payment provider, or paid feature was introduced. Dictionary search remains unlimited and ungated.
 
+
+## Lesson feedback follow-up — automatic completion and reader polish
+
+- Removed the separate manual "Finish lesson" control. A lesson is now marked completed only after every practice question has been answered correctly.
+- Completion is saved to the existing `lesson_progress` row; it does not insert a new lesson-start activity and therefore does not consume another daily allowance.
+- Practice inputs and answer-check controls are locked while the completion update is being saved, preventing a late answer change or duplicate submission. If the update fails, controls are restored and the learner can retry.
+- The Chinese lesson practice resolver now reads the singular `practice` translation object as well as the existing plural `practices` array. Previously, most translated question prompts silently fell back to English.
+- Improved practice question cards, answer-choice states, progress display, and completion feedback for narrow and wide layouts.
+- Applied explicit high-contrast foreground styling to the sentence-part highlights inside the lesson reader to override browser-default `mark` text rendering.
+- No Previous/Next lesson navigation controls are rendered inside the lesson reader; learners return to the lesson library using Back to lessons.
+
+### Static checks after the feedback changes
+
+- Inline JavaScript syntax compilation: passed.
+- Manual completion button absent from the reader markup: passed.
+- Automatic completion is called only when all practice answers are correct: passed.
+- Chinese translation lookup supports both singular and plural practice structures: passed.
+- Lesson-reader highlight foreground override present: passed.
+- Previous/Next lesson navigation controls absent from the reader renderer: passed.
+
+### Additional live-browser checks still required
+
+1. Complete a lesson with all correct answers and verify the library immediately shows **Completed** without a separate button.
+2. Confirm a wrong answer can be retried and that changing a previously correct answer requires checking it again.
+3. Simulate a failed Supabase completion update and confirm the lesson remains **In progress**, an error is visible, and the learner can retry.
+4. Confirm completing a lesson does not consume a second daily lesson-start allowance.
+5. Check all nine lesson prompts in Simplified Chinese, including practice questions, while confirming English answer examples remain readable where they are intentionally part of the exercise.
+6. Check sentence-part highlight contrast in the dark theme on desktop and mobile.
+7. Re-test account switching, per-account progress isolation, saved words, and unlimited dictionary search.
+
 ## Release/deployment status
 
 - This is a development build pending owner live-browser verification and final release approval.
