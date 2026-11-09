@@ -1,4 +1,4 @@
-# SwiftDictionary Update 2.1.0 — Consolidated QA Record
+# SwiftDictionary Update 2.2.0 — Development QA Record
 
 ## Update 2.1.0 scope and implementation
 
@@ -153,3 +153,15 @@ No live browser session was available for this review. The following must be che
 8. Recheck mobile layout and account-menu dismissal.
 
 Static JavaScript syntax validation was run for this follow-up build. Live-browser testing is not claimed.
+
+
+## Update 2.2.0 development status
+- Lessons placeholder replaced with English lesson library and reader.
+- Three difficulty levels, each with three initial authored lessons and independent progress.
+- Topic filtering, learning goals, explanation, examples, common mistakes and practice feedback.
+- Progress sync uses owner-scoped Supabase tables; practice results store aggregate counts only.
+- First lesson start inserts one progress record; an AFTER INSERT trigger records the existing `lesson` allowance. Existing records are reused on resume/revisit.
+- Concurrent duplicate starts are handled by re-reading the unique existing progress row; no second charge is created.
+- Database guard prevents changing lesson identity and prevents completed progress from reverting.
+- Existing `saved_words`, authentication and `supabase-config.js` were not changed.
+- Static browser testing and live GitHub Pages checks are pending. Do not deploy before owner review.
