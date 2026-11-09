@@ -272,3 +272,36 @@ Static JavaScript syntax validation was run for this follow-up build. Live-brows
 5. Complete every practice question and confirm automatic lesson completion still works.
 6. Confirm the four-question Articles lesson still renders all questions and requires all of them to be answered correctly.
 7. Expand question coverage for additional lessons after agreeing on the target question count and content scope.
+
+
+## Lesson practice expansion — initial nine-lesson collection
+
+- Expanded each of the eight lessons that previously had one question to **three original practice questions each**. The Articles lesson retains its four questions.
+- The initial collection now contains **28 practice questions** across nine lessons: eight lessons × three questions, plus four Articles questions.
+- Added matching Simplified Chinese prompts and options for the new questions. English example sentences remain in English where they are the subject of the grammar exercise; explanatory prompts and meaning choices are localized.
+- Existing answer-position randomization continues to shuffle each question's options on lesson entry and remap the correct answer index.
+- Every question remains required for automatic lesson completion; learners must answer all questions correctly.
+- These nine lessons are the initial lesson catalogue, not a permanent product limit. Future updates can add lessons and difficulty/topic collections without changing this initial count.
+
+### Static checks after expansion
+
+- Eight English lesson records now use three practice questions each: passed.
+- Articles lesson retains four questions: passed.
+- Matching Chinese practice arrays contain three translated questions for each expanded lesson: passed.
+- Existing question-answer indexes and option arrays are present: passed.
+- Existing lesson translation resolver, per-entry option shuffling, answer remapping, and automatic completion flow remain in place: source inspection passed.
+
+### Browser verification still required
+
+1. Open all nine lessons in English and Simplified Chinese; confirm the expected 3/4 question counts and no missing translations.
+2. Verify all 28 questions, including correct and incorrect answer feedback.
+3. Re-enter lessons and confirm answer choices reshuffle while correctness remains accurate.
+4. Confirm translation switching preserves current selections, checked progress, and answer order.
+5. Confirm a lesson is marked completed only after all its questions are answered correctly and the save succeeds.
+6. Confirm lesson progress, daily allowance behavior, personal testing access, account switching, saved words, and unlimited dictionary search remain intact.
+7. Confirm the lesson catalogue can be expanded later without changing the meaning of the nine initial lessons.
+
+### Legal/content note
+
+- Newly added questions and answer choices are original SwiftDictionary educational content, not copied from third-party workbooks or paid course materials.
+- Continue reviewing linguistic accuracy and avoid reproducing proprietary question banks, textbook exercises, or licensed content without permission.
