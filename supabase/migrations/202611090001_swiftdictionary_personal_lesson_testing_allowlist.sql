@@ -81,7 +81,7 @@ begin
 
   -- Only the explicit account allowlisted below skips the quota count.
   -- Ownership checks, activity logging, plan availability and timezone validation remain.
-  if private.is_learning_limit_exempt() then
+  if new.activity_type = 'lesson' and private.is_learning_limit_exempt() then
     return new;
   end if;
 
