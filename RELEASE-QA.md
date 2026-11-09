@@ -253,3 +253,22 @@ Static JavaScript syntax validation was run for this follow-up build. Live-brows
 - This is an account-specific internal testing exception, not a public plan or subscription entitlement.
 - It does not change dictionary access, paid-feature plans, or other users' daily limits.
 - Keep the allowlist restricted to the owner-approved account, document its removal after QA, and do not publish the UUID in client-side source or public documentation.
+
+
+## Lesson practice answer randomization and question coverage
+
+- Practice answer options are shuffled independently each time a learner enters a lesson, including when reopening an in-progress or completed lesson.
+- The correct answer index is recalculated from the shuffled option order; feedback and completion checks must still validate the correct option.
+- A lesson's option order is kept stable while the learner remains in the lesson, including when switching the translation language, so selections and progress are not disrupted.
+- Re-entering the same lesson generates a different option order from the immediately previous entry whenever a question has multiple options.
+- Existing multi-question lessons remain supported through the `practices` array. Current content coverage: **Choose a, an or the** has four practice questions; the other eight lessons currently have one each.
+
+### Required verification
+
+1. Enter each of the nine lessons and confirm the correct answer is not always shown in the middle position.
+2. Leave and re-enter each lesson; confirm option positions are reshuffled and the correct answer is still accepted.
+3. Switch translation language while inside a lesson; confirm option order stays stable, translated prompts/options refresh, and practice progress is preserved.
+4. Confirm wrong options remain incorrect after shuffling and correct options still receive correct feedback.
+5. Complete every practice question and confirm automatic lesson completion still works.
+6. Confirm the four-question Articles lesson still renders all questions and requires all of them to be answered correctly.
+7. Expand question coverage for additional lessons after agreeing on the target question count and content scope.
