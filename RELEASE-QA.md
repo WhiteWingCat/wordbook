@@ -92,6 +92,19 @@ No live browser session or browser automation environment was available. The fol
 6. Check sentence-part highlight contrast in the dark theme on desktop and mobile.
 7. Re-test account switching, per-account progress isolation, saved words, and unlimited dictionary search.
 
+
+## Follow-up feedback — completion navigation and live translation switching
+
+- Added a **Back to lessons** action at the bottom-right after a lesson has been successfully saved as completed.
+- Changing the global translation language now immediately refreshes the active lesson and lesson-library topic labels without requiring page navigation.
+- The translation refresh preserves checked answer selections and already-verified practice progress, so changing languages mid-lesson does not force the learner to restart practice.
+
+### Additional browser checks
+
+1. Complete a lesson and confirm the bottom-right **Back to lessons** action appears below the practice section only after the completion save succeeds.
+2. Change translation language while viewing a lesson; verify the lesson title, explanation, examples, mistakes, topic and practice prompts refresh immediately.
+3. Change translation language after answering some practice questions; verify selections and correct-answer progress remain intact.
+
 ## Release/deployment status
 
 - This is a development build pending owner live-browser verification and final release approval.
