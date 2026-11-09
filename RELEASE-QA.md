@@ -340,3 +340,42 @@ This section supersedes the earlier nine-lesson / 28-question count above. The n
 - The new content does not reproduce third-party textbook exercises or proprietary question banks.
 - Word meanings and usage distinctions have been reviewed for general accuracy, but a native-speaker or qualified language-editor review remains advisable before public release.
 - This is an additive content expansion; no subscription gate or change to unlimited dictionary search was introduced.
+
+
+## Further grammar expansion — 15-lesson catalogue
+
+This section supersedes the preceding 12-lesson / 40-question status. The three additional lessons broaden the grammar foundation while retaining the original lessons and the first vocabulary expansion.
+
+- Beginner: **Use countable and uncountable nouns** — singular/plural forms, much/many, and quantity expressions such as a piece of advice.
+- Intermediate: **Choose first and second conditionals** — realistic future possibilities versus hypothetical situations.
+- Advanced: **Understand mixed conditionals** — past conditions with present results and present conditions with past results.
+- The catalogue now contains **15 lessons**, with five lessons at each difficulty level.
+- The complete catalogue contains **52 original practice questions**, with matching Simplified Chinese prompts and options for all 52.
+- All three new lessons have four questions each. The original nine lesson records and the three vocabulary lessons remain in place.
+- Existing answer randomization, answer-index mapping, translation selection, progress and completion logic were not intentionally changed.
+
+### Static verification for this expansion
+
+- All 15 lesson IDs appear once in the English lesson data and once in the Simplified Chinese translation map.
+- Each difficulty contains five lessons.
+- Each new lesson contains four English practice questions and four matching Chinese practice questions.
+- All English questions have three options and a valid correct-answer index.
+- Inline JavaScript syntax compilation: passed.
+- No live browser test has been performed.
+
+### Browser verification still required
+
+1. Confirm all 15 lessons appear in the correct difficulty and topic filters.
+2. Open the three new grammar lessons in English and Simplified Chinese; review the teaching notes, examples, and all four questions.
+3. Test correct and incorrect feedback, including answer randomization.
+4. Switch translation language during practice and verify selections and progress are preserved.
+5. Complete each new lesson and confirm the save succeeds before completion is shown.
+6. Confirm starting, resuming, and revisiting these lessons follows the existing allowance rules.
+7. Recheck authentication, account switching, saved-word isolation, and unlimited dictionary search.
+
+### Legal and content review
+
+- The new explanations, examples, questions, and options are original SwiftDictionary learning content.
+- No third-party question bank, workbook, or textbook exercise was copied.
+- Grammar rules have been checked for general accuracy. A qualified language editor or native-speaker review is still recommended before public release.
+- This is a content-only expansion. It introduces no subscription gate and does not restrict dictionary search.
