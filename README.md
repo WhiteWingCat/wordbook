@@ -1,6 +1,6 @@
 # SwiftDictionary Update 2.2.0 — English Lessons Foundation
 
-SwiftDictionary is a GitHub Pages-compatible vocabulary-learning website for English and Simplified Chinese. This update introduces an English Lessons foundation with Beginner, Intermediate and Advanced levels, a topic-filtered lesson library, guided lesson reader, practice questions, selected translation-language support, and account-synchronised lesson progress. Quiz and Flashcards remain Coming Soon. The English and Simplified Chinese dictionary courses, stroke-order lesson, Google authentication, account switching, and saved-word synchronization are retained.
+SwiftDictionary is a GitHub Pages-compatible vocabulary-learning website for English and Simplified Chinese. This update introduces an English Lessons foundation with Beginner, Intermediate and Advanced levels, a topic-filtered lesson library, guided lesson reader, multi-question practice where appropriate, visible lesson-start allowances, and account-synchronised lesson progress. Quiz and Flashcards remain Coming Soon. The English and Simplified Chinese dictionary courses, stroke-order lesson, Google authentication, account switching, and saved-word synchronization are retained.
 
 ## Release contents
 
@@ -16,10 +16,10 @@ The existing `banner.svg` and `supabase-config.js` remain external project files
 
 - Five-page navigation: **Dictionary**, **Lessons**, **Quiz**, **Flashcards**, and **Profile**.
 - Dictionary remains the default page and its English/Chinese word-grid search remains free and unlimited.
-- Lessons, Quiz, and Flashcards have functional Coming Soon placeholder pages in this release. Their learning features are scheduled for later releases.
+- Lessons provides a topic-filtered library with Beginner, Intermediate and Advanced levels, separate progress per difficulty, a focused lesson reader, and practice. Quiz and Flashcards remain Coming Soon.
 - Pages can be opened directly using the in-app hash routes `#dictionary`, `#lessons`, `#quiz`, `#flashcards`, and `#profile`.
 - Profile is restricted to signed-in users. Signed-out visitors who select or directly open Profile are redirected to Dictionary.
-- Profile includes a learning overview, expandable activity and daily-allowance details, and account preferences for display name, learning language, translation language, and IANA timezone.
+- Profile includes a learning overview, expandable activity and daily-allowance details, and account preferences for display name, learning language, translation language, and IANA timezone. The Lessons page also shows remaining daily new-lesson starts and the configured timezone reset.
 - Daily activity allowances are configured in Supabase by plan and activity category. Initial values are Free: 5 starts per day per category; Premium: 12 starts per day per category. Premium entitlement infrastructure is present, but no payment, checkout, or subscription purchase flow is included.
 - Daily resets use each user's configured timezone. A timezone change is blocked after learning activity has been recorded for that user's current local day.
 - Learning activity records store only activity type, language code, and timestamp; they do not store answers, response content, or word-level activity.
@@ -113,3 +113,13 @@ The avatar icon is a small profile preference, not an identity-verification feat
 - A new lesson is charged at first start. Resuming an in-progress lesson and revisiting a completed lesson are free.
 - Additive Supabase migration: `SUPABASE-MIGRATION-2.2.0.sql`. The migration has been applied to the connected project during development; do not re-run it blindly.
 - This work is on the development branch and is not deployed. Keep `supabase-config.js` and `banner.svg` unchanged.
+
+
+## Update 2.2.0 lesson allowance and practice behaviour
+
+- A new lesson consumes one lesson start when its progress record is first created. Resuming the same in-progress lesson does not consume another start; completed lessons can be revisited free of charge.
+- The allowance display shows remaining new lesson starts for the current day in the user's configured timezone. The database-side quota trigger remains authoritative; the display is informational and may briefly lag concurrent activity.
+- The lesson library shows each lesson as a single horizontal row with its progress state at the right.
+- Objectives, explanations, examples, and common mistakes share one content panel. Practice is separate and can contain multiple questions.
+- Some lessons include structured visual breakdowns. Current translation support localizes selected interface labels; complete translation of lesson teaching content is still being developed.
+- The initial course contains nine authored lessons (three per difficulty). This is a foundation, not a complete course curriculum.
