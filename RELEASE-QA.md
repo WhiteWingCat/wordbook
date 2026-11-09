@@ -235,7 +235,7 @@ Static JavaScript syntax validation was run for this follow-up build. Live-brows
 - Added a private database-side allowlist for the single authenticated account approved by the owner for lesson testing.
 - The allowlist table is in the non-exposed `private` schema, has RLS enabled, and grants no table access to browser roles. Users cannot add or change their own exemption.
 - The authenticated trigger still verifies that the request belongs to `auth.uid()`, validates the user's timezone, checks that the activity is enabled for the account's plan, and records every lesson start in `learning_activity_log`.
-- Only the allowlisted UUID skips the daily quota count. All other accounts retain the configured daily limits.
+- Only lesson starts by the allowlisted account skip the daily quota count. Quiz, Flashcard, and every other activity type retain their configured limits; all other accounts retain normal limits.
 - Added the read-only `is_personal_learning_test_access()` RPC so the signed-in UI can display **Unlimited — Personal testing access** for the exempt account; the frontend display is informational and does not enforce the exception.
 - The exception is intended for internal QA only. Remove the allowlist row and revoke the temporary access when testing is complete.
 
@@ -244,7 +244,7 @@ Static JavaScript syntax validation was run for this follow-up build. Live-brows
 1. Sign in with the allowlisted account and confirm the Lessons page displays **Unlimited** and identifies personal testing access.
 2. Open all nine lessons, including starting more lessons than the normal daily allowance; confirm each start succeeds and each activity is still logged.
 3. Sign in with a separate non-exempt account that has exhausted its allowance; confirm a new lesson start is still rejected by the database trigger.
-4. Confirm resuming an existing lesson and revisiting a completed lesson remain free for both accounts.
+4. Confirm resuming an existing lesson and revisiting a completed lesson remain free for both accounts. Confirm the exception does not affect other activity categories.
 5. Confirm neither account can read or modify the private allowlist table through the Supabase Data API.
 6. Confirm the personal testing status RPC returns false for every non-allowlisted account and does not expose the allowlist contents.
 
