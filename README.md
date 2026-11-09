@@ -1,6 +1,6 @@
-# SwiftDictionary Update 2.1.0
+# SwiftDictionary Update 2.2.0 — English Lessons Foundation
 
-SwiftDictionary is a GitHub Pages-compatible vocabulary-learning website for English and Simplified Chinese. This update establishes the shared five-page learning interface, signed-in Profile, account preferences, learning-progress overview, configurable daily learning allowances, and Coming Soon pages for Lessons, Quiz, and Flashcards. The English and Simplified Chinese dictionary courses, stroke-order lesson, Google authentication, account switching, and saved-word synchronization are retained.
+SwiftDictionary is a GitHub Pages-compatible vocabulary-learning website for English and Simplified Chinese. This update introduces an English Lessons foundation with Beginner, Intermediate and Advanced levels, a topic-filtered lesson library, guided lesson reader, practice questions, selected translation-language support, and account-synchronised lesson progress. Quiz and Flashcards remain Coming Soon. The English and Simplified Chinese dictionary courses, stroke-order lesson, Google authentication, account switching, and saved-word synchronization are retained.
 
 ## Release contents
 
@@ -102,3 +102,14 @@ Definitions, Chinese glosses, example sentences, and character notes are learner
 - The account menu closes on outside click or Escape.
 
 The avatar icon is a small profile preference, not an identity-verification feature. No additional activity tracking is introduced by these changes.
+
+
+## Update 2.2.0 — Lessons
+- Three independent difficulty levels with separate progress.
+- Initial lesson library contains three authored lessons per difficulty. This is a foundation release; the course library will be expanded in later content batches.
+- Lesson reader includes learning goals, explanations, contextual examples, common mistakes and one practice question per lesson.
+- The selected translation language is used for the lesson interface headings; English instructional content remains the source language in this initial content batch.
+- Signed-in users can start lessons and sync progress. Signed-out visitors can browse the library but must sign in to start.
+- A new lesson is charged at first start. Resuming an in-progress lesson and revisiting a completed lesson are free.
+- Additive Supabase migration: `SUPABASE-MIGRATION-2.2.0.sql`. The migration has been applied to the connected project during development; do not re-run it blindly.
+- This work is on the development branch and is not deployed. Keep `supabase-config.js` and `banner.svg` unchanged.
