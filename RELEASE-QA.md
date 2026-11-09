@@ -305,3 +305,38 @@ Static JavaScript syntax validation was run for this follow-up build. Live-brows
 
 - Newly added questions and answer choices are original SwiftDictionary educational content, not copied from third-party workbooks or paid course materials.
 - Continue reviewing linguistic accuracy and avoid reproducing proprietary question banks, textbook exercises, or licensed content without permission.
+\n\n## Latest lesson-library expansion — 12-lesson catalogue
+
+This section supersedes the earlier nine-lesson / 28-question count above. The nine original lessons remain the initial permanent catalogue; this expansion adds three more lessons rather than replacing or limiting the original collection.
+
+- Beginner now includes **Build useful verb combinations** (do homework, make breakfast, take a break, catch a bus).
+- Intermediate now includes **Recognise word families and affixes** (prefixes, suffixes, word families, and grammatical form).
+- Advanced now includes **Distinguish near-synonyms precisely** (including imply/infer and economic/economical).
+- The library now contains **12 lessons**, with four lessons at each difficulty level.
+- Each of the three new lessons has four original practice questions, bringing the full library to **40 questions** (the original 28 plus 12 new questions).
+- Matching Simplified Chinese lesson content and practice prompts/options were added for all three lessons. English terms remain in English where they are the learning target.
+- Existing practice randomization, correct-answer remapping, translation switching, progress persistence, and automatic completion logic were not intentionally changed.
+
+### Static verification for this expansion
+
+- All 12 lesson IDs occur once in the English lesson data and once in the Simplified Chinese translation map.
+- The new English lesson records each contain four practice questions.
+- Inline JavaScript syntax compilation: passed.
+- Live browser interaction, database progress, and allowance behaviour have not yet been tested for this expansion.
+
+### Browser verification still required
+
+1. Confirm all 12 lessons appear under the correct difficulty and topic filters.
+2. Open the three new lessons in English and Simplified Chinese; verify explanations, examples, prompts, and all four questions.
+3. Test correct and incorrect feedback for all 12 new questions; confirm answer shuffling does not change correctness.
+4. Switch translation language during a new lesson and confirm selections, practice progress, and option order remain stable.
+5. Complete each new lesson and confirm completion is saved only after every question is answered correctly.
+6. Confirm the new lessons use the existing allowance and progress rules: one charge on first start, no extra charge on resume/revisit.
+7. Recheck saved words, Google sign-in, account switching, and unlimited dictionary search.
+
+### Legal and content review
+
+- The three lessons, explanations, examples, questions, and answer options are original SwiftDictionary educational material.
+- The new content does not reproduce third-party textbook exercises or proprietary question banks.
+- Word meanings and usage distinctions have been reviewed for general accuracy, but a native-speaker or qualified language-editor review remains advisable before public release.
+- This is an additive content expansion; no subscription gate or change to unlimited dictionary search was introduced.
