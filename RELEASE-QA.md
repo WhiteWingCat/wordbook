@@ -228,3 +228,28 @@ Static JavaScript syntax validation was run for this follow-up build. Live-brows
 - Translation-language support currently localizes selected interface labels only. Full lesson-content translation remains outstanding and must not be represented as complete.
 - Confirm the lesson-start trigger can insert into learning_activity_log under authenticated RLS and grants; verify with a signed-in test account before deployment.
 - No deployment to GitHub Pages was performed.
+
+
+## Personal lesson testing access — account-specific allowance exception
+
+- Added a private database-side allowlist for the single authenticated account approved by the owner for lesson testing.
+- The allowlist table is in the non-exposed `private` schema, has RLS enabled, and grants no table access to browser roles. Users cannot add or change their own exemption.
+- The authenticated trigger still verifies that the request belongs to `auth.uid()`, validates the user's timezone, checks that the activity is enabled for the account's plan, and records every lesson start in `learning_activity_log`.
+- Only the allowlisted UUID skips the daily quota count. All other accounts retain the configured daily limits.
+- Added the read-only `is_personal_learning_test_access()` RPC so the signed-in UI can display **Unlimited — Personal testing access** for the exempt account; the frontend display is informational and does not enforce the exception.
+- The exception is intended for internal QA only. Remove the allowlist row and revoke the temporary access when testing is complete.
+
+### Required verification
+
+1. Sign in with the allowlisted account and confirm the Lessons page displays **Unlimited** and identifies personal testing access.
+2. Open all nine lessons, including starting more lessons than the normal daily allowance; confirm each start succeeds and each activity is still logged.
+3. Sign in with a separate non-exempt account that has exhausted its allowance; confirm a new lesson start is still rejected by the database trigger.
+4. Confirm resuming an existing lesson and revisiting a completed lesson remain free for both accounts.
+5. Confirm neither account can read or modify the private allowlist table through the Supabase Data API.
+6. Confirm the personal testing status RPC returns false for every non-allowlisted account and does not expose the allowlist contents.
+
+### Legal and privacy note
+
+- This is an account-specific internal testing exception, not a public plan or subscription entitlement.
+- It does not change dictionary access, paid-feature plans, or other users' daily limits.
+- Keep the allowlist restricted to the owner-approved account, document its removal after QA, and do not publish the UUID in client-side source or public documentation.
