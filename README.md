@@ -16,7 +16,7 @@ The existing `banner.svg` and `supabase-config.js` remain external project files
 
 - Five-page navigation: **Dictionary**, **Lessons**, **Quiz**, **Flashcards**, and **Profile**.
 - Dictionary remains the default page and its English/Chinese word-grid search remains free and unlimited.
-- Lessons provides a topic-filtered library with Beginner, Intermediate and Advanced levels, separate progress per difficulty, a focused lesson reader, and practice. Quiz and Flashcards remain Coming Soon.
+- Lessons provides a topic-filtered library with Beginner, Intermediate and Advanced levels, separate progress per difficulty, a focused lesson reader, and practice. Quiz and Flashcards remain Coming Soon. The current development catalogue contains 12 lessons (four per difficulty) and 40 original practice questions, with English and Simplified Chinese lesson content.
 - Pages can be opened directly using the in-app hash routes `#dictionary`, `#lessons`, `#quiz`, `#flashcards`, and `#profile`.
 - Profile is restricted to signed-in users. Signed-out visitors who select or directly open Profile are redirected to Dictionary.
 - Profile includes a learning overview, expandable activity and daily-allowance details, and account preferences for display name, learning language, translation language, and IANA timezone. The Lessons page also shows remaining daily new-lesson starts and the configured timezone reset.
