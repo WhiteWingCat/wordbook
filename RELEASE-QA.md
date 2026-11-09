@@ -165,3 +165,23 @@ Static JavaScript syntax validation was run for this follow-up build. Live-brows
 - Database guard prevents changing lesson identity and prevents completed progress from reverting.
 - Existing `saved_words`, authentication and `supabase-config.js` were not changed.
 - Static browser testing and live GitHub Pages checks are pending. Do not deploy before owner review.
+
+
+## Update 2.2.0 — lesson experience refinements (development)
+
+- Lesson library uses one horizontal row per lesson, with progress aligned at the right: Completed, In progress, or Not started. Status colours are supplemented by text labels.
+- Objectives, explanation, examples, and common mistakes are grouped into one teaching-content panel. Practice questions use a separate panel.
+- Practice accepts multiple questions for topics that benefit from them, while retaining compatibility with the original single-question lesson data.
+- The articles lesson now has four practice questions and a visual cue panel distinguishing first mention, identifiable nouns, and vowel sounds.
+- The sentence-basics lesson has a labelled subject/verb/object breakdown.
+- A prominent Lessons-page allowance panel shows new lesson starts remaining, plan limit, configured timezone reset, and one-remaining / exhausted states. It counts today's lesson activity rows using configured timezone day boundaries; the database trigger remains the enforcement authority.
+- A quota rejection displays an explicit message explaining that resuming an existing lesson and revisiting completed lessons remain free.
+- Existing lesson start/resume/complete database flow and saved-word/authentication code were not intentionally changed.
+
+### QA status
+- Source changes committed to the feature branch only.
+- No live browser session was available for this pass. The revised lesson list, practice interactions, responsive layout, timezone boundary display, quota rejection message, and progress status colours remain to be tested in a browser.
+- The sentence breakdown currently presents semantic labels as visual chips; inline highlighted sentence treatment remains a refinement item.
+- Translation-language support currently localizes selected interface labels only. Full lesson-content translation remains outstanding and must not be represented as complete.
+- Confirm the lesson-start trigger can insert into learning_activity_log under authenticated RLS and grants; verify with a signed-in test account before deployment.
+- No deployment to GitHub Pages was performed.
