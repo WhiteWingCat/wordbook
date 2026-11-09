@@ -33,9 +33,8 @@ $function$;
 revoke all on function public.is_personal_learning_test_access() from public, anon;
 grant execute on function public.is_personal_learning_test_access() to authenticated;
 
-insert into private.learning_limit_exemptions (user_id, reason)
-values ('9336f987-79b2-4e0a-b76e-6ac9a39da206', 'Personal lesson testing access')
-on conflict (user_id) do update set reason = excluded.reason;
+-- The owner-approved UUID is seeded separately through a private database operation.
+-- Do not commit account UUIDs or other personal identifiers to this repository.
 
 create or replace function public.enforce_learning_daily_limit()
 returns trigger language plpgsql set search_path to ''
