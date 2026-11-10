@@ -211,7 +211,7 @@ Do not mark the 2.3.0 PR ready, merge it, apply production SQL, or deploy the we
 - [ ] Test all history tables are deleted, all Profile/Daily Learning caches are cleared, and saved words/preferences/authentication remain intact.
 - [ ] Test deletion as a normal authenticated user, a signed-out user, another user's session, and an owner with the personal testing exemption.
 - [ ] Test account deletion separately, including FK cascades, Auth sessions, residual JWT handling, and any Storage objects.
-- [ ] Complete automated idempotency, RLS, privilege, rollback and concurrency tests in the free PostgreSQL harness; deletion assertions have been added but are pending CI.
+- [ ] Complete automated idempotency, RLS, privilege, rollback and concurrency tests in the free PostgreSQL harness; deletion assertions have been added and passed in CI run [#42799773985](https://github.com/WhiteWingCat/wordbook/actions/runs/42799773985); isolated Supabase integration remains outstanding.
 - [ ] Complete live Supabase integration and browser tests in an isolated project before any production migration.
 - [ ] Finalise the public privacy notice with accurate controller identity, contact, processing locations, subprocessor details, retention and request handling.
 - [ ] Complete Malaysia PDPA review and target-market legal review with qualified advice where needed.
@@ -283,4 +283,4 @@ A draft server-side RPC and Profile control have now been added to the feature b
 
 The UI requires explicit confirmation and explains the retained data and unchanged current-day allowance. It asks the user to sign out and sign in again if recent authentication is required.
 
-The migration and assertions are not production-ready until CI, isolated Supabase integration, and browser tests pass. The deletion RPC has not been installed in the live project. Account deletion remains a separate future implementation and must continue to use a trusted Auth Admin operation rather than browser credentials.
+The PostgreSQL 17 migration and deletion assertions passed in GitHub Actions run [#42799773985](https://github.com/WhiteWingCat/wordbook/actions/runs/42799773985). They are not production-ready until isolated Supabase integration, Data API schema-exposure verification, and browser tests pass. The deletion RPC has not been installed in the live project. Account deletion remains a separate future implementation and must continue to use a trusted Auth Admin operation rather than browser credentials.
