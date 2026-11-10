@@ -287,7 +287,13 @@ begin
     return v_session;
   end if;
 
-  select p.timezone, p.learning_language,
+  select case
+           when p.allowance_timezone is not null
+                and p.allowance_timezone_until > pg_catalog.now()
+           then p.allowance_timezone
+           else p.timezone
+         end,
+         p.learning_language,
          case p_activity_type
            when 'daily_topic' then p.daily_topic_enabled
            when 'daily_application' then p.daily_application_enabled
