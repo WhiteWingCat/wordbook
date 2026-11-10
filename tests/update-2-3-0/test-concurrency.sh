@@ -135,7 +135,7 @@ wait "$daily_pid_a"
 wait "$daily_pid_b"
 
 psql "$db" -X -v ON_ERROR_STOP=1 <<SQL
-do $
+do \$\$
 declare
   v_events integer;
   v_status text;
@@ -156,7 +156,7 @@ begin
     raise exception 'Concurrent daily completion left the session in status %', v_status;
   end if;
 end;
-$;
+\$\$;
 SQL
 
 if [[ "$(cat /tmp/daily-a.status)" -ne 0 || "$(cat /tmp/daily-b.status)" -ne 0 ]]; then
