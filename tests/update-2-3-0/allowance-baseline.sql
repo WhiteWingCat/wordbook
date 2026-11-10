@@ -169,6 +169,11 @@ create policy "Users can read their own preferences"
 on public.user_preferences for select to authenticated
 using ((select auth.uid()) = user_id);
 
+create policy "Users can update their own preferences"
+on public.user_preferences for update to authenticated
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
+
 create policy "Users can read their own entitlements"
 on public.user_entitlements for select to authenticated
 using ((select auth.uid()) = user_id);
