@@ -284,7 +284,12 @@
       const limit = snapshot.limits[type]?.limit;
       const used = snapshot.completed[type] || 0;
       const remaining = Number.isFinite(limit) ? Math.max(0,limit-used) : null;
-      const remainingLabel = remaining === null ? "Allowance unavailable" : remaining + " / " + limit + " completions remaining";
+      const alreadyCompleted = (snapshot.dailyResults || []).some(row =>
+        row.activity_type === type && row.content_id === content.id && row.status === "completed");
+      const remainingLabel = alreadyCompleted
+        ? "No new content available · replay is free"
+        : remaining === null ? "Allowance unavailable" : remaining + " / " + limit + " completions remaining";
+      const buttonLabel = alreadyCompleted ? "Review completed content" : "Start / Resume";
       const reason = type === "daily_revision" ? '<p class="daily-activity-meta"><span class="daily-activity-tag">' + esc(content.body) + '</span></p>' : "";
       const disabled = !currentUser || !supabaseClient || snapshot.learningLanguage !== "en" || (typeof course !== "undefined" && course !== "en");
       return '<article class="daily-activity-card" data-activity-card="' + type + '">'
@@ -292,7 +297,7 @@
         + '<h2>' + esc(meta.title) + '</h2><p>' + esc(meta.description) + '</p>'
         + '<div class="daily-reader-example"><strong>' + esc(content.title) + '</strong></div>'
         + reason
-        + '<button type="button" class="primary-button" data-start-daily="' + type + '"' + (disabled ? " disabled" : "") + '>Start / Resume</button>'
+        + '<button type="button" class="primary-button" data-label="' + esc(buttonLabel) + '" data-start-daily="' + type + '"' + (disabled ? " disabled" : "") + '>' + esc(buttonLabel) + '</button>'
         + '</article>';
     }).join("");
     grid.querySelectorAll("[data-start-daily]").forEach(button => {
@@ -321,7 +326,7 @@
     } catch (error) {
       byId("dailyLearningStatus").textContent = error.message || "The activity could not be opened. Please try again.";
     } finally {
-      if (button) { button.disabled = false; button.textContent = "Start / Resume"; }
+      if (button) { button.disabled = false; button.textContent = button.dataset.label || "Start / Resume"; }
     }
   }
 
