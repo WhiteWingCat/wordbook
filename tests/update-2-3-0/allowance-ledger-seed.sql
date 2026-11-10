@@ -3,10 +3,10 @@
 insert into auth.users(id)
 values ('88888888-8888-4888-8888-888888888888');
 
-insert into auth.sessions(id,user_id,created_at)
+insert into auth.sessions(id,user_id,created_at,not_after)
 values
-  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','88888888-8888-4888-8888-888888888888',now()),
-  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','88888888-8888-4888-8888-888888888888',now() - interval '1 hour'),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','88888888-8888-4888-8888-888888888888',now(),null),
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','88888888-8888-4888-8888-888888888888',now() - interval '1 hour',null),
   ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee','88888888-8888-4888-8888-888888888888',now(),now() - interval '1 minute');
 
 insert into public.profiles(user_id,display_name)
