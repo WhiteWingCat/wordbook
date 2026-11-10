@@ -148,6 +148,13 @@ begin
   end if;
 
   new.created_at := now();
+
+  -- Historical/start-only events are recorded but never consume or require
+  -- a completion allowance. Only successful completion events are charged.
+  if new.event_type <> 'completed' then
+    return new;
+  end if;
+
   perform pg_catalog.pg_advisory_xact_lock(
     pg_catalog.hashtextextended(new.user_id::text, 0)
   );
