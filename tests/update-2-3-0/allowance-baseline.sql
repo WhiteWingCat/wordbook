@@ -22,20 +22,20 @@ create function auth.uid()
 returns uuid
 language sql
 stable
-as $
+as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
-$;
+$$;
 
 create function auth.jwt()
 returns jsonb
 language sql
 stable
-as $
+as $$
   select coalesce(
     nullif(current_setting('request.jwt.claims', true), '')::jsonb,
     '{}'::jsonb
   )
-$;
+$$;
 
 grant usage on schema auth, public, private to anon, authenticated;
 grant execute on function auth.uid() to anon, authenticated;
