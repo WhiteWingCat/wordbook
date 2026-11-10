@@ -516,7 +516,7 @@ commit;
 begin;
 select set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222222', true);
 set local role authenticated;
-do $
+do $$
 declare
   v_foreign_session uuid;
 begin
@@ -526,13 +526,13 @@ begin
   );
   perform set_config('test.foreign_session_id', v_foreign_session::text, false);
 end;
-$;
+$$;
 commit;
 
 begin;
 select set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
 set local role authenticated;
-do $
+do $$
 declare
   v_foreign_session uuid := current_setting('test.foreign_session_id')::uuid;
   v_visible integer;
@@ -555,7 +555,7 @@ begin
     raise exception 'A user can modify another account daily session';
   end if;
 end;
-$;
+$$;
 commit;
 
 -- Preferences are owner-scoped and disabled activities cannot be newly started.
