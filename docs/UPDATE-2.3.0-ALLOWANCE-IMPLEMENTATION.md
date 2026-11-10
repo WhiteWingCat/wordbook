@@ -217,3 +217,41 @@ No deletion RPC, allowance-ledger schema, frontend control, Auth Admin deletion 
 - [ ] Finalise the privacy notice only after the controller/contact details, actual provider regions/subprocessors, backup/log retention and cross-border transfer safeguards are confirmed.
 - [ ] Complete Malaysia PDPA review, including DPO threshold/systematic-monitoring assessment, breach response, cross-border transfer and age-related obligations.
 
+
+
+## Separate current-window allowance ledger — implementation draft
+
+A third, separate SQL draft now follows the permanent allowance and Daily Activity drafts:
+
+- `docs/UPDATE-2.3.0-ALLOWANCE-LEDGER-MIGRATION-DRAFT.sql`
+- `tests/update-2-3-0/allowance-ledger-seed.sql`
+- `tests/update-2-3-0/allowance-ledger-assertions.sql`
+
+The migration creates `private.learning_allowance_usage`, with at most one row per user/activity category. It stores only the current window start/end, a count, and an update timestamp. It contains no lesson/content/topic identifiers, answer data, language text, or completion event trail.
+
+Before switching enforcement, the migration backfills each user's active allowance window from existing completed activity events. It preserves actual usage even if an existing count is already above the current plan limit; it does not silently reset or truncate counts.
+
+The completion-event trigger now atomically increments this private ledger in the same transaction as the existing activity-history insert. It serializes through the existing per-user advisory lock. If the current window is at its plan limit, the insert and corresponding completion roll back. The lesson-only personal testing exemption remains limited to permanent lessons. Daily session start checks read the ledger through a narrowly scoped SECURITY DEFINER helper that verifies `auth.uid()` matches the requested user; the private table itself has no browser grants.
+
+The daily activity start/resume RPC now reads current usage from the ledger. Starting/resuming remains free; only completion increments the ledger. The existing timezone transition fields determine the effective timezone and local-midnight window.
+
+### Added compatibility tests
+
+- Seed two legacy completed lesson events before the ledger migration and assert the migration backfills a count of two.
+- Confirm authenticated clients cannot read the private table directly.
+- Confirm the scoped usage helper returns only the caller's own current-window count.
+- Complete three more lessons to reach the Free limit of five.
+- Delete the detailed lesson history as a privileged operation and prove the current usage remains five and another completion is rejected.
+- Complete one Daily Topic, delete its activity-history event, and prove another Daily Topic cannot be started in that allowance window.
+- Force a ledger row into an expired window and prove the next successful completion rolls usage over to one.
+- Existing timezone, RLS, plan-limit, completion idempotency, and concurrency tests continue to run after the ledger migration.
+
+The GitHub Actions workflow now applies the ledger draft after the two existing 2.3.0 SQL drafts and runs the ledger assertions. This remains a disposable PostgreSQL 17 compatibility test, not a live Supabase migration test. No production database, website, or user data has been changed.
+
+### Review notes before isolated Supabase integration
+
+- Confirm the migration owner can create and own objects in the private schema and that the deployed Supabase roles/schema privileges match the fixture.
+- Verify the trigger function's SECURITY DEFINER ownership, pinned empty search_path, explicit authenticated-user check, and private-table grants with Supabase advisors.
+- Validate the ledger backfill query against a production snapshot in an isolated project immediately before release.
+- Confirm all completion writers insert a completed `learning_activity_log` event in the same transaction. Any future completion type must use this same path or be explicitly integrated with the ledger.
+- Keep the ledger out of user-facing Profile history and do not add client-side write or delete access.
