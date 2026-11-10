@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - feature/update-2-3-0-allowance-foundation
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
