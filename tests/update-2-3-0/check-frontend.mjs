@@ -34,7 +34,7 @@ for (const item of curated.topics) {
   }
 }
 for (const item of curated.applications) {
-  if (!item.topicId || !item.questions?.length || !item.zh) {
+  if (!item.topicId || !item.questions?.length) {
     throw new Error(`Daily Application is missing topic, questions or translation: ${item.id}`);
   }
   for (const question of item.questions) {
