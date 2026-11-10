@@ -3,6 +3,9 @@
 insert into auth.users(id)
 values ('88888888-8888-4888-8888-888888888888');
 
+insert into public.profiles(user_id,display_name)
+values ('88888888-8888-4888-8888-888888888888','Keep Profile');
+
 insert into public.user_preferences(user_id, timezone)
 values ('88888888-8888-4888-8888-888888888888','UTC');
 
