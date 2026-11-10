@@ -84,6 +84,7 @@ do $$
 declare
   v_count integer;
   v_status text;
+  v_quota_rejected boolean := false;
 begin
   -- Reject null/invalid lesson identity and completion without a started row.
   begin
@@ -112,12 +113,15 @@ begin
     raise exception 'Expected exactly five completed lesson events after duplicate retry; got %', v_count;
   end if;
 
+  v_quota_rejected := false;
   begin
     perform public.complete_permanent_lesson('beginner', 'legacy-06');
-    raise exception 'Expected the sixth completion to be rejected';
   exception when sqlstate 'P0001' then
-    null;
+    v_quota_rejected := true;
   end;
+  if not v_quota_rejected then
+    raise exception 'Expected the sixth completion to be rejected';
+  end if;
 
   select status into v_status
   from public.lesson_progress
@@ -180,6 +184,7 @@ select set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222222
 do $$
 declare
   v_count integer;
+  v_quota_rejected boolean := false;
 begin
   insert into public.learning_activity_log(user_id, activity_type, language_code, event_type)
   values (auth.uid(), 'daily_topic', 'en', 'completed');
@@ -187,10 +192,12 @@ begin
   begin
     insert into public.learning_activity_log(user_id, activity_type, language_code, event_type)
     values (auth.uid(), 'daily_topic', 'en', 'completed');
-    raise exception 'Second Daily Topic completion unexpectedly succeeded';
   exception when sqlstate 'P0001' then
-    null;
+    v_quota_rejected := true;
   end;
+  if not v_quota_rejected then
+    raise exception 'Second Daily Topic completion unexpectedly succeeded';
+  end if;
 
   insert into public.learning_activity_log(user_id, activity_type, language_code, event_type)
   values (auth.uid(), 'daily_revision', 'en', 'completed');
@@ -220,6 +227,7 @@ select set_config('request.jwt.claim.sub', '44444444-4444-4444-8444-444444444444
 do $$
 declare
   i integer;
+  v_quota_rejected boolean := false;
 begin
   for i in 1..3 loop
     insert into public.learning_activity_log(user_id, activity_type, language_code, event_type)
@@ -229,10 +237,12 @@ begin
   begin
     insert into public.learning_activity_log(user_id, activity_type, language_code, event_type)
     values (auth.uid(), 'daily_discovery', 'en', 'completed');
-    raise exception 'Fourth Premium Daily Discovery completion unexpectedly succeeded';
   exception when sqlstate 'P0001' then
-    null;
+    v_quota_rejected := true;
   end;
+  if not v_quota_rejected then
+    raise exception 'Fourth Premium Daily Discovery completion unexpectedly succeeded';
+  end if;
 end;
 $$;
 commit;
@@ -281,6 +291,7 @@ do $$
 declare
   i integer;
   v_status text;
+  v_quota_rejected boolean := false;
 begin
   for i in 1..15 loop
     perform public.complete_permanent_lesson(
@@ -290,10 +301,12 @@ begin
 
   begin
     perform public.complete_permanent_lesson('beginner', 'premium-limit-16');
-    raise exception 'Premium 16th permanent lesson unexpectedly succeeded';
   exception when sqlstate 'P0001' then
-    null;
+    v_quota_rejected := true;
   end;
+  if not v_quota_rejected then
+    raise exception 'Premium 16th permanent lesson unexpectedly succeeded';
+  end if;
 
   select status into v_status
   from public.lesson_progress
