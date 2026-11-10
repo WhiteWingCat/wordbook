@@ -97,6 +97,25 @@
     .stat-card strong { display:block; color:var(--accent); font-size:1.7rem; }
     .stat-card span { color:var(--muted); font-size:.88rem; }
     .profile-card h3 { margin-top:0; }
+    .daily-preferences { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; border:1px solid var(--border); border-radius:15px; padding:16px; margin:20px 0; background:var(--panel); }
+    .daily-preferences legend { padding:0 8px; font-weight:700; }
+    .daily-preference { display:flex; align-items:center; gap:9px; border:1px solid var(--border); border-radius:11px; padding:10px; color:var(--text); font-size:.9rem; }
+    .daily-preference input { accent-color:var(--accent); width:18px; height:18px; }
+    .daily-activity-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:18px 0; }
+    .daily-activity-card,.daily-reader-card { border:1px solid var(--border); border-radius:16px; background:var(--panel); padding:20px; box-shadow:var(--shadow); }
+    .daily-activity-card h2 { margin:8px 0; font-size:1.2rem; }
+    .daily-activity-card p,.daily-reader-card p { color:var(--muted); }
+    .daily-activity-meta { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 14px; }
+    .daily-activity-tag { border:1px solid var(--border); border-radius:999px; padding:4px 9px; color:var(--muted); font-size:.78rem; }
+    .daily-activity-card .primary-button { margin-top:8px; }
+    .daily-reader-card { max-width:820px; margin:18px 0; }
+    .daily-reader-card h2 { margin-top:0; }
+    .daily-reader-example { border-left:3px solid var(--accent); background:var(--panel-hover); padding:12px 15px; border-radius:0 10px 10px 0; margin:12px 0; }
+    .daily-question { border-top:1px solid var(--border); padding:16px 0; }
+    .daily-question label { display:flex; gap:9px; align-items:flex-start; padding:8px 0; }
+    .daily-question input { accent-color:var(--accent); margin-top:4px; }
+    .daily-question-feedback { color:var(--muted); font-size:.9rem; min-height:1.2em; }
+    @media(max-width:760px){.daily-preferences{grid-template-columns:repeat(2,minmax(0,1fr));}.daily-activity-grid{grid-template-columns:1fr;}}
     .profile-card details { border-top:1px solid var(--border); padding:12px 0; }
     .profile-card summary { cursor:pointer; font-weight:650; }
     .preference-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
@@ -276,6 +295,7 @@
     <nav class="wrap primary-nav" aria-label="Main navigation">
       <button type="button" data-page="dictionary" aria-current="page">Dictionary</button>
       <button type="button" data-page="lessons">Lessons</button>
+      <button type="button" data-page="daily-learning">Daily Learning</button>
       <button type="button" data-page="quiz">Quiz</button>
       <button type="button" data-page="flashcards">Flashcards</button>
     </nav>
@@ -324,6 +344,21 @@
       <div class="difficulty-tabs" role="group" aria-label="Lesson difficulty"><button class="difficulty-tab active" data-difficulty="beginner">Beginner</button><button class="difficulty-tab" data-difficulty="intermediate">Intermediate</button><button class="difficulty-tab" data-difficulty="advanced">Advanced</button></div>
       <div id="lessonLibrary"><div id="lessonAllowance" class="lesson-allowance" aria-live="polite"><div><strong>Daily lesson allowance</strong><small id="lessonAllowanceNote">Sign in to view your daily lesson completions.</small></div><span id="lessonAllowanceCount" class="lesson-allowance-count">—</span></div><p id="lessonDifficultySummary" class="lesson-muted"></p><label class="lesson-filter">Topic <select id="lessonTopicFilter"><option value="all">All topics</option></select></label><span id="lessonProgressSummary" class="lesson-muted"></span><div id="lessonCards" class="lesson-card-grid"></div></div>
       <article id="lessonReader" hidden><button id="lessonBack" class="secondary-button">← Back to lessons</button><div id="lessonReaderContent"></div></article><p id="lessonStatus" role="status" aria-live="polite"></p>
+    </section>
+    <section id="dailyLearningPage" class="page-panel" hidden aria-labelledby="dailyLearningHeading">
+      <p class="eyebrow">DAILY PRACTICE</p>
+      <h1 id="dailyLearningHeading">Daily Learning</h1>
+      <p class="page-intro">Short activities to build consistency, apply what you know, discover something new, and revisit topics at the right time.</p>
+      <p id="dailyLearningStatus" role="status" aria-live="polite" class="page-intro">Sign in to save daily activity progress across devices.</p>
+      <fieldset class="daily-preferences">
+        <legend>My daily activities</legend>
+        <label class="daily-preference"><input type="checkbox" data-daily-pref="daily_topic_enabled" checked> Daily Topic</label>
+        <label class="daily-preference"><input type="checkbox" data-daily-pref="daily_application_enabled" checked> Daily Application</label>
+        <label class="daily-preference"><input type="checkbox" data-daily-pref="daily_discovery_enabled" checked> Daily Discovery</label>
+        <label class="daily-preference"><input type="checkbox" data-daily-pref="daily_revision_enabled" checked> Daily Revision</label>
+      </fieldset>
+      <div id="dailyActivityGrid" class="daily-activity-grid"></div>
+      <article id="dailyActivityReader" class="daily-reader-card" hidden></article>
     </section>
     <section id="quizPage" class="page-panel" hidden aria-labelledby="quizHeading">
       <h1 id="quizHeading">Quiz</h1><p class="page-intro">Test your understanding and reinforce what you have learned.</p>
@@ -17699,7 +17734,7 @@
           render();
         }
         // Defer database work outside the auth callback to avoid locking auth state changes.
-        setTimeout(() => refreshAccount(), 0);
+        setTimeout(async () => { await refreshAccount(); window.dispatchEvent(new Event("swift-auth-updated")); }, 0);
       });
       google.addEventListener("click", async () => {
         accountStatus.textContent = "Opening Google sign-in…";
@@ -17823,7 +17858,7 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
 
     // Update 2.1.0: shared page navigation and signed-in Profile foundation.
     const pageButtons = [...document.querySelectorAll("[data-page]")];
-    const pageIds = { dictionary:"dictionaryPage", lessons:"lessonsPage", quiz:"quizPage", flashcards:"flashcardsPage", profile:"profilePage" };
+    const pageIds = { dictionary:"dictionaryPage", lessons:"lessonsPage", "daily-learning":"dailyLearningPage", quiz:"quizPage", flashcards:"flashcardsPage", profile:"profilePage" };
     let profilePreferences = null;
     function showPage(page, updateHash = true) {
       if (page === "profile" && !currentUser) page = "dictionary";
@@ -17836,6 +17871,7 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
       });
       if (page === "profile" && currentUser) loadProfileData();
       if (page === "lessons") initialiseLessons();
+      if (page === "daily-learning" && typeof initialiseDailyLearning === "function") initialiseDailyLearning();
       window.scrollTo({top:0,behavior:"instant"});
     }
     pageButtons.forEach(button => button.addEventListener("click", () => showPage(button.dataset.page)));
@@ -17967,5 +18003,6 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
       showHashPage();
     });
   </script>
+  <script src="daily-learning.js"></script>
 </body>
 </html>
