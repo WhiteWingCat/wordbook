@@ -232,9 +232,7 @@ for (const activity of ["daily_topic","daily_application","daily_discovery","dai
 if (mockElements.dailyActivityGrid.innerHTML.includes("Past simple or present perfect?")) {
   throw new Error("Daily Learning selected a previously completed topic as a new daily assignment.");
 }
-mockData.daily_activity_sessions = [
-  "topic-present-perfect-01","topic-articles-01","topic-quantity-01","topic-sentence-order-01","topic-collocations-01"
-].map(content_id => ({
+mockData.daily_activity_sessions = curated.topics.map(item => item.id).map(content_id => ({
   activity_type:"daily_topic",content_id,topic_id:"test-topic",
   correct_count:null,question_count:null,completed_at:"2026-11-09T08:00:00.000Z",status:"completed"
 }));
