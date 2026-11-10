@@ -139,7 +139,7 @@
       return dailyDiscoveries[(baseIndex + slot) % dailyDiscoveries.length];
     }
     const candidates = revisionCandidates(snapshot.lessonResults, snapshot.dailyResults, snapshot.completedToday);
-    const candidate = candidates[slot % Math.max(1,candidates.length)] || { topicId:dailyApplications[0].topicId, reason:"A short review to keep your knowledge active." };
+    const candidate = candidates[0] || { topicId:dailyApplications[0].topicId, reason:"A short review to keep your knowledge active." };
     const id = ["revision",candidate.topicId,day,String(slot+1)].join("-");
     return makeRevisionContent(candidate.topicId,id,candidate.reason);
   }
@@ -164,7 +164,7 @@
     const grid = byId("dailyActivityGrid");
     if (!supabaseClient || !currentUser) {
       preferences = Object.fromEntries(preferenceKeys.map(key => [key, true]));
-      snapshot = { timezone:"UTC", day:localDayStart("UTC"), plan:"free", limits:{}, completed:{}, content:{} };
+      snapshot = { timezone:"UTC", day:localDayStart("UTC"), learningLanguage:"en", plan:"free", limits:{}, completed:{}, content:{} };
       applyPreferenceInputs(false);
       status.textContent = "Sign in to start activities and sync your preferences and progress across devices.";
       renderCards();
@@ -183,6 +183,7 @@
     ]);
     if (sequence !== loadSequence) return;
     if (prefResult.error) throw prefResult.error;
+    if (entitlementResult.error) throw entitlementResult.error;
     if (!prefResult.data) throw new Error("Your learning preferences could not be found. Please sign out and sign in again.");
     const prefs = prefResult.data;
     preferences = Object.fromEntries(preferenceKeys.map(key => [key,prefs[key] !== false]));
@@ -224,7 +225,7 @@
     for (const row of logResult.data || []) completed[row.activity_type] = (completed[row.activity_type] || 0) + 1;
     const completedToday = (dailyResult.data || []).filter(row => row.completed_at && row.completed_at >= start && row.completed_at < finish);
     snapshot = {
-      timezone, day, plan, limits, completed, completedToday,
+      timezone, day, learningLanguage:language, plan, limits, completed, completedToday,
       lessonResults:lessonResult.data || [],
       dailyResults:dailyResult.data || [],
       content:{}
@@ -265,7 +266,7 @@
       const remaining = Number.isFinite(limit) ? Math.max(0,limit-used) : null;
       const remainingLabel = remaining === null ? "Allowance unavailable" : remaining + " / " + limit + " completions remaining";
       const reason = type === "daily_revision" ? '<p class="daily-activity-meta"><span class="daily-activity-tag">' + esc(content.body) + '</span></p>' : "";
-      const disabled = !currentUser || !supabaseClient || (typeof course !== "undefined" && course !== "en");
+      const disabled = !currentUser || !supabaseClient || snapshot.learningLanguage !== "en" || (typeof course !== "undefined" && course !== "en");
       return '<article class="daily-activity-card" data-activity-card="' + type + '">'
         + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(meta.label) + '</span><span class="daily-activity-tag">' + esc(remainingLabel) + '</span></div>'
         + '<h2>' + esc(meta.title) + '</h2><p>' + esc(meta.description) + '</p>'
@@ -390,17 +391,23 @@
       args.p_correct_count = firstTry.filter(value => value === true).length;
       args.p_question_count = content.questions.length;
     }
+    let saved;
     try {
       const {data,error} = await supabaseClient.rpc("complete_daily_activity_session",args);
       if (error) throw error;
-      const saved = Array.isArray(data) ? data[0] : data;
+      saved = Array.isArray(data) ? data[0] : data;
       if (!saved) throw new Error("The completion could not be confirmed.");
       readerState.session = saved;
       renderReader(activityType,content,saved);
-      await loadDailyData();
     } catch (error) {
       byId("dailyLearningStatus").textContent = error.message || "Completion could not be saved. Your session remains in progress.";
       if (button) { button.disabled = false; button.textContent = "Complete activity"; }
+      return;
+    }
+    try {
+      await loadDailyData();
+    } catch (error) {
+      byId("dailyLearningStatus").textContent = "Activity completed successfully. The remaining allowance display could not be refreshed: " + (error.message || "Please reload the page.");
     }
   }
 
