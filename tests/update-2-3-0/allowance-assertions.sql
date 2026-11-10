@@ -546,14 +546,14 @@ begin
   for i in 1..3 loop
     select id into v_session
     from public.start_daily_activity_session(
-      'daily_discovery','premium-discovery-' || i,null,null,'daily'
+      'daily_revision','premium-revision-' || i,'verb-tenses','intermediate','adaptive_revision'
     );
     perform public.complete_daily_activity_session(v_session, null, null);
   end loop;
 
   begin
     perform public.start_daily_activity_session(
-      'daily_discovery','premium-discovery-4',null,null,'daily'
+      'daily_revision','premium-revision-4','verb-tenses','intermediate','adaptive_revision'
     );
   exception when sqlstate 'P0001' then
     v_rejected := true;
