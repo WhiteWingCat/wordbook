@@ -788,6 +788,7 @@ declare
   v_original_until timestamptz;
   v_session uuid;
   v_session_zone text;
+  v_quota_rejected boolean := false;
 begin
   update public.user_preferences set timezone = 'America/Los_Angeles'
   where user_id = auth.uid();
@@ -831,7 +832,18 @@ begin
   if v_session_zone <> 'UTC' then
     raise exception 'Daily session did not use the effective allowance timezone';
   end if;
-  perform public.abandon_daily_activity_session(v_session);
+  perform public.complete_daily_activity_session(v_session, null, null);
+
+  begin
+    perform public.start_daily_activity_session(
+      'daily_topic','timezone-window-blocked','sentence-basics','beginner','daily'
+    );
+  exception when sqlstate 'P0001' then
+    v_quota_rejected := true;
+  end;
+  if not v_quota_rejected then
+    raise exception 'Changing timezone granted another Daily Topic completion in the same allowance window';
+  end if;
 end;
 $timezone_test$;
 commit;
@@ -866,7 +878,7 @@ begin
 
   select id into v_session
   from public.start_daily_activity_session(
-    'daily_topic','timezone-window-after-boundary','sentence-basics','beginner','daily'
+    'daily_application','timezone-window-after-boundary','sentence-basics','beginner','daily'
   );
   select timezone into v_session_zone
   from public.daily_activity_sessions where id = v_session;
