@@ -34,8 +34,7 @@ run_completion() {
 begin;
 select set_config('request.jwt.claim.sub', '$uid', true);
 set local role authenticated;
--- Acquire the same transaction-scoped per-user lock, then overlap both callers.
-select pg_advisory_xact_lock(hashtextextended('$uid', 0));
+-- Start both requests together; the completion RPC must serialize them itself.
 select pg_sleep(1);
 select (public.complete_permanent_lesson('beginner', '$lesson')).status;
 commit;
