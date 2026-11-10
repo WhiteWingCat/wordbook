@@ -19,6 +19,7 @@ declare
   v_jwt jsonb;
   v_session_id uuid;
   v_session_created_at timestamptz;
+  v_session_not_after timestamptz;
 begin
   if v_user is null then
     raise exception 'Authentication required'
@@ -31,8 +32,8 @@ begin
   v_jwt := auth.jwt();
   v_session_id := nullif(v_jwt ->> 'session_id', '')::uuid;
 
-  select s.created_at
-  into v_session_created_at
+  select s.created_at, s.not_after
+  into v_session_created_at, v_session_not_after
   from auth.sessions s
   where s.id = v_session_id
     and s.user_id = v_user;
@@ -40,7 +41,8 @@ begin
   if not found
      or v_session_created_at is null
      or v_session_created_at < pg_catalog.now() - interval '15 minutes'
-     or v_session_created_at > pg_catalog.now() + interval '60 seconds' then
+     or v_session_created_at > pg_catalog.now() + interval '60 seconds'
+     or (v_session_not_after is not null and v_session_not_after <= pg_catalog.now()) then
     raise exception 'Recent authentication required to delete learning history'
       using errcode = '42501';
   end if;
