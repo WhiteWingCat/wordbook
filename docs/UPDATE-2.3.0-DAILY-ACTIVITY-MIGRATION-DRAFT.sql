@@ -256,7 +256,9 @@ begin
      or (p_topic_id is not null and (p_topic_id <> pg_catalog.btrim(p_topic_id) or pg_catalog.char_length(p_topic_id) < 1 or pg_catalog.char_length(p_topic_id) > 120))
      or (p_difficulty is not null and p_difficulty not in ('beginner','intermediate','advanced'))
      or p_source is null
-     or p_source not in ('daily','adaptive_revision') then
+     or p_source not in ('daily','adaptive_revision')
+     or (p_activity_type = 'daily_revision' and (p_source <> 'adaptive_revision' or p_topic_id is null))
+     or (p_source = 'adaptive_revision' and p_activity_type <> 'daily_revision') then
     raise exception 'Invalid daily activity session details'
       using errcode = '22023';
   end if;
