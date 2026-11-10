@@ -141,14 +141,22 @@
   function chooseContent(activityType, slot) {
     const day = snapshot.day;
     const baseIndex = dayOrdinal(day);
-    if (activityType === "daily_topic") {
-      return dailyTopics[(baseIndex + slot) % dailyTopics.length];
-    }
-    if (activityType === "daily_application") {
-      return dailyApplications[(baseIndex + slot) % dailyApplications.length];
-    }
-    if (activityType === "daily_discovery") {
-      return dailyDiscoveries[(baseIndex + slot) % dailyDiscoveries.length];
+    const pools = {
+      daily_topic:dailyTopics,
+      daily_application:dailyApplications,
+      daily_discovery:dailyDiscoveries
+    };
+    if (pools[activityType]) {
+      const pool = pools[activityType];
+      const completedIds = new Set((snapshot.dailyResults || [])
+        .filter(row => row.activity_type === activityType)
+        .map(row => row.content_id));
+      const available = pool.filter(item => !completedIds.has(item.id));
+      // Never surface yesterday's completed Premium slot as today's first item.
+      // If the curated pool is exhausted, fall back to a free replay.
+      return available.length
+        ? available[(baseIndex + slot) % available.length]
+        : pool[(baseIndex + slot) % pool.length];
     }
     const candidates = revisionCandidates(snapshot.lessonResults, snapshot.dailyResults, snapshot.completedToday);
     const candidate = candidates[0] || { topicId:dailyApplications[0].topicId, reason:"A short review to keep your knowledge active." };
@@ -225,7 +233,7 @@
         .select("topic_id,correct_count,question_count,attempted_at")
         .eq("user_id",userId).order("attempted_at",{ascending:false}).limit(200),
       supabaseClient.from("daily_activity_sessions")
-        .select("activity_type,topic_id,correct_count,question_count,completed_at,status")
+        .select("activity_type,content_id,topic_id,correct_count,question_count,completed_at,status")
         .eq("user_id",userId).eq("status","completed")
         .order("completed_at",{ascending:false}).limit(200)
     ]);
