@@ -264,3 +264,14 @@ The new draft `daily_activity_sessions` table also declares an `ON DELETE CASCAD
 - Supabase [Auth Admin deleteUser](https://supabase.com/docs/reference/javascript/auth-admin-deleteuser)
 - Supabase [Cascade Deletes](https://supabase.com/docs/guides/database/postgres/cascade-deletes)
 - Malaysia Personal Data Protection Commissioner sources listed in Section 8
+
+
+## Allowance ledger implementation progress — 2026-11-10
+
+The proposed private current-window allowance ledger has now been added as a separate SQL migration draft, following the existing permanent-allowance and Daily Activity drafts. It is not applied to production.
+
+The migration backfills the current local-day count from completed history, then makes the private ledger authoritative for new completions and Daily Activity start checks. It retains only one count/window row per user/activity category. Learning history can therefore be deleted later without resetting current-day usage. A scoped read helper verifies the caller's identity, and browser roles have no direct table access.
+
+The migration and regression assertions are wired into the disposable PostgreSQL 17 CI workflow. The test cases cover legacy backfill, direct table access denial, quota preservation after deleting history, Daily Topic quota preservation, and next-window rollover. CI results are pending at the time this note was written.
+
+This is not yet the history-deletion feature. The next work is to run and fix the compatibility suite, review security/performance behaviour, then test the exact migration sequence in an isolated Supabase project before implementing the deletion RPC.
