@@ -6,7 +6,8 @@ values ('88888888-8888-4888-8888-888888888888');
 insert into auth.sessions(id,user_id,created_at)
 values
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','88888888-8888-4888-8888-888888888888',now()),
-  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','88888888-8888-4888-8888-888888888888',now() - interval '1 hour');
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','88888888-8888-4888-8888-888888888888',now() - interval '1 hour'),
+  ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee','88888888-8888-4888-8888-888888888888',now(),now() - interval '1 minute');
 
 insert into public.profiles(user_id,display_name)
 values ('88888888-8888-4888-8888-888888888888','Keep Profile');
