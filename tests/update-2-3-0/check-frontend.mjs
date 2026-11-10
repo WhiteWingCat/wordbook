@@ -202,6 +202,33 @@ if (!dailyScript.includes("function effectiveAllowanceTimezone(")
   throw new Error("Daily Learning does not use or explain the effective allowance timezone.");
 }
 
+const dailyZoneStart = dailyScript.indexOf("  function effectiveAllowanceTimezone(");
+const dailyZoneEnd = dailyScript.indexOf("\n\n  function selectedTranslation(", dailyZoneStart);
+if (dailyZoneStart < 0 || dailyZoneEnd < 0) {
+  throw new Error("Daily Learning effective timezone helper could not be isolated.");
+}
+const dailyEffectiveAllowanceTimezone = new Function(
+  dailyScript.slice(dailyZoneStart, dailyZoneEnd) + "; return effectiveAllowanceTimezone;"
+)();
+assertTime(
+  dailyEffectiveAllowanceTimezone({
+    timezone:"America/Los_Angeles",
+    allowance_timezone:"Asia/Kuala_Lumpur",
+    allowance_timezone_until:pendingUntil
+  }, Date.parse("2026-11-10T12:00:00.000Z")),
+  "Asia/Kuala_Lumpur",
+  "Daily Learning pending timezone remains aligned with the database"
+);
+assertTime(
+  dailyEffectiveAllowanceTimezone({
+    timezone:"America/Los_Angeles",
+    allowance_timezone:"Asia/Kuala_Lumpur",
+    allowance_timezone_until:pendingUntil
+  }, Date.parse("2026-11-11T00:00:00.000Z")),
+  "America/Los_Angeles",
+  "Daily Learning adopts the new timezone after the boundary"
+);
+
 const required = [
   'rpc("complete_permanent_lesson"',
   'rpc("record_completed_lesson_practice_result"',
