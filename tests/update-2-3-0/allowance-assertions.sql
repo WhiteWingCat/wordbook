@@ -40,16 +40,6 @@ begin
     raise exception 'Authenticated users cannot execute the daily abandon RPC';
   end if;
 
-  -- Start-only events are not charged and remain recordable after the completion quota is full.
-  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
-  insert into public.learning_activity_log(user_id, activity_type, language_code, event_type)
-  values ('11111111-1111-4111-8111-111111111111', 'lesson', 'en', 'started');
-  if (select count(*) from public.learning_activity_log
-      where user_id = '11111111-1111-4111-8111-111111111111'
-        and activity_type = 'lesson' and event_type = 'started') < 2 then
-    raise exception 'A start-only event was not recorded after the completion quota was full';
-  end if;
-
   -- Approved limits are installed, including independent daily categories.
   if (select daily_limit from public.learning_plan_limits
       where plan_code = 'free' and activity_type = 'lesson') <> 5 then
@@ -96,6 +86,36 @@ begin
       where user_id = '11111111-1111-4111-8111-111111111111'
         and event_type = 'started') <> 2 then
     raise exception 'Historical in-progress lesson events were not backfilled';
+  end if;
+end;
+$$;
+
+-- A start-only event remains free even after the user's completion quota is full.
+do $$
+declare
+  i integer;
+begin
+  perform set_config('request.jwt.claim.sub', '33333333-3333-4333-8333-333333333333', true);
+  for i in 1..5 loop
+    insert into public.lesson_progress(user_id,difficulty,lesson_id,status)
+    values ('33333333-3333-4333-8333-333333333333','beginner','start-free-' || i,'in_progress');
+    perform public.complete_permanent_lesson(
+      'beginner','start-free-' || i,'test-topic',1,1
+    );
+  end loop;
+
+  insert into public.learning_activity_log(user_id,activity_type,language_code,event_type)
+  values ('33333333-3333-4333-8333-333333333333','lesson','en','started');
+
+  if (select count(*) from public.learning_activity_log
+      where user_id = '33333333-3333-4333-8333-333333333333'
+        and activity_type = 'lesson' and event_type = 'completed') <> 5 then
+    raise exception 'The test user did not reach exactly five lesson completions';
+  end if;
+  if (select count(*) from public.learning_activity_log
+      where user_id = '33333333-3333-4333-8333-333333333333'
+        and activity_type = 'lesson' and event_type = 'started') <> 1 then
+    raise exception 'A start-only event was not recorded after the completion quota was full';
   end if;
 end;
 $$;
