@@ -4,7 +4,7 @@
 
 ## Scope of this step
 
-Implement the approved completion-based allowance foundation for permanent lessons first. Daily activity sessions will later use the same completion-log model, but are not enabled by this step.
+Implement the approved completion-based allowance foundation for permanent lessons, privacy-minimised lesson practice summaries, and the database foundation for daily activity sessions. Daily activity content and learner-facing screens are not implemented yet.
 
 ## Confirmed live-state findings
 
@@ -49,7 +49,9 @@ The RPC is SECURITY INVOKER so owner-scoped RLS remains active for the progress 
 
 The `index.html` patch is now staged alongside the SQL review draft:
 
-- `completeLesson()` calls `complete_permanent_lesson(p_difficulty, p_lesson_id)`; the direct browser-side UPDATE is removed.
+- `completeLesson()` calls `complete_permanent_lesson(...)` with difficulty, lesson ID, a stable topic ID, first-attempt correct count, and question count; the direct browser-side UPDATE is removed.
+- The lesson UI records only an in-memory first-attempt correctness flag per question. The database stores only the aggregate correct/question counts and stable topic ID, never selected answers or raw response data.
+- The lesson completion trigger writes the activity event and aggregate practice result in the same transaction. A quota failure rolls both back. Direct browser INSERT access to `lesson_practice_results` is removed, and one aggregate summary per completed permanent lesson is enforced.
 - A quota rejection leaves the lesson `in_progress`, preserves the learner's saved progress, and explains that completion can be retried after the local-day reset.
 - `loadLessonAllowance()` counts only `event_type = "completed"` records and uses completion-based wording.
 - The Profile activity query reads `event_type`, and completion totals count completed events only. The Profile activity categories now include the four approved daily activity types.
@@ -66,6 +68,8 @@ Files:
 - `.github/workflows/update-2-3-0-allowance-test.yml`
 - `tests/update-2-3-0/allowance-baseline.sql`
 - `tests/update-2-3-0/allowance-assertions.sql`
+- `docs/UPDATE-2.3.0-DAILY-ACTIVITY-DATA-DESIGN.md`
+- `docs/UPDATE-2.3.0-DAILY-ACTIVITY-MIGRATION-DRAFT.sql`
 - `tests/update-2-3-0/test-concurrency.sh`
 
 The test baseline is a minimal Supabase-compatible schema fixture, not a dump of production. It now mirrors the relevant production column types, constraints, foreign keys, plan codes, plan limits, roles, RLS policies, triggers, and `auth.uid()` behaviour needed by this migration. The existing production Free Quiz/Flashcard limits (5) and Premium Quiz/Flashcard limits (12) are included and asserted unchanged. It is useful for PostgreSQL syntax and transaction/permission logic, but it cannot prove compatibility with every Supabase-managed setting or the exact production schema.
@@ -86,11 +90,15 @@ The first run exposed a missing authenticated identity in the concurrency test s
 - [x] Two concurrent completions at the quota boundary cannot exceed the daily limit in the compatibility test.
 - [x] Direct status update to completed and direct activity-log INSERT are denied in the compatibility test.
 - [x] The private test exemption remains lesson-only in the compatibility test.
+- [x] Aggregate first-attempt practice results are stored atomically with permanent lesson completion.
+- [x] Direct browser INSERT into lesson practice results is denied; only one summary per completed lesson is accepted.
 - [x] Starting and abandoning a lesson do not consume a completion allowance.
 - [x] Premium users can complete exactly 15 permanent lessons in the compatibility test.
 - [x] Quiz and Flashcard limits remain unchanged (Free 5 / Premium 12).
 - [x] IANA timezone boundary calculations correctly produce 23-hour spring-forward and 25-hour fall-back days.
 - [x] Daily categories have independent limits; the exemption does not bypass them.
+- [x] Daily session start/resume/abandon/replay and completion RPC flows pass the PostgreSQL compatibility tests.
+- [x] Daily preferences default to enabled, and owner-scoped RLS prevents cross-account session reads/updates.
 - [ ] Daily reset is validated against the exact Supabase production configuration and a browser using a non-UTC stored timezone.
 - [ ] Historical backfill is rechecked against the live production rows immediately before any production migration.
 - [ ] Supabase security and performance advisors reviewed after any approved production migration.
@@ -108,3 +116,8 @@ The GitHub Actions workflow uses standard hosted runners on this public reposito
 
 
 The latest compatibility fixture was expanded after a read-only production schema review. It now uses the production `bigint` progress ID shape, auth-user foreign keys, the lesson completion-consistency constraint, and the actual Free/Premium Quiz and Flashcard limits. No production data was copied into the fixture.
+
+
+## Current implementation boundary
+
+The permanent lesson completion and aggregate-result foundation, plus the daily activity preference/session database draft, have passed the free PostgreSQL compatibility suite. The frontend has been patched for permanent lesson aggregate capture and completion-based allowance display. The daily activity content catalogues, Daily Learning page/cards, actual Daily Topic/Application/Discovery/Revision lesson experiences, adaptive scheduling algorithm, and Profile accuracy/revision analytics are still outstanding. These drafts are not production migrations, and the frontend is not deployed.
