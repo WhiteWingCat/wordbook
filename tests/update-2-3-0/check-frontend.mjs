@@ -18,6 +18,31 @@ for (let i = 0; i < scripts.length; i += 1) {
 
 if (checked === 0) throw new Error("No inline JavaScript blocks were checked.");
 
+const dateFnStart = html.indexOf("function datePartsInZone(");
+const zoneFnStart = html.indexOf("function zonedMidnightUtc(", dateFnStart);
+const zoneFnEnd = html.indexOf("async function loadLessonAllowance", zoneFnStart);
+if (dateFnStart < 0 || zoneFnStart < 0 || zoneFnEnd < 0) {
+  throw new Error("Timezone helper functions could not be located.");
+}
+const datePartsInZone = new Function(
+  html.slice(dateFnStart, zoneFnStart) + "; return datePartsInZone;"
+)();
+const zonedMidnightUtc = new Function(
+  "datePartsInZone",
+  html.slice(zoneFnStart, zoneFnEnd) + "; return zonedMidnightUtc;"
+)(datePartsInZone);
+
+const assertTime = (actual, expected, label) => {
+  if (actual !== expected) throw new Error(`${label}: expected ${expected}, got ${actual}`);
+};
+assertTime(zonedMidnightUtc("2026-11-10", "Asia/Kuala_Lumpur"), "2026-11-09T16:00:00.000Z", "Malaysia local midnight");
+assertTime(zonedMidnightUtc("2026-11-10", "America/Los_Angeles"), "2026-11-10T08:00:00.000Z", "Los Angeles local midnight");
+const springHours = (Date.parse(zonedMidnightUtc("2026-03-09", "America/New_York")) - Date.parse(zonedMidnightUtc("2026-03-08", "America/New_York"))) / 3600000;
+const fallHours = (Date.parse(zonedMidnightUtc("2026-11-02", "America/New_York")) - Date.parse(zonedMidnightUtc("2026-11-01", "America/New_York"))) / 3600000;
+if (springHours !== 23 || fallHours !== 25) {
+  throw new Error(`DST boundary test failed: expected 23/25 hours, got ${springHours}/${fallHours}`);
+}
+
 const required = [
   'rpc("complete_permanent_lesson"',
   'rpc("record_completed_lesson_practice_result"',
