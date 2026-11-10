@@ -53,7 +53,8 @@ const required = [
   "p_correct_count:",
   "p_question_count:",
   "practiceFirstTry",
-  "lessonTopicIdFor"
+  "lessonTopicIdFor",
+  "const saved=Array.isArray(data)?data[0]:data"
 ];
 for (const fragment of required) {
   if (!html.includes(fragment)) throw new Error(`Frontend integration check failed: missing ${fragment}`);
