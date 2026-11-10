@@ -86,6 +86,41 @@ create policy "Users can update their own daily activity sessions"
 
 grant select, insert, update on public.daily_activity_sessions to authenticated;
 
+-- Clients cannot bypass the start RPC by inserting a session with a forged
+-- local date, timezone, source, or content identifier.
+create or replace function private.guard_daily_activity_session_insert()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+begin
+  if auth.uid() is null or auth.uid() <> new.user_id
+     or pg_catalog.current_setting('swiftdictionary.daily_start_rpc', true)
+        is distinct from 'on' then
+    raise exception 'Use start_daily_activity_session to create a daily session'
+      using errcode = '42501';
+  end if;
+
+  if new.status <> 'in_progress'
+     or new.completed_at is not null
+     or new.correct_count is not null
+     or new.question_count is not null then
+    raise exception 'A new daily session must begin unfinished'
+      using errcode = '23514';
+  end if;
+
+  return new;
+end;
+$function$;
+
+revoke all on function private.guard_daily_activity_session_insert()
+  from public, anon, authenticated;
+
+create trigger daily_activity_guard_insert
+before insert on public.daily_activity_sessions
+for each row execute function private.guard_daily_activity_session_insert();
+
 -- 3) Only session identity and lifecycle fields can change. Completion is
 -- possible only while the trusted RPC has set its transaction-local marker.
 create or replace function public.guard_daily_activity_session_update()
@@ -221,7 +256,7 @@ begin
      or p_content_id <> pg_catalog.btrim(p_content_id)
      or pg_catalog.char_length(p_content_id) < 1
      or pg_catalog.char_length(p_content_id) > 120
-     or (p_topic_id is not null and pg_catalog.char_length(p_topic_id) > 120)
+     or (p_topic_id is not null and (p_topic_id <> pg_catalog.btrim(p_topic_id) or pg_catalog.char_length(p_topic_id) < 1 or pg_catalog.char_length(p_topic_id) > 120))
      or (p_difficulty is not null and p_difficulty not in ('beginner','intermediate','advanced'))
      or p_source is null
      or p_source not in ('daily','adaptive_revision') then
@@ -241,6 +276,21 @@ begin
   order by started_at desc
   limit 1
   for update;
+
+  if found then
+    return v_session;
+  end if;
+
+  -- Replaying content already completed by this learner is free, including
+  -- when the same stable content ID is surfaced again on a later day.
+  select * into v_session
+  from public.daily_activity_sessions
+  where user_id = v_user
+    and activity_type = p_activity_type
+    and content_id = p_content_id
+    and status = 'completed'
+  order by completed_at desc
+  limit 1;
 
   if found then
     return v_session;
@@ -305,6 +355,10 @@ begin
       using errcode = 'P0001';
   end if;
 
+  perform pg_catalog.set_config(
+    'swiftdictionary.daily_start_rpc', 'on', true
+  );
+
   insert into public.daily_activity_sessions
     (user_id, activity_type, content_id, topic_id, difficulty, source,
      local_date, timezone, status)
@@ -312,6 +366,15 @@ begin
     (v_user, p_activity_type, p_content_id, p_topic_id, p_difficulty, p_source,
      v_local_date, v_timezone, 'in_progress')
   returning * into v_session;
+
+  if not found then
+    raise exception 'Daily activity session could not be started'
+      using errcode = '40001';
+  end if;
+
+  perform pg_catalog.set_config(
+    'swiftdictionary.daily_start_rpc', 'off', true
+  );
 
   return v_session;
 end;
