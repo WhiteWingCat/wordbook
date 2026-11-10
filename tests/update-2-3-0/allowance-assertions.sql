@@ -207,3 +207,117 @@ begin
 end;
 $$;
 commit;
+
+
+-- Starting and abandoning a permanent lesson is free.
+begin;
+select set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+set local role authenticated;
+do $$
+declare
+  v_before integer;
+  v_after integer;
+begin
+  select count(*) into v_before
+  from public.learning_activity_log
+  where user_id = auth.uid() and activity_type = 'lesson'
+    and event_type = 'completed';
+
+  insert into public.lesson_progress(user_id, difficulty, lesson_id, status)
+  values (auth.uid(), 'beginner', 'abandoned-test', 'in_progress');
+
+  -- Leaving the row in progress represents an abandoned lesson session.
+  select count(*) into v_after
+  from public.learning_activity_log
+  where user_id = auth.uid() and activity_type = 'lesson'
+    and event_type = 'completed';
+
+  if v_after <> v_before then
+    raise exception 'Starting/abandoning a lesson consumed a completion allowance';
+  end if;
+end;
+$$;
+commit;
+
+-- Premium users can complete 15 permanent lessons, but not a 16th.
+insert into public.lesson_progress(user_id, difficulty, lesson_id, status)
+select '44444444-4444-4444-8444-444444444444',
+       'beginner', 'premium-limit-' || lpad(n::text, 2, '0'), 'in_progress'
+from generate_series(1, 16) as n;
+
+begin;
+select set_config('request.jwt.claim.sub', '44444444-4444-4444-8444-444444444444', true);
+set local role authenticated;
+do $$
+declare
+  i integer;
+  v_status text;
+begin
+  for i in 1..15 loop
+    perform public.complete_permanent_lesson(
+      'beginner', 'premium-limit-' || lpad(i::text, 2, '0')
+    );
+  end loop;
+
+  begin
+    perform public.complete_permanent_lesson('beginner', 'premium-limit-16');
+    raise exception 'Premium 16th permanent lesson unexpectedly succeeded';
+  exception when sqlstate 'P0001' then
+    null;
+  end;
+
+  select status into v_status
+  from public.lesson_progress
+  where user_id = auth.uid() and lesson_id = 'premium-limit-16';
+  if v_status <> 'in_progress' then
+    raise exception 'Premium quota rejection did not preserve the 16th lesson as in progress';
+  end if;
+
+  if (select count(*) from public.learning_activity_log
+      where user_id = auth.uid() and activity_type = 'lesson'
+        and event_type = 'completed') <> 15 then
+    raise exception 'Premium user did not receive exactly 15 permanent lesson completions';
+  end if;
+end;
+$$;
+commit;
+
+-- Verify that local-day boundaries use DST-aware IANA timezone conversion:
+-- 2026 spring-forward day is 23 hours and fall-back day is 25 hours in New York.
+do $$
+declare
+  v_start timestamptz;
+  v_end timestamptz;
+  v_day_hours numeric;
+begin
+  v_start := (
+    (('2026-03-08 12:00:00-04'::timestamptz
+      at time zone 'America/New_York')::date)::timestamp
+    at time zone 'America/New_York'
+  );
+  v_end := (
+    ((('2026-03-08 12:00:00-04'::timestamptz
+      at time zone 'America/New_York')::date + 1)::timestamp)
+    at time zone 'America/New_York'
+  );
+  v_day_hours := extract(epoch from (v_end - v_start)) / 3600;
+  if v_day_hours <> 23 then
+    raise exception 'Spring-forward local day was % hours; expected 23', v_day_hours;
+  end if;
+
+  v_start := (
+    (('2026-11-01 12:00:00-05'::timestamptz
+      at time zone 'America/New_York')::date)::timestamp
+    at time zone 'America/New_York'
+  );
+  v_end := (
+    ((('2026-11-01 12:00:00-05'::timestamptz
+      at time zone 'America/New_York')::date + 1)::timestamp)
+    at time zone 'America/New_York'
+  );
+  v_day_hours := extract(epoch from (v_end - v_start)) / 3600;
+  if v_day_hours <> 25 then
+    raise exception 'Fall-back local day was % hours; expected 25', v_day_hours;
+  end if;
+end;
+$$;
