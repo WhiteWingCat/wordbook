@@ -515,7 +515,7 @@ begin
   from public.start_daily_activity_session(
     'daily_application','private-account-session','sentence-basics','beginner','daily'
   );
-  perform set_config('test.foreign_session_id', v_foreign_session::text, true);
+  perform set_config('test.foreign_session_id', v_foreign_session::text, false);
 end;
 $;
 commit;
