@@ -16,7 +16,7 @@ select set_config(
   'request.jwt.claims',
   pg_catalog.jsonb_build_object(
     'sub','88888888-8888-4888-8888-888888888888',
-    'auth_time',pg_catalog.extract(epoch from pg_catalog.now())::bigint
+    'auth_time',extract(epoch from pg_catalog.now())::bigint
   )::text,
   true
 );
@@ -96,7 +96,7 @@ select set_config(
   'request.jwt.claims',
   pg_catalog.jsonb_build_object(
     'sub','88888888-8888-4888-8888-888888888888',
-    'auth_time',pg_catalog.extract(epoch from pg_catalog.now() - interval '1 hour')::bigint
+    'auth_time',extract(epoch from pg_catalog.now() - interval '1 hour')::bigint
   )::text,
   true
 );
