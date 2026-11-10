@@ -548,7 +548,7 @@ begin
     from public.start_daily_activity_session(
       'daily_revision','premium-revision-' || i,'verb-tenses','intermediate','adaptive_revision'
     );
-    perform public.complete_daily_activity_session(v_session, null, null);
+    perform public.complete_daily_activity_session(v_session, 2, 3);
   end loop;
 
   begin
