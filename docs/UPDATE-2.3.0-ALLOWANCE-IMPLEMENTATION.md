@@ -70,7 +70,7 @@ The frontend is not live-compatible until the database migration and RPC are ins
 - [ ] Two simultaneous completions at the quota boundary cannot exceed the daily limit.
 - [ ] Daily reset uses the stored IANA timezone, including DST-aware boundaries.
 - [ ] Personal test exemption remains lesson-only.
-- [ ] Direct client status update and direct activity-log INSERT are denied.
+- [ ] Direct client INSERT as completed, direct status update to completed, and direct activity-log INSERT are denied.
 - [ ] Existing account switching, saved-word isolation, and unlimited dictionary search still work.
 - [ ] Supabase security and performance advisors reviewed after applying the migration.
 - [ ] Browser tests pass before the PR is marked ready.
