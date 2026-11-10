@@ -36,7 +36,7 @@ select set_config('request.jwt.claim.sub', '$uid', true);
 set local role authenticated;
 -- Start both requests together; the completion RPC must serialize them itself.
 select pg_sleep(1);
-select (public.complete_permanent_lesson('beginner', '$lesson')).status;
+select (public.complete_permanent_lesson('beginner', '$lesson', 'sentence-basics', 3, 3)).status;
 commit;
 SQL
   echo "$?" >"$status"
