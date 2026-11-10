@@ -23,11 +23,20 @@ jobs:
         with:
           version: latest
       - name: Initialise an isolated local Supabase workspace
-        run: supabase init
+        run: |
+          mkdir -p "$RUNNER_TEMP/swiftdictionary-supabase"
+          cd "$RUNNER_TEMP/swiftdictionary-supabase"
+          supabase init
       - name: Start disposable local Supabase services
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
         run: supabase start -x studio,edge-runtime,logflare,vector,imgproxy
       - name: Verify real Supabase Auth schema, roles and JWT helpers
-        run: supabase db query --local --file tests/update-2-3-0/supabase-local-auth-contract.sql
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: supabase db query --local --file "$GITHUB_WORKSPACE/tests/update-2-3-0/supabase-local-auth-contract.sql"
+      - name: Stop disposable local Supabase services
+        if: always()
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: supabase stop --no-backup
 
   postgres-migration-check:
     name: PostgreSQL 17 migration and allowance tests
