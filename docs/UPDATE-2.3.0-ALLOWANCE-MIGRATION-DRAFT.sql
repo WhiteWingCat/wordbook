@@ -277,7 +277,7 @@ begin
 end;
 $function$;
 
-create or replace function public.record_lesson_completion_allowance()
+create or replace function private.record_lesson_completion_allowance()
 returns trigger
 language plpgsql
 security definer
@@ -299,7 +299,7 @@ begin
 end;
 $function$;
 
-revoke all on function public.record_lesson_completion_allowance()
+revoke all on function private.record_lesson_completion_allowance()
   from public, anon, authenticated;
 
 drop trigger if exists lesson_progress_record_completion
@@ -308,7 +308,7 @@ create trigger lesson_progress_record_completion
 after update of status on public.lesson_progress
 for each row
 when (old.status is distinct from new.status)
-execute function public.record_lesson_completion_allowance();
+execute function private.record_lesson_completion_allowance();
 
 -- Activity rows are now written only by trusted database triggers, not the browser.
 drop policy if exists "Users can record their own learning activity"
