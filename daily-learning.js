@@ -350,6 +350,7 @@
       html += '<p id="dailyPracticeStatus" role="status" aria-live="polite" class="page-intro"></p>';
     }
     if (!completed && !isQuiz) html += '<button type="button" class="primary-button" data-complete-daily>Mark activity complete</button>';
+    if (!completed) html += '<button type="button" class="secondary-button" data-abandon-daily>Abandon session</button>';
     if (!completed && isQuiz) html += '<button type="button" class="primary-button" data-complete-daily hidden>Complete activity</button>';
     if (completed) html += '<p class="page-intro">This content is already completed. You can revisit it without using another daily allowance.</p>';
     reader.innerHTML = html;
@@ -366,6 +367,8 @@
     }));
     const completeButton = reader.querySelector("[data-complete-daily]");
     if (completeButton) completeButton.addEventListener("click",completeDailyActivity);
+    const abandonButton = reader.querySelector("[data-abandon-daily]");
+    if (abandonButton) abandonButton.addEventListener("click",abandonDailyActivity);
     reader.scrollIntoView({behavior:"smooth",block:"start"});
   }
 
@@ -394,6 +397,27 @@
     if (completeButton) completeButton.hidden = !allCorrect;
     const status = byId("dailyPracticeStatus");
     if (status) status.textContent = allCorrect ? "All answers are correct. You can now complete this activity." : "Review the feedback and try the unanswered or incorrect questions again.";
+  }
+
+  async function abandonDailyActivity() {
+    if (!readerState || !currentUser || !supabaseClient) return;
+    const sessionId = readerState.session.id;
+    const button = byId("dailyActivityReader").querySelector("[data-abandon-daily]");
+    if (button) { button.disabled = true; button.textContent = "Abandoning…"; }
+    try {
+      const {data,error} = await supabaseClient.rpc("abandon_daily_activity_session",{p_session_id:sessionId});
+      if (error) throw error;
+      const saved = Array.isArray(data) ? data[0] : data;
+      if (!saved || saved.status !== "abandoned") throw new Error("The session could not be abandoned.");
+      byId("dailyActivityReader").hidden = true;
+      byId("dailyActivityReader").innerHTML = "";
+      readerState = null;
+      byId("dailyLearningStatus").textContent = "Session abandoned. No daily allowance was used.";
+      await loadDailyData();
+    } catch (error) {
+      byId("dailyLearningStatus").textContent = error.message || "The session could not be abandoned.";
+      if (button) { button.disabled = false; button.textContent = "Abandon session"; }
+    }
   }
 
   async function completeDailyActivity() {
