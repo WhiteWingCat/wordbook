@@ -25,7 +25,7 @@ The owner confirmed the following choices on 2026-11-10:
 |---|---|
 | Daily activity presentation | Show all enabled activities together on the Daily Learning page. |
 | Daily Revision | Use adaptive revision based on learning performance and spaced review. |
-| Daily Discovery | Use a mixture of vocabulary, word origins, expressions, language facts, grammar insights and common mistakes. |
+| Daily Discovery | Use a mixture of vocabulary, word origins, expressions, language facts, grammar insights and common mistakes. |\n| New-account activity defaults | Enable Daily Topic, Daily Application, Daily Discovery and Daily Revision by default. |
 
 These are product decisions, not implementation approval.
 
