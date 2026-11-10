@@ -119,7 +119,8 @@ const invalidHistory = revisionRunner([
   { topic_id:"precise-vocabulary",correct_count:1,question_count:3,attempted_at:"2026-11-09T12:00:00.000Z" }
 ],[],[]);
 const invalidCandidate = invalidHistory.find(item => item.topicId === "precise-vocabulary");
-if (invalidCandidate?.accuracy !== null || invalidCandidate?.weak) {
+if (Math.abs((invalidCandidate?.accuracy ?? 0) - (1 / 3)) > 0.0001 || invalidCandidate?.weak
+    || !invalidCandidate.reason.includes("not enough recent practice")) {
   throw new Error("Adaptive revision accepted malformed practice history as valid evidence.");
 }
 
