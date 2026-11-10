@@ -281,12 +281,39 @@ begin
 end;
 $function$;
 
+-- The existing practice-results table is empty in production. Refuse to add
+-- a uniqueness rule if unexpected duplicate summaries have appeared meanwhile.
+do $
+begin
+  if exists (
+    select 1
+    from public.lesson_practice_results
+    group by user_id, difficulty, lesson_id
+    having count(*) > 1
+  ) then
+    raise exception 'Cannot enforce one practice summary per completed permanent lesson: duplicates exist';
+  end if;
+end
+$;
+
+create unique index if not exists lesson_practice_results_one_per_lesson
+  on public.lesson_practice_results(user_id, difficulty, lesson_id);
+
+-- Only the trusted completion trigger writes aggregate practice outcomes.
+drop policy if exists "Users can record their own lesson practice summaries"
+  on public.lesson_practice_results;
+revoke insert on public.lesson_practice_results from authenticated;
+
 create or replace function private.record_lesson_completion_allowance()
 returns trigger
 language plpgsql
 security definer
 set search_path = ''
 as $function$
+declare
+  v_topic_id text;
+  v_correct_count integer;
+  v_question_count integer;
 begin
   if auth.uid() is null or auth.uid() <> new.user_id then
     raise exception 'Authentication required for own lesson completion'
@@ -294,9 +321,26 @@ begin
   end if;
 
   if old.status = 'in_progress' and new.status = 'completed' then
+    v_topic_id := pg_catalog.current_setting('swiftdictionary.lesson_topic_id', true);
+    v_correct_count := pg_catalog.current_setting('swiftdictionary.lesson_correct_count', true)::integer;
+    v_question_count := pg_catalog.current_setting('swiftdictionary.lesson_question_count', true)::integer;
+
+    if v_topic_id is null or v_correct_count is null or v_question_count is null
+       or v_question_count <= 0 or v_correct_count < 0
+       or v_correct_count > v_question_count then
+      raise exception 'Valid aggregate lesson practice results are required'
+        using errcode = '22023';
+    end if;
+
     insert into public.learning_activity_log
       (user_id, activity_type, language_code, event_type)
     values (new.user_id, 'lesson', 'en', 'completed');
+
+    insert into public.lesson_practice_results
+      (user_id, difficulty, lesson_id, topic_id, correct_count, question_count)
+    values
+      (new.user_id, new.difficulty, new.lesson_id, v_topic_id,
+       v_correct_count, v_question_count);
   end if;
 
   return new;
@@ -322,9 +366,14 @@ revoke insert on public.learning_activity_log from authenticated;
 -- 5) Atomic, idempotent completion RPC. The completion update and quota log
 -- insert share one transaction: if the quota trigger rejects the insert, the
 -- progress update rolls back too. Duplicate retries return the completed row.
+drop function if exists public.complete_permanent_lesson(text, text);
+
 create or replace function public.complete_permanent_lesson(
   p_difficulty text,
-  p_lesson_id text
+  p_lesson_id text,
+  p_topic_id text,
+  p_correct_count integer,
+  p_question_count integer
 )
 returns public.lesson_progress
 language plpgsql
@@ -345,8 +394,15 @@ begin
      or p_lesson_id is null
      or p_lesson_id <> pg_catalog.btrim(p_lesson_id)
      or pg_catalog.char_length(p_lesson_id) < 1
-     or pg_catalog.char_length(p_lesson_id) > 120 then
-    raise exception 'Invalid lesson identity'
+     or pg_catalog.char_length(p_lesson_id) > 120
+     or p_topic_id is null
+     or p_topic_id <> pg_catalog.btrim(p_topic_id)
+     or pg_catalog.char_length(p_topic_id) < 1
+     or pg_catalog.char_length(p_topic_id) > 120
+     or p_correct_count is null or p_question_count is null
+     or p_question_count <= 0 or p_correct_count < 0
+     or p_correct_count > p_question_count then
+    raise exception 'Invalid lesson identity or aggregate practice result'
       using errcode = '22023';
   end if;
 
@@ -370,6 +426,9 @@ begin
     return v_progress;
   end if;
 
+  perform pg_catalog.set_config('swiftdictionary.lesson_topic_id', p_topic_id, true);
+  perform pg_catalog.set_config('swiftdictionary.lesson_correct_count', p_correct_count::text, true);
+  perform pg_catalog.set_config('swiftdictionary.lesson_question_count', p_question_count::text, true);
   perform pg_catalog.set_config(
     'swiftdictionary.lesson_completion_rpc', 'on', true
   );
@@ -389,14 +448,17 @@ begin
   perform pg_catalog.set_config(
     'swiftdictionary.lesson_completion_rpc', 'off', true
   );
+  perform pg_catalog.set_config('swiftdictionary.lesson_topic_id', '', true);
+  perform pg_catalog.set_config('swiftdictionary.lesson_correct_count', '', true);
+  perform pg_catalog.set_config('swiftdictionary.lesson_question_count', '', true);
 
   return v_progress;
 end;
 $function$;
 
-revoke all on function public.complete_permanent_lesson(text, text)
+revoke all on function public.complete_permanent_lesson(text, text, text, integer, integer)
   from public, anon;
-grant execute on function public.complete_permanent_lesson(text, text)
+grant execute on function public.complete_permanent_lesson(text, text, text, integer, integer)
   to authenticated;
 
 -- The former start-trigger function is now dormant; prevent direct execution.
