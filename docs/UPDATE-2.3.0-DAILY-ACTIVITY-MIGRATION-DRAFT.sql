@@ -157,6 +157,13 @@ begin
       using errcode = '42501';
   end if;
 
+  if new.status = 'abandoned'
+     and pg_catalog.current_setting('swiftdictionary.daily_abandon_rpc', true)
+         is distinct from 'on' then
+    raise exception 'Use abandon_daily_activity_session to abandon a daily activity'
+      using errcode = '42501';
+  end if;
+
   if new.status not in ('in_progress','completed','abandoned') then
     raise exception 'Invalid daily activity session status'
       using errcode = '23514';
@@ -380,7 +387,77 @@ begin
 end;
 $function$;
 
--- 6) Completion RPC. The progress transition and activity-log insert are one
+-- 6) Abandon RPC. Abandoning is free and does not create an activity event.
+create or replace function public.abandon_daily_activity_session(
+  p_session_id uuid
+)
+returns public.daily_activity_sessions
+language plpgsql
+security invoker
+set search_path = ''
+as $function$
+declare
+  v_user uuid := auth.uid();
+  v_session public.daily_activity_sessions%rowtype;
+begin
+  if v_user is null then
+    raise exception 'Authentication required'
+      using errcode = '42501';
+  end if;
+
+  if p_session_id is null then
+    raise exception 'Session ID is required'
+      using errcode = '22023';
+  end if;
+
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(v_user::text, 0)
+  );
+
+  select * into v_session
+  from public.daily_activity_sessions
+  where id = p_session_id and user_id = v_user
+  for update;
+
+  if not found then
+    raise exception 'Daily activity session not found'
+      using errcode = 'P0002';
+  end if;
+
+  if v_session.status <> 'in_progress' then
+    return v_session;
+  end if;
+
+  perform pg_catalog.set_config(
+    'swiftdictionary.daily_abandon_rpc', 'on', true
+  );
+
+  update public.daily_activity_sessions
+  set status = 'abandoned'
+  where id = v_session.id
+    and user_id = v_user
+    and status = 'in_progress'
+  returning * into v_session;
+
+  if not found then
+    raise exception 'Daily activity session could not be abandoned'
+      using errcode = '40001';
+  end if;
+
+  perform pg_catalog.set_config(
+    'swiftdictionary.daily_abandon_rpc', 'off', true
+  );
+
+  return v_session;
+end;
+$function$;
+
+revoke all on function public.abandon_daily_activity_session(uuid)
+  from public, anon;
+grant execute on function public.abandon_daily_activity_session(uuid)
+  to authenticated;
+
+-- 7) Completion RPC. The progress transition and activity-log insert are one
 -- transaction. A quota rejection rolls back the session completion as well.
 create or replace function public.complete_daily_activity_session(
   p_session_id uuid,
