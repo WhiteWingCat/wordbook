@@ -340,7 +340,8 @@ begin
       using errcode = '42501';
   end if;
 
-  if p_difficulty not in ('beginner', 'intermediate', 'advanced')
+  if p_difficulty is null
+     or p_difficulty not in ('beginner', 'intermediate', 'advanced')
      or p_lesson_id is null
      or p_lesson_id <> pg_catalog.btrim(p_lesson_id)
      or pg_catalog.char_length(p_lesson_id) < 1
@@ -380,14 +381,14 @@ begin
     and status = 'in_progress'
   returning * into v_progress;
 
-  perform pg_catalog.set_config(
-    'swiftdictionary.lesson_completion_rpc', 'off', true
-  );
-
   if not found then
     raise exception 'Lesson completion could not be saved'
       using errcode = '40001';
   end if;
+
+  perform pg_catalog.set_config(
+    'swiftdictionary.lesson_completion_rpc', 'off', true
+  );
 
   return v_progress;
 end;
