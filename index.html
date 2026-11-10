@@ -17906,7 +17906,7 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
         document.getElementById("activeLanguages").textContent = new Set(completedActivity.map(row=>row.language_code)).size;
         const counts = Object.fromEntries(types.map(type=>[type,completedActivity.filter(row=>row.activity_type===type).length]));
         document.getElementById("progressDetails").textContent = completedActivity.length ? types.map(type=>`${type.replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase())}: ${counts[type]} session(s)`).join(" · ") : "No completed learning activity recorded yet. Your completed lessons and daily activities will appear here.";
-        const limitText = types.map(type=>{const row=limits.find(item=>item.plan_code===plan&&item.activity_type===type);const used=todayRows.filter(item=>item.activity_type===type).length;return `${type[0].toUpperCase()+type.slice(1)}: ${row?.is_enabled ? Math.max(0,row.daily_limit-used)+" of "+row.daily_limit+" remaining" : "Unavailable"}`;});
+        const limitText = types.map(type=>{const row=limits.find(item=>item.plan_code===plan&&item.activity_type===type);const used=todayRows.filter(item=>item.activity_type===type).length;return `${type.replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase())}: ${row?.is_enabled ? Math.max(0,row.daily_limit-used)+" of "+row.daily_limit+" remaining" : "Unavailable"}`;});
         document.getElementById("allowanceDetails").textContent = `${plan === "premium" ? "Premium" : "Free"} plan · ${limitText.join(" · ")} · Resets at midnight (${tz}).`;
         document.getElementById("profileWelcome").textContent = `Welcome${profileQ.data?.display_name ? ", "+profileQ.data.display_name : ""}. Here is your learning overview.`;
       } catch (error) {
