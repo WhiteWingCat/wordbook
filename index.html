@@ -399,6 +399,12 @@
           <div class="profile-actions"><button type="button" id="savePreferences" class="primary-button">Save preferences</button><span id="preferenceStatus" class="muted-note" aria-live="polite"></span></div>
           <p class="muted-note">Your timezone determines when daily learning allowances reset. If you change it, the new timezone takes effect after the current allowance day ends. It is a timezone setting, not a precise location.</p>
         </section>
+        <section class="profile-card"><h3>Privacy and data</h3>
+          <p class="muted-note">Delete your learning history, including lesson progress, practice summaries, Daily Learning sessions and activity history. Your account, saved words, profile and preferences will remain. Completions already used today will still count until the normal allowance reset.</p>
+          <p class="muted-note">For security, sign out and sign in again before requesting deletion. The server accepts this request only within 15 minutes of authentication.</p>
+          <button type="button" id="deleteLearningHistoryButton" class="secondary-button">Delete learning history</button>
+          <p id="learningHistoryDeleteStatus" class="muted-note" aria-live="polite"></p>
+        </section>
         <section class="profile-card"><h3>Account</h3><p id="profileEmail" class="muted-note"></p><button type="button" id="profileSignOut" class="secondary-button">Sign out</button></section>
       </div>
     </section>
@@ -17893,6 +17899,33 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
     document.getElementById("profileSignIn").addEventListener("click", () => document.getElementById("accountDialog").classList.add("open"));
     document.getElementById("profileSignOut").addEventListener("click", async () => {
       if (supabaseClient) { const {error} = await supabaseClient.auth.signOut(); if (error) document.getElementById("preferenceStatus").textContent = error.message; }
+    });
+    document.getElementById("deleteLearningHistoryButton").addEventListener("click", async () => {
+      if (!supabaseClient || !currentUser) return;
+      const button = document.getElementById("deleteLearningHistoryButton");
+      const status = document.getElementById("learningHistoryDeleteStatus");
+      const confirmed = window.confirm(
+        "Permanently delete all lesson progress, practice summaries, Daily Learning sessions and learning activity history for this account? Saved words, account details and preferences will remain. Today's used completion allowance will not be restored."
+      );
+      if (!confirmed) return;
+      button.disabled = true;
+      status.textContent = "Deleting learning history…";
+      try {
+        const {data,error} = await supabaseClient.rpc("delete_my_learning_history");
+        if (error) throw error;
+        if (!data || data.deleted !== true) throw new Error("The server did not confirm the deletion.");
+        status.textContent = "Learning history deleted. Your current daily allowance usage is unchanged.";
+        await loadProfileData();
+        if (typeof initialiseDailyLearning === "function") await initialiseDailyLearning();
+        if (typeof initialiseLessons === "function") await initialiseLessons();
+      } catch (error) {
+        const message = String(error?.message || error);
+        status.textContent = /Recent authentication required|auth_time/i.test(message)
+          ? "For security, please sign out and sign in again, then retry the deletion within 15 minutes."
+          : "Could not delete learning history: " + message;
+      } finally {
+        button.disabled = false;
+      }
     });
 
     function browserTimezone() {
