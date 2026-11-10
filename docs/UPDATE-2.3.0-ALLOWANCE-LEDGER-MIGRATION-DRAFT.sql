@@ -25,6 +25,9 @@ create table private.learning_allowance_usage (
 
 alter table private.learning_allowance_usage enable row level security;
 revoke all on table private.learning_allowance_usage from public, anon, authenticated;
+-- The authenticated Daily Activity start RPC calls one narrow helper in this schema;
+-- schema usage does not grant access to the private table or other functions.
+grant usage on schema private to authenticated;
 
 -- Backfill the active local-day count before switching enforcement. Keep an
 -- already-over-limit count intact; never truncate usage to the plan limit.
@@ -83,6 +86,7 @@ declare
   v_start timestamptz;
   v_end timestamptz;
   v_used integer;
+  v_effective_timezone text;
 begin
   if auth.uid() is null or auth.uid() <> p_user_id then
     raise exception 'Authentication required for own allowance usage'
@@ -97,6 +101,21 @@ begin
        select 1 from pg_catalog.pg_timezone_names z where z.name = p_timezone
      ) then
     raise exception 'Invalid allowance activity or timezone'
+      using errcode = '22023';
+  end if;
+
+  select coalesce(
+           case when p.allowance_timezone is not null
+                     and p.allowance_timezone_until > pg_catalog.now()
+                then p.allowance_timezone else p.timezone end,
+           'UTC'
+         )
+  into v_effective_timezone
+  from public.user_preferences p
+  where p.user_id = p_user_id;
+
+  if v_effective_timezone is null or p_timezone is distinct from v_effective_timezone then
+    raise exception 'Allowance timezone must match the server-owned effective timezone'
       using errcode = '22023';
   end if;
 
