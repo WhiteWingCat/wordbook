@@ -503,6 +503,52 @@ end;
 $$;
 commit;
 
+-- Daily session rows are isolated by owner RLS across accounts.
+begin;
+select set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222222', true);
+set local role authenticated;
+do $
+declare
+  v_foreign_session uuid;
+begin
+  select id into v_foreign_session
+  from public.start_daily_activity_session(
+    'daily_application','private-account-session','sentence-basics','beginner','daily'
+  );
+  perform set_config('test.foreign_session_id', v_foreign_session::text, true);
+end;
+$;
+commit;
+
+begin;
+select set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+set local role authenticated;
+do $
+declare
+  v_foreign_session uuid := current_setting('test.foreign_session_id')::uuid;
+  v_visible integer;
+begin
+  select count(*) into v_visible
+  from public.daily_activity_sessions
+  where id = v_foreign_session;
+  if v_visible <> 0 then
+    raise exception 'A user can read another account daily session';
+  end if;
+
+  update public.daily_activity_sessions
+  set status = 'abandoned'
+  where id = v_foreign_session;
+
+  select count(*) into v_visible
+  from public.daily_activity_sessions
+  where id = v_foreign_session and status = 'in_progress';
+  if v_visible <> 0 then
+    raise exception 'A user can modify another account daily session';
+  end if;
+end;
+$;
+commit;
+
 -- Preferences are owner-scoped and disabled activities cannot be newly started.
 begin;
 select set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
@@ -511,6 +557,12 @@ do $$
 declare
   v_rejected boolean := false;
 begin
+  if not (select daily_topic_enabled and daily_application_enabled
+          and daily_discovery_enabled and daily_revision_enabled
+          from public.user_preferences where user_id = auth.uid()) then
+    raise exception 'Daily activity preferences do not default to all enabled';
+  end if;
+
   update public.user_preferences
   set daily_discovery_enabled = false
   where user_id = auth.uid();
