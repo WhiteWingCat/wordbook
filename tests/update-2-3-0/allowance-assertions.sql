@@ -379,6 +379,8 @@ declare
   v_before integer;
   v_after integer;
   v_quota_rejected boolean := false;
+  v_session_timezone text;
+  v_session_date date;
 begin
   select count(*) into v_before
   from public.learning_activity_log
@@ -395,6 +397,13 @@ begin
   );
   if v_first <> v_resumed then
     raise exception 'Starting the same category twice did not resume the open session';
+  end if;
+
+  select timezone, local_date into v_session_timezone, v_session_date
+  from public.daily_activity_sessions where id = v_first;
+  if v_session_timezone <> 'Asia/Kuala_Lumpur'
+     or v_session_date <> (now() at time zone 'Asia/Kuala_Lumpur')::date then
+    raise exception 'Daily session did not snapshot the saved IANA timezone and local date';
   end if;
 
   select count(*) into v_after
