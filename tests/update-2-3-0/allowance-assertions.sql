@@ -491,9 +491,12 @@ begin
     raise exception 'Starting/resuming a daily session consumed allowance';
   end if;
 
-  update public.daily_activity_sessions
-  set status = 'abandoned'
-  where id = v_first;
+  perform public.abandon_daily_activity_session(v_first);
+  perform public.abandon_daily_activity_session(v_first);
+
+  if (select status from public.daily_activity_sessions where id = v_first) <> 'abandoned' then
+    raise exception 'Daily abandon RPC did not mark the session abandoned';
+  end if;
 
   select id into v_second
   from public.start_daily_activity_session(
@@ -532,6 +535,16 @@ begin
   if not v_quota_rejected then
     raise exception 'A second Free Daily Topic session was started after its completion limit';
   end if;
+
+  -- Direct status updates cannot abandon or complete a session outside the RPC.
+  begin
+    update public.daily_activity_sessions
+    set status = 'abandoned'
+    where id = v_second;
+    raise exception 'Direct daily session abandonment unexpectedly succeeded';
+  exception when insufficient_privilege then
+    null;
+  end;
 
   -- Direct REST-style session creation cannot forge a date/timezone or bypass the start RPC.
   begin
