@@ -18,10 +18,10 @@ begin
   if has_table_privilege('authenticated', 'public.learning_activity_log', 'INSERT') then
     raise exception 'Authenticated users still have direct activity-log INSERT privilege';
   end if;
-  if has_function_privilege('anon', 'public.complete_permanent_lesson(text,text)', 'EXECUTE') then
+  if has_function_privilege('anon', 'public.complete_permanent_lesson(text,text,text,integer,integer)', 'EXECUTE') then
     raise exception 'Anonymous users can execute the completion RPC';
   end if;
-  if not has_function_privilege('authenticated', 'public.complete_permanent_lesson(text,text)', 'EXECUTE') then
+  if not has_function_privilege('authenticated', 'public.complete_permanent_lesson(text,text,text,integer,integer)', 'EXECUTE') then
     raise exception 'Authenticated users cannot execute the completion RPC';
   end if;
 
@@ -88,21 +88,21 @@ declare
 begin
   -- Reject null/invalid lesson identity and completion without a started row.
   begin
-    perform public.complete_permanent_lesson(null, 'legacy-06');
+    perform public.complete_permanent_lesson(null, 'legacy-06', 'sentence-basics', 0, 3);
     raise exception 'Null difficulty unexpectedly passed validation';
   exception when sqlstate '22023' then
     null;
   end;
 
   begin
-    perform public.complete_permanent_lesson('beginner', 'not-started');
+    perform public.complete_permanent_lesson('beginner', 'not-started', 'sentence-basics', 0, 3);
     raise exception 'Completion without a started lesson unexpectedly succeeded';
   exception when sqlstate 'P0002' then
     null;
   end;
 
-  perform public.complete_permanent_lesson('beginner', 'legacy-05');
-  perform public.complete_permanent_lesson('beginner', 'legacy-05');
+  perform public.complete_permanent_lesson('beginner', 'legacy-05', 'sentence-basics', 2, 3);
+  perform public.complete_permanent_lesson('beginner', 'legacy-05', 'sentence-basics', 2, 3);
 
   select count(*) into v_count
   from public.learning_activity_log
@@ -115,7 +115,7 @@ begin
 
   v_quota_rejected := false;
   begin
-    perform public.complete_permanent_lesson('beginner', 'legacy-06');
+    perform public.complete_permanent_lesson('beginner', 'legacy-06', 'sentence-basics', 2, 3);
   exception when sqlstate 'P0001' then
     v_quota_rejected := true;
   end;
@@ -162,7 +162,7 @@ declare
   v_count integer;
 begin
   for i in 1..6 loop
-    perform public.complete_permanent_lesson('beginner', 'exempt-' || lpad(i::text, 2, '0'));
+    perform public.complete_permanent_lesson('beginner', 'exempt-' || lpad(i::text, 2, '0'), 'sentence-basics', 3, 3);
   end loop;
 
   select count(*) into v_count
@@ -295,12 +295,12 @@ declare
 begin
   for i in 1..15 loop
     perform public.complete_permanent_lesson(
-      'beginner', 'premium-limit-' || lpad(i::text, 2, '0')
+      'beginner', 'premium-limit-' || lpad(i::text, 2, '0'), 'verb-tenses', 3, 3
     );
   end loop;
 
   begin
-    perform public.complete_permanent_lesson('beginner', 'premium-limit-16');
+    perform public.complete_permanent_lesson('beginner', 'premium-limit-16', 'verb-tenses', 3, 3);
   exception when sqlstate 'P0001' then
     v_quota_rejected := true;
   end;
