@@ -1,10 +1,10 @@
 # Update 2.3.0 — Allowance foundation implementation notes
 
-**Status:** Draft implementation review. The migration draft has passed a free PostgreSQL 17 compatibility test suite in GitHub Actions. No production database or live website changes have been made.
+**Status:** Draft implementation review. The current branch head has passed the free PostgreSQL 17 compatibility test suite in GitHub Actions, including a Daily Learning runtime smoke test. No production database or live website changes have been made.
 
 ## Scope of this step
 
-Implement the approved completion-based allowance foundation for permanent lessons, privacy-minimised lesson practice summaries, and the database foundation for daily activity sessions. Daily activity content and learner-facing screens are not implemented yet.
+Implement the approved completion-based allowance foundation for permanent lessons, privacy-minimised lesson practice summaries, and the database foundation for daily activity sessions. The branch also contains the initial Daily Learning page, synced preference controls, curated English activity content, and adaptive revision selection; this remains draft frontend code pending live integration and browser QA.
 
 ## Confirmed live-state findings
 
@@ -75,7 +75,7 @@ Files:
 
 The test baseline is a minimal Supabase-compatible schema fixture, not a dump of production. It now mirrors the relevant production column types, constraints, foreign keys, plan codes, plan limits, roles, RLS policies, triggers, and `auth.uid()` behaviour needed by this migration. The existing production Free Quiz/Flashcard limits (5) and Premium Quiz/Flashcard limits (12) are included and asserted unchanged. It is useful for PostgreSQL syntax and transaction/permission logic, but it cannot prove compatibility with every Supabase-managed setting or the exact production schema.
 
-**Latest run:** [GitHub Actions run 42757819319](https://github.com/WhiteWingCat/wordbook/actions/runs/42757819319) — passed. The workflow successfully applied the migration draft and tested historical event backfill, Free/Premium lesson and daily-category limits, unchanged Quiz/Flashcard limits, completion-only charging, abandoned starts, rollback on quota failure, duplicate completion idempotency, direct-write restrictions, the lesson-only exemption, independent daily categories, DST-aware 23-hour/25-hour local days, and concurrent quota-boundary serialization.
+**Latest confirmed run at this revision:** [GitHub Actions run 42782349126](https://github.com/WhiteWingCat/wordbook/actions/runs/42782349126) — passed on branch head `39e7717be5f82eb764b3d15bb909a8ef14147bd9`. It checked inline/external JavaScript syntax, Daily Learning runtime initialisation with a mocked Supabase client, both SQL drafts on PostgreSQL 17, historical event backfill, Free/Premium limits, unchanged Quiz/Flashcard limits, completion-only charging, start-only events remaining free at a full quota, abandon/resume/replay behaviour, rollback on quota failure, duplicate completion idempotency, direct-write restrictions, lesson-only exemption, independent daily categories, owner-scoped RLS, and concurrent quota-boundary serialization.
 
 The first run exposed a missing authenticated identity in the concurrency test setup. The fixture was corrected, and the subsequent run passed. This was a test-harness setup issue, not a migration failure.
 
@@ -99,6 +99,8 @@ The first run exposed a missing authenticated identity in the concurrency test s
 - [x] IANA timezone boundary calculations correctly produce 23-hour spring-forward and 25-hour fall-back days.
 - [x] Daily categories have independent limits; the exemption does not bypass them.
 - [x] Daily session start/resume/abandon/replay and completion RPC flows pass the PostgreSQL compatibility tests.
+- [x] Start-only activity events remain uncharged even after the completion quota is full.
+- [x] Daily Learning page initialisation renders all four activity cards in the mocked frontend runtime test.
 - [x] Daily preferences default to enabled, and owner-scoped RLS prevents cross-account session reads/updates.
 - [ ] Daily reset is validated against the exact Supabase production configuration and a browser using a non-UTC stored timezone.
 - [ ] Historical backfill is rechecked against the live production rows immediately before any production migration.
@@ -121,7 +123,7 @@ The latest compatibility fixture was expanded after a read-only production schem
 
 ## Current implementation boundary
 
-The permanent lesson completion and aggregate-result foundation, plus the daily activity preference/session database draft, have passed the free PostgreSQL compatibility suite. The frontend now includes the Daily Learning page shell and four activity cards, account-synchronised preference toggles, a first curated set of Daily Topic/Application/Discovery content, and an adaptive Daily Revision selector. Application and Revision save only first-attempt aggregate outcomes; Topic and Discovery are reading activities. The initial content set currently targets English learning, with Chinese explanations shown when Chinese is selected as the translation language. Expanded content libraries, broader language support, and Profile accuracy/revision analytics are still outstanding. These drafts are not production migrations, and the frontend is not deployed.
+The permanent lesson completion and aggregate-result foundation, plus the daily activity preference/session database draft, have passed the free PostgreSQL compatibility suite. The frontend includes the Daily Learning page shell and four activity cards, account-synchronised preference toggles, a first curated set of Daily Topic/Application/Discovery content, and an adaptive Daily Revision selector. Application and Revision save only first-attempt aggregate outcomes; Topic and Discovery are reading activities. The initial content set currently targets English learning, with Chinese explanations shown when Chinese is selected as the translation language. Profile practice insights now display recent aggregate accuracy, number of recent scored attempts, and topics due for review; the due-topic count uses a minimum evidence threshold. Expanded content libraries, broader language support, live browser testing, and live Supabase integration remain outstanding. These drafts are not production migrations, and the frontend is not deployed.
 
 
 The daily activity content is authored for SwiftDictionary and includes source links for factual Daily Discovery notes. The etymology entry about salary explicitly notes that the popular Roman-soldier salt-pay story is debated. No long third-party passages or textbook exercises are copied. The page is still a draft and has not been deployed.
