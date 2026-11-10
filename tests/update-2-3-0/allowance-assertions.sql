@@ -18,6 +18,9 @@ begin
   if has_table_privilege('authenticated', 'public.learning_activity_log', 'INSERT') then
     raise exception 'Authenticated users still have direct activity-log INSERT privilege';
   end if;
+  if has_table_privilege('authenticated', 'public.lesson_practice_results', 'INSERT') then
+    raise exception 'Authenticated users still have direct practice-result INSERT privilege';
+  end if;
   if has_function_privilege('anon', 'public.complete_permanent_lesson(text,text,text,integer,integer)', 'EXECUTE') then
     raise exception 'Anonymous users can execute the completion RPC';
   end if;
@@ -113,6 +116,23 @@ begin
     raise exception 'Expected exactly five completed lesson events after duplicate retry; got %', v_count;
   end if;
 
+  if (select count(*) from public.lesson_practice_results
+      where user_id = auth.uid() and difficulty = 'beginner'
+        and lesson_id = 'legacy-05') <> 1 then
+    raise exception 'Lesson completion did not save exactly one aggregate practice result';
+  end if;
+  if (select topic_id from public.lesson_practice_results
+      where user_id = auth.uid() and difficulty = 'beginner'
+        and lesson_id = 'legacy-05') <> 'sentence-basics'
+     or (select correct_count from public.lesson_practice_results
+      where user_id = auth.uid() and difficulty = 'beginner'
+        and lesson_id = 'legacy-05') <> 2
+     or (select question_count from public.lesson_practice_results
+      where user_id = auth.uid() and difficulty = 'beginner'
+        and lesson_id = 'legacy-05') <> 3 then
+    raise exception 'Aggregate practice result values were not saved correctly';
+  end if;
+
   v_quota_rejected := false;
   begin
     perform public.complete_permanent_lesson('beginner', 'legacy-06', 'sentence-basics', 2, 3);
@@ -136,6 +156,16 @@ begin
     set status = 'completed', completed_at = now()
     where user_id = auth.uid() and lesson_id = 'legacy-06';
     raise exception 'Direct lesson completion unexpectedly succeeded';
+  exception when insufficient_privilege then
+    null;
+  end;
+
+  -- Browser roles cannot forge aggregate practice history.
+  begin
+    insert into public.lesson_practice_results(
+      user_id, difficulty, lesson_id, topic_id, correct_count, question_count
+    ) values (auth.uid(), 'beginner', 'forged', 'sentence-basics', 3, 3);
+    raise exception 'Direct practice-result INSERT unexpectedly succeeded';
   exception when insufficient_privilege then
     null;
   end;
