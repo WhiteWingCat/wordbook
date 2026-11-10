@@ -90,6 +90,7 @@ if (dailyScript.includes('.from("daily_activity_sessions").insert(')
 // Execute the Daily Learning loader with a mocked Supabase client.
 // This catches runtime ordering errors that syntax-only checks cannot detect.
 const mockElements = {
+  dailyLearningPage: {},
   dailyLearningStatus: { textContent: "" },
   dailyActivityGrid: { innerHTML: "", querySelectorAll: () => [] }
 };
