@@ -43,7 +43,7 @@ The accompanying `UPDATE-2.3.0-ALLOWANCE-MIGRATION-DRAFT.sql` is a review artifa
 8. Preserve the existing plan/entitlement/timezone checks and the private lesson-only exemption.
 9. Set permanent lesson limits to Free 5 / Premium 15 and add the four independent daily category rows at Free 1 / Premium 3. Quiz and Flashcard rows remain unchanged.
 
-The RPC is SECURITY INVOKER so owner-scoped RLS remains active for the progress update. The internal trigger function is SECURITY DEFINER only to write the activity event after authenticated ownership has been verified; direct EXECUTE is revoked from browser roles.
+The RPC is SECURITY INVOKER so owner-scoped RLS remains active for the progress update. The internal trigger function lives in the non-exposed `private` schema and is SECURITY DEFINER only to write the activity event after authenticated ownership has been verified; direct EXECUTE is revoked from browser roles.
 
 ## Frontend changes staged on this branch
 
