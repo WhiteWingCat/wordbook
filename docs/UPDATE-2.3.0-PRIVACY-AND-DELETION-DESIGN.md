@@ -279,7 +279,7 @@ This is not yet the history-deletion feature. The next work is to run and fix th
 
 ## Learning-history deletion implementation status — 2026-11-10
 
-A draft server-side RPC and Profile control have now been added to the feature branch. The RPC requires a recent signed JWT session_id and Auth session creation timestamp (15 minutes, excluding token refresh), derives the target from `auth.uid()`, serializes with completion operations using the same advisory lock, and deletes only learning-history tables. It does not delete saved words, profile, preferences, entitlements, the Auth account, or the private allowance ledger.
+A draft server-side RPC and Profile control have now been added to the feature branch. The RPC requires a recent signed JWT session_id matching an existing Auth session created within the previous 15 minutes, derives the target from `auth.uid()`, serializes with completion operations using the same advisory lock, and deletes only learning-history tables. It does not delete saved words, profile, preferences, entitlements, the Auth account, or the private allowance ledger.
 
 The UI requires explicit confirmation and explains the retained data and unchanged current-day allowance. It asks the user to sign out and sign in again if recent authentication is required.
 
