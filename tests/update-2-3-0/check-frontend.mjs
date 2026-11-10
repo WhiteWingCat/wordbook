@@ -87,4 +87,78 @@ if (dailyScript.includes('.from("daily_activity_sessions").insert(')
 }
 
 
+// Execute the Daily Learning loader with a mocked Supabase client.
+// This catches runtime ordering errors that syntax-only checks cannot detect.
+const mockElements = {
+  dailyLearningStatus: { textContent: "" },
+  dailyActivityGrid: { innerHTML: "", querySelectorAll: () => [] }
+};
+const mockData = {
+  user_preferences: {
+    timezone: "Asia/Kuala_Lumpur",
+    learning_language: "en",
+    translation_language: "zh",
+    daily_topic_enabled: true,
+    daily_application_enabled: true,
+    daily_discovery_enabled: true,
+    daily_revision_enabled: true
+  },
+  user_entitlements: { plan_code: "free", status: "active", valid_from: null, valid_until: null },
+  learning_plan_limits: ["daily_topic","daily_application","daily_discovery","daily_revision"]
+    .map(activity_type => ({ activity_type, daily_limit: 1, is_enabled: true })),
+  learning_activity_log: [],
+  lesson_practice_results: [],
+  daily_activity_sessions: []
+};
+const mockSupabase = {
+  from(table) {
+    return {
+      select() { return this; },
+      eq() { return this; },
+      gte() { return this; },
+      lt() { return this; },
+      in() { return this; },
+      order() { return this; },
+      limit() { return this; },
+      maybeSingle() { return Promise.resolve({ data: mockData[table], error: null }); },
+      then(resolve, reject) {
+        return Promise.resolve({ data: mockData[table] || [], error: null }).then(resolve, reject);
+      }
+    };
+  },
+  rpc() { throw new Error("RPC should not run during page initialisation"); }
+};
+const runtimeWindow = { addEventListener() {} };
+const runtimeContext = {
+  document: {
+    getElementById(id) { return mockElements[id] || null; },
+    querySelectorAll() { return []; }
+  },
+  window: runtimeWindow,
+  location: { hash: "" },
+  currentUser: { id: "test-user" },
+  supabaseClient: mockSupabase,
+  course: "en",
+  translationLanguage: "zh",
+  escapeHTML: value => String(value),
+  browserTimezone: () => "UTC",
+  localDayStart: () => "2026-11-10",
+  zonedMidnightUtc: day => day + "T00:00:00.000Z",
+  Date,
+  Intl,
+  Map,
+  Set,
+  Promise
+};
+vm.runInNewContext(dailyScript, runtimeContext, { filename: "daily-learning-runtime.js" });
+await runtimeWindow.initialiseDailyLearning();
+if (!mockElements.dailyLearningStatus.textContent.includes("Asia/Kuala_Lumpur")) {
+  throw new Error("Daily Learning did not load the saved timezone in the runtime fixture.");
+}
+for (const activity of ["daily_topic","daily_application","daily_discovery","daily_revision"]) {
+  if (!mockElements.dailyActivityGrid.innerHTML.includes(`data-start-daily="${activity}"`)) {
+    throw new Error(`Daily Learning runtime did not render ${activity}.`);
+  }
+}
+
 process.stdout.write(`Frontend syntax and integration checks passed (${checked} inline scripts).\n`);
