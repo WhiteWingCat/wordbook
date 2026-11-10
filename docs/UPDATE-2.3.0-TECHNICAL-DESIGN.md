@@ -12,6 +12,9 @@ The following decisions are approved for Update 2.3.0:
 - **Daily Discovery:** Mixed content: vocabulary, word origins, expressions, language facts, grammar insights, and common mistakes.
 - The four daily activity types are Daily Topic, Daily Application, Daily Discovery, and Daily Revision.
 - The permanent lesson library remains separate from the daily activity experience.
+- **Allowance policy (approved):** Free accounts may complete up to 5 permanent lessons per local day and 1 completed session in each daily category (Revision, Discovery, Topic, Application). Premium accounts may complete up to 15 permanent lessons per local day and up to 3 completed sessions in each daily category.
+- **Completion-based charging (approved):** Starting or abandoning a lesson/session does not consume an allowance. The allowance is consumed only when that lesson/session is successfully completed and saved. Resuming an unfinished session does not consume another allowance. Completion must be charged at most once for the same qualifying completion; retries after a failed save must be idempotent.
+- Daily category limits are separate: one Revision does not consume Discovery, Topic, or Application allowance.
 - Quiz and Flashcards remain reserved for Updates 2.4.0 and 2.5.0.
 - Dictionary lookup remains free and unlimited.
 
@@ -40,8 +43,8 @@ All inspected tables have RLS enabled. User-owned tables have owner-scoped polic
 ### Existing application behaviour
 
 - The frontend creates a `lesson_progress` row only on a learner's first start of a lesson.
-- A database trigger records that first start in `learning_activity_log` as activity type `lesson`; resuming and revisiting an existing lesson do not create another start.
-- The lesson allowance trigger enforces daily limits in the database, with user timezone and transaction-level concurrency protection.
+- A database trigger currently records that first start in `learning_activity_log` as activity type `lesson`; resuming and revisiting an existing lesson do not create another start.
+- **This current start-based quota behaviour must be redesigned** to match the approved completion-based policy. A started/abandoned lesson must not count. The authoritative quota check and usage record must happen atomically when completion is saved, with user timezone and transaction-level concurrency protection.
 - The current lesson practice flow checks answers in the browser and saves lesson completion, but the inspected frontend contains no insert into `lesson_practice_results`.
 - Current Profile activity statistics read `learning_activity_log`; they cannot infer topic accuracy, question-level performance, or revision due dates from that log.
 - `learning_activity_log` deliberately stores only activity type, language code, and timestamp. Do not overload it with answer content or detailed learning telemetry.
@@ -52,7 +55,7 @@ All inspected tables have RLS enabled. User-owned tables have owner-scoped polic
 
 The live database contains `lesson_practice_results`, but it currently has zero rows. The frontend does not reference this table. Therefore, adaptive revision cannot safely be based on lesson accuracy until a verified result-writing flow exists.
 
-**Decision:** In the implementation phase, add a reliable aggregate-result write after a practice attempt has a final outcome. Store only the minimum necessary summary (topic, difficulty, correct count, question count, attempt timestamp, and activity/session reference where applicable). Do not store the learner's selected answers or free-text response content.
+**Approved direction:** Add a reliable aggregate-result write after a practice attempt has a final outcome. Store only the minimum necessary summary (stable topic ID, difficulty, correct count, question count, attempt timestamp, and activity/session reference where applicable). Do not store the learner's selected answers, free-text responses, typed sentences, or raw keystrokes. Do not collect names, email addresses, device fingerprints, precise location, or unrelated behavioural data in learning records. Keep records owner-scoped with RLS, restrict reads to the authenticated owner, and use aggregate metrics for adaptive revision. Provide a clear privacy explanation that practice performance is used to personalise revision and progress statistics. Define a retention/deletion approach so users can request deletion of their learning history without deleting their account.
 
 ### 3.2 Migration history requires reconciliation
 
@@ -62,15 +65,25 @@ This indicates that the deployed schema and migration history are not currently 
 
 **Decision:** Before applying any 2.3.0 DDL, compare the live schema with repository SQL, identify which 2.2.0 statements were applied outside migration history, and prepare a safe baseline/reconciliation plan. No production migration-history edits are part of this planning task.
 
-### 3.3 Activity allowance categories need an explicit policy
+### 3.3 Approved allowance policy and required enforcement redesign
 
-The current database constraint and plan-limit rows support `lesson`, `quiz`, and `flashcard`. The current allowance trigger expects a matching enabled row in `learning_plan_limits`.
+The owner has approved these daily completion limits:
 
-The four daily activities should not silently be counted as `lesson` starts, nor should they bypass the server-side trigger. A deliberate quota design is required before implementation.
+| Activity category | Free plan | Premium plan |
+|---|---:|---:|
+| Permanent lessons (combined across Beginner, Intermediate, Advanced) | 5 completed lessons/day | 15 completed lessons/day |
+| Daily Revision | 1 completed session/day | 3 completed sessions/day |
+| Daily Discovery | 1 completed session/day | 3 completed sessions/day |
+| Daily Topic | 1 completed session/day | 3 completed sessions/day |
+| Daily Application | 1 completed session/day | 3 completed sessions/day |
 
-**Proposed direction:** Introduce explicit activity categories for `daily_topic`, `daily_application`, `daily_discovery`, and `daily_revision`, or explicitly document a smaller grouping if product policy prefers shared allowances. Reuse the existing plan-limit table and server-side trigger pattern. Preserve the existing `lesson`, `quiz`, and `flashcard` categories unchanged. Do not choose new Free/Premium numerical limits until the owner approves them.
+Daily categories have independent limits. The four daily categories must not share one combined daily counter.
 
-The personal testing exemption must remain scoped to `lesson` only. It must not exempt any 2.3.0 activity.
+**Charge only on successful completion:** opening, starting, resuming, or abandoning a session does not consume allowance. A qualifying completion consumes one unit only after the completion and usage record are committed successfully. The quota check, completion transition, and usage insert must be atomic and concurrency-safe. A failed completion save must not consume quota; retrying the same completion must not double-charge. Reopening an already completed permanent lesson or replaying completed daily content should not charge again unless the owner later explicitly approves a separate repeat-attempt model.
+
+For permanent lessons, count completed lesson IDs across all three difficulty levels. The existing unique progress row means a lesson's first transition to `completed` is the chargeable event; revisits are free. For daily activities, count distinct completed daily sessions per category and local day; resuming the same session is free.
+
+The current database constraint and plan-limit rows support `lesson`, `quiz`, and `flashcard`. Add explicit daily activity categories (`daily_topic`, `daily_application`, `daily_discovery`, `daily_revision`) and configure plan limits as above. The permanent lesson limit remains under `lesson`, but its trigger moves from first start to first completion. Preserve Quiz and Flashcard categories for their future releases. The personal testing exemption must remain scoped to `lesson` only; it must not exempt any 2.3.0 daily category.
 
 ### 3.4 Existing security advisories
 
@@ -92,7 +105,7 @@ Show all enabled activities together:
 
 Each card should show its purpose, today's content/recommendation, completion state, and remaining allowance where relevant. A user preference controls whether each activity is shown. All four should be enabled by default unless the owner later chooses another default.
 
-Changing preferences must not consume a learning allowance. An allowance is charged only when a qualifying activity session starts successfully.
+Changing preferences, opening an activity, or starting/resuming a session must not consume a learning allowance. The relevant allowance is consumed only after a qualifying session is successfully completed and saved. Abandoning an unfinished session is free.
 
 ### 4.2 Content catalogue
 
@@ -119,9 +132,10 @@ Introduce a per-user daily assignment/session model that records:
 - stable content or topic ID;
 - session status (started, completed, abandoned if needed);
 - start/completion timestamps;
-- source/reason (daily selection, weak-topic recommendation, or scheduled revision).
+- source/reason (daily selection, weak-topic recommendation, or scheduled revision);
+- a stable idempotency key for completion accounting.
 
-Use a uniqueness/idempotency rule so refreshing the page or opening it on another device does not generate duplicate assignments or charge another start. A local date must be derived from the user's configured IANA timezone, not the browser's current timezone alone.
+Use a uniqueness/idempotency rule so refreshing the page or opening it on another device does not generate duplicate assignments. A started or abandoned session is not quota usage. The successful completion transition and quota usage must be committed in one transaction. A local date must be derived from the user's configured IANA timezone, not the browser's current timezone alone.
 
 ### 4.5 Aggregate practice outcomes
 
@@ -169,16 +183,23 @@ Add:
 
 All figures must be derived from persisted records. Avoid optimistic counters that increment before a database save succeeds. Keep all queries user-filtered and protected by RLS.
 
-## 5. Allowance policy — decisions still required
+## 5. Approved allowance policy — implementation requirements
 
-Before coding, the owner should approve:
-1. Whether each of the four daily activities has its own daily allowance category or whether some share one category.
-2. Free and Premium daily limits for each category.
-3. Whether Daily Revision consumes an allowance, and if so whether its limit differs from new-learning activities.
-4. Whether a started but abandoned session consumes the allowance (recommended: yes, once a session is successfully created, to prevent repeated resets; resuming that same session is free).
-5. Whether completed daily content can be replayed free or counts as a new attempt (recommended: replay/review is free; only a new daily assignment/session start counts).
+The numerical limits and completion-based charging rules in Section 3.3 are approved and should be implemented as written. No further product decision is needed for the basic allowance model.
 
-The existing lesson allowance and personal testing exception must remain unchanged.
+Implementation must ensure:
+- one permanent lesson counter shared across Beginner, Intermediate, and Advanced;
+- four separate daily counters, one for each daily activity category;
+- Free: 5 permanent lesson completions and 1 completion per daily category per local day;
+- Premium: 15 permanent lesson completions and 3 completions per daily category per local day;
+- starts, resumes, and abandoned sessions are free;
+- only a successful first completion consumes a unit;
+- duplicate completion requests cannot double-charge;
+- a failed save cannot consume a unit;
+- completed content revisits/replays do not charge again;
+- the personal testing exemption remains lesson-only and private.
+
+Plan status must be checked server-side at the time of completion. Daily boundaries must use the user's stored IANA timezone. Do not trust a client-supplied plan, local date, completion flag, or remaining allowance.
 
 ## 6. Security, privacy, and legal precautions
 
@@ -194,14 +215,15 @@ The existing lesson allowance and personal testing exception must remain unchang
 ## 7. Recommended implementation order
 
 1. Reconcile the 2.2.0 schema and migration history; establish a reproducible baseline.
-2. Approve activity allowance categories and numerical limits.
-3. Implement owner-scoped daily activity preferences and idempotent daily assignments.
-4. Implement Daily Topic and its content catalogue.
-5. Implement Daily Application and aggregate practice-result capture.
-6. Implement mixed Daily Discovery content.
-7. Implement adaptive Daily Revision and weak-topic prioritisation.
-8. Expand Profile statistics using persisted data.
-9. Test timezone boundaries, duplicate sessions, allowances, account switching, RLS, completion saves, and regressions in dictionary search, saved words, and permanent lessons.
+2. Redesign the allowance database flow so quota is charged on successful completion rather than start; preserve atomicity and idempotency.
+3. Add the four independent daily allowance categories and configure Free/Premium limits approved in Section 3.3.
+4. Implement privacy-minimised practice-result capture and owner-scoped daily activity preferences/assignments.
+5. Implement Daily Topic and its content catalogue.
+6. Implement Daily Application and aggregate practice-result capture.
+7. Implement mixed Daily Discovery content.
+8. Implement adaptive Daily Revision and weak-topic prioritisation.
+9. Expand Profile statistics using persisted data.
+10. Test timezone boundaries, concurrent/duplicate completion requests, abandoned sessions, allowance counters, account switching, RLS, deletion/retention, and regressions in dictionary search, saved words, and permanent lessons.
 
 ## 8. Release safeguards
 
@@ -216,3 +238,11 @@ The existing lesson allowance and personal testing exception must remain unchang
 - Production Supabase tables, columns, RLS policies, triggers, and migration records were inspected read-only.
 - Current row counts at review time: 13 lesson progress records, 0 lesson practice result records, and 13 learning activity log records. No user identifiers or answer content were queried for this summary.
 - No application code, production data, schema, migrations, or GitHub Pages deployment was changed during this review.
+
+
+## 10. Owner-approved decisions added after the initial review
+
+- Practice tracking is approved provided it is privacy-minimised as specified in Sections 3.1 and 6: aggregate outcomes only, no raw answers/free text, strict owner-scoped RLS, clear purpose disclosure, and a deletion/retention approach.
+- Migration-history reconciliation is an explicit next engineering task. Do not mark migrations as applied or execute a baseline script until live schema equivalence has been verified statement by statement and a rollback/recovery plan exists.
+- Daily allowance policy is final for planning: Free = 5 permanent lesson completions/day and 1 completion in each of the four daily categories/day; Premium = 15 permanent lesson completions/day and 3 completions in each daily category/day.
+- Allowances are consumed only on successful completion. Starting, resuming, and abandoning do not consume allowance. Completion accounting must be atomic, concurrency-safe, and idempotent.
