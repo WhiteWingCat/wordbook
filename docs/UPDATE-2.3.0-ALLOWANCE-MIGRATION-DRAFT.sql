@@ -73,7 +73,7 @@ set event_type = 'completed'
 where event_type is null;
 
 alter table public.learning_activity_log
-  alter column event_type set default 'completed',
+  alter column event_type drop default,
   alter column event_type set not null,
   add constraint learning_activity_log_event_type_check
     check (event_type in ('started', 'completed'));
