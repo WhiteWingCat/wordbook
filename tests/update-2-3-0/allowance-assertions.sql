@@ -363,3 +363,204 @@ begin
   end if;
 end;
 $$;
+
+
+-- Daily Topic: start/resume/abandon are free, first completion is charged once,
+-- replaying completed content is free, and a new item is blocked after quota.
+begin;
+select set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+set local role authenticated;
+do $$
+declare
+  v_first uuid;
+  v_resumed uuid;
+  v_second uuid;
+  v_replayed uuid;
+  v_before integer;
+  v_after integer;
+  v_quota_rejected boolean := false;
+begin
+  select count(*) into v_before
+  from public.learning_activity_log
+  where user_id = auth.uid() and activity_type = 'daily_topic'
+    and event_type = 'completed';
+
+  select id into v_first
+  from public.start_daily_activity_session(
+    'daily_topic','topic-day-1','sentence-basics','beginner','daily'
+  );
+  select id into v_resumed
+  from public.start_daily_activity_session(
+    'daily_topic','another-content-id','sentence-basics','beginner','daily'
+  );
+  if v_first <> v_resumed then
+    raise exception 'Starting the same category twice did not resume the open session';
+  end if;
+
+  select count(*) into v_after
+  from public.learning_activity_log
+  where user_id = auth.uid() and activity_type = 'daily_topic'
+    and event_type = 'completed';
+  if v_after <> v_before then
+    raise exception 'Starting/resuming a daily session consumed allowance';
+  end if;
+
+  update public.daily_activity_sessions
+  set status = 'abandoned'
+  where id = v_first;
+
+  select id into v_second
+  from public.start_daily_activity_session(
+    'daily_topic','topic-day-1','sentence-basics','beginner','daily'
+  );
+  if v_second = v_first then
+    raise exception 'An abandoned session was not replaced by a fresh session';
+  end if;
+
+  perform public.complete_daily_activity_session(v_second, null, null);
+  perform public.complete_daily_activity_session(v_second, null, null);
+
+  select count(*) into v_after
+  from public.learning_activity_log
+  where user_id = auth.uid() and activity_type = 'daily_topic'
+    and event_type = 'completed';
+  if v_after <> v_before + 1 then
+    raise exception 'Daily Topic completion was not charged exactly once';
+  end if;
+
+  select id into v_replayed
+  from public.start_daily_activity_session(
+    'daily_topic','topic-day-1','sentence-basics','beginner','daily'
+  );
+  if v_replayed <> v_second then
+    raise exception 'Replaying completed daily content did not return the original completed session';
+  end if;
+
+  begin
+    perform public.start_daily_activity_session(
+      'daily_topic','topic-day-2','sentence-basics','beginner','daily'
+    );
+  exception when sqlstate 'P0001' then
+    v_quota_rejected := true;
+  end;
+  if not v_quota_rejected then
+    raise exception 'A second Free Daily Topic session was started after its completion limit';
+  end if;
+
+  -- Direct REST-style session creation cannot forge a date/timezone or bypass the start RPC.
+  begin
+    insert into public.daily_activity_sessions(
+      user_id, activity_type, content_id, local_date, timezone, status
+    ) values (auth.uid(), 'daily_topic', 'forged-session', date '2000-01-01', 'Pacific/Honolulu', 'in_progress');
+    raise exception 'Direct daily session INSERT unexpectedly succeeded';
+  exception when insufficient_privilege then
+    null;
+  end;
+end;
+$$;
+commit;
+
+-- Daily Application requires valid aggregate outcomes; no raw answers are stored.
+begin;
+select set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+set local role authenticated;
+do $$
+declare
+  v_session uuid;
+  v_invalid_rejected boolean := false;
+begin
+  select id into v_session
+  from public.start_daily_activity_session(
+    'daily_application','application-day-1','sentence-basics','beginner','daily'
+  );
+
+  begin
+    perform public.complete_daily_activity_session(v_session, null, null);
+  exception when sqlstate '22023' then
+    v_invalid_rejected := true;
+  end;
+  if not v_invalid_rejected then
+    raise exception 'Daily Application accepted missing aggregate result counts';
+  end if;
+
+  -- Direct completion is blocked; only the completion RPC may finish the session.
+  begin
+    update public.daily_activity_sessions
+    set status = 'completed', completed_at = now(),
+        correct_count = 2, question_count = 3
+    where id = v_session;
+    raise exception 'Direct daily session completion unexpectedly succeeded';
+  exception when insufficient_privilege then
+    null;
+  end;
+
+  perform public.complete_daily_activity_session(v_session, 2, 3);
+  if (select correct_count from public.daily_activity_sessions where id = v_session) <> 2
+     or (select question_count from public.daily_activity_sessions where id = v_session) <> 3 then
+    raise exception 'Daily Application aggregate outcome was not saved correctly';
+  end if;
+end;
+$$;
+commit;
+
+-- Preferences are owner-scoped and disabled activities cannot be newly started.
+begin;
+select set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+set local role authenticated;
+do $$
+declare
+  v_rejected boolean := false;
+begin
+  update public.user_preferences
+  set daily_discovery_enabled = false
+  where user_id = auth.uid();
+
+  begin
+    perform public.start_daily_activity_session(
+      'daily_discovery','discovery-day-1',null,null,'daily'
+    );
+  exception when insufficient_privilege then
+    v_rejected := true;
+  end;
+  if not v_rejected then
+    raise exception 'A disabled daily activity was started';
+  end if;
+
+  update public.user_preferences
+  set daily_discovery_enabled = true
+  where user_id = auth.uid();
+end;
+$$;
+commit;
+
+-- Premium Daily Discovery allows three distinct completions; the fourth is blocked.
+begin;
+select set_config('request.jwt.claim.sub', '44444444-4444-4444-8444-444444444444', true);
+set local role authenticated;
+do $$
+declare
+  i integer;
+  v_session uuid;
+  v_rejected boolean := false;
+begin
+  for i in 1..3 loop
+    select id into v_session
+    from public.start_daily_activity_session(
+      'daily_discovery','premium-discovery-' || i,null,null,'daily'
+    );
+    perform public.complete_daily_activity_session(v_session, null, null);
+  end loop;
+
+  begin
+    perform public.start_daily_activity_session(
+      'daily_discovery','premium-discovery-4',null,null,'daily'
+    );
+  exception when sqlstate 'P0001' then
+    v_rejected := true;
+  end;
+  if not v_rejected then
+    raise exception 'Premium fourth Daily Discovery session was not blocked';
+  end if;
+end;
+$$;
+commit;
