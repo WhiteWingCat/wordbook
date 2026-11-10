@@ -97,6 +97,7 @@ The first run exposed a missing authenticated identity in the concurrency test s
 - [x] Premium users can complete exactly 15 permanent lessons in the compatibility test.
 - [x] Quiz and Flashcard limits remain unchanged (Free 5 / Premium 12).
 - [x] IANA timezone boundary calculations correctly produce 23-hour spring-forward and 25-hour fall-back days.
+- [x] Timezone changes preserve the previous allowance timezone until its next local midnight; repeated changes cannot move that boundary or grant another daily completion in the PostgreSQL compatibility test.
 - [x] Daily categories have independent limits; the exemption does not bypass them.
 - [x] Daily session start/resume/abandon/replay and completion RPC flows pass the PostgreSQL compatibility tests.
 - [x] Start-only activity events remain uncharged even after the completion quota is full.
@@ -120,7 +121,7 @@ This step records only the learning activity category, event type, language code
 **Release legal/privacy gates:**
 - The repository currently has no dedicated Privacy Policy or Terms page. Before public release, add a clear notice describing Google/Supabase account data, saved words, learning preferences (including the IANA timezone), lesson progress, completion history, aggregate practice results, purposes, retention, hosting/service providers, and how users can request deletion.
 - A deletion route is not implemented. Do not grant browser users direct DELETE access to learning_activity_log: it is also the completion allowance ledger, so deleting current-day events could let a user reset their quota. Design a server-mediated deletion process that removes learning content/results while preserving the current-day quota accounting until its reset, or move quota accounting to a separate minimal ledger.
-- Timezone changes are currently user-editable. Before release, decide how to prevent a timezone change from granting a second allowance window (for example, defer the new timezone until the next reset or carry today's usage across the change). This protection is not yet implemented.
+- Timezone changes remain user-editable, but the allowance timezone is now server-protected: a change is deferred until the current allowance day ends in the previous timezone. Repeated changes preserve the original pending boundary, and clients cannot forge or extend the server-owned override. The database quota trigger, Daily Learning session RPC, lesson allowance display, Daily Learning display, and Profile daily statistics use the same effective timezone. This is covered by PostgreSQL regression tests; live Supabase and cross-browser verification remain release gates.
 - The curated English library has been expanded to 28 Daily Topic entries, 25 Daily Application sets (each with two scored questions), and 27 Daily Discovery entries. This provides at least eight days of distinct curated content at the Premium limit of three completions per category per day, before replay is needed. Content is mapped to all 13 stable lesson topic IDs for adaptive revision. These are initial pools, not an indefinite content supply; continue editorial expansion before promising ongoing novelty.
 - Daily Discovery notes are paraphrased and link to Cambridge Dictionary, British Council, and Wordorigins references. Keep the examples independently authored; do not copy dictionary definitions, exercises, textbook passages, or third-party images. Verify attribution and the applicable source terms before any commercial use.
 
@@ -172,3 +173,24 @@ The revision selector was strengthened and covered by deterministic regression f
 - Added deterministic tests for weak-topic priority, overdue-but-not-weak topics, recent improvement, minimum evidence, same-day repeat prevention, and malformed history.
 
 The GitHub Actions run for commit `e7a6f66209b410ef219b8f57d446fc29706c981e` passed: [run #42792996028](https://github.com/WhiteWingCat/wordbook/actions/runs/42792996028). This validates the frontend syntax/integration checks and the existing PostgreSQL 17 migration, RLS, allowance, and concurrency suite. It does not replace live browser testing or a live Supabase integration test. No production database or deployment was changed.
+
+
+## Timezone-change protection — 2026-11-10
+
+The allowance migration draft now adds two server-managed fields to `user_preferences`:
+
+- `allowance_timezone`: the timezone that continues to govern the current allowance window after a user changes their preferred timezone.
+- `allowance_timezone_until`: the exact UTC instant of the next midnight in that previous timezone.
+
+A database trigger owns these fields. On a timezone change it freezes the previous timezone through its next local midnight. Additional timezone changes before that instant do not move the boundary. Attempts by an authenticated client to set, clear, or extend the override are overwritten by the trigger. After the boundary expires, the newly preferred timezone is used; a later change starts a new deferred transition.
+
+The lesson-completion quota trigger and Daily Activity session-start RPC both calculate usage with the effective timezone. The frontend reads the same server-owned fields for the Daily Learning page, lesson allowance card, and Profile's today-activity statistic. The Profile explains that a saved timezone change takes effect after the current allowance day ends.
+
+Regression coverage verifies:
+- The first timezone change preserves the old timezone and next-midnight boundary.
+- Repeated changes do not move the boundary.
+- Client attempts to forge or extend the override are ignored.
+- A Daily Topic completion remains charged and a second completion is rejected despite changing timezone.
+- After the original boundary expires, the new preferred timezone is used for a subsequent Daily Activity session.
+
+The PostgreSQL 17 migration, policy, frontend syntax/runtime, and concurrency suite passed on commit `6de4013e3922362d0534fc6045e49405546831f2`: [GitHub Actions run #42794351935](https://github.com/WhiteWingCat/wordbook/actions/runs/42794351935). This is a disposable Supabase-compatible test fixture, not a live production database test. No production schema or website was changed.
