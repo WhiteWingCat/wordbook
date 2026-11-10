@@ -232,6 +232,9 @@ assertTime(
 const required = [
   'rpc("complete_permanent_lesson"',
   'rpc("record_completed_lesson_practice_result"',
+  'rpc("delete_my_learning_history"',
+  'id="deleteLearningHistoryButton"',
+  'id="learningHistoryDeleteStatus"',
   "saveCompletedLessonPractice",
   "p_topic_id:",
   "p_correct_count:",
