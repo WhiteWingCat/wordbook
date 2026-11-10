@@ -40,6 +40,16 @@ begin
     raise exception 'Authenticated users cannot execute the daily abandon RPC';
   end if;
 
+  -- Start-only events are not charged and remain recordable after the completion quota is full.
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  insert into public.learning_activity_log(user_id, activity_type, language_code, event_type)
+  values ('11111111-1111-4111-8111-111111111111', 'lesson', 'en', 'started');
+  if (select count(*) from public.learning_activity_log
+      where user_id = '11111111-1111-4111-8111-111111111111'
+        and activity_type = 'lesson' and event_type = 'started') < 2 then
+    raise exception 'A start-only event was not recorded after the completion quota was full';
+  end if;
+
   -- Approved limits are installed, including independent daily categories.
   if (select daily_limit from public.learning_plan_limits
       where plan_code = 'free' and activity_type = 'lesson') <> 5 then
