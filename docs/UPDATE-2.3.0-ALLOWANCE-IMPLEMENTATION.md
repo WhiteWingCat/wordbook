@@ -45,18 +45,18 @@ The accompanying `UPDATE-2.3.0-ALLOWANCE-MIGRATION-DRAFT.sql` is a review artifa
 
 The RPC is SECURITY INVOKER so owner-scoped RLS remains active for the progress update. The internal trigger function is SECURITY DEFINER only to write the activity event after authenticated ownership has been verified; direct EXECUTE is revoked from browser roles.
 
-## Frontend changes required before enabling the migration
+## Frontend changes staged on this branch
 
-The current `index.html` still needs a coordinated patch on this branch:
+The `index.html` patch is now staged alongside the SQL review draft:
 
-- In `completeLesson()`, replace the direct `lesson_progress.update(...)` call with:
-  `supabaseClient.rpc("complete_permanent_lesson", { p_difficulty: ls.difficulty, p_lesson_id: x.id })`.
-- Keep the existing retry behaviour. A quota rejection must leave the lesson `in_progress`, so the learner can resume and retry after the local-day reset.
-- In `loadLessonAllowance()`, filter activity-log rows by `event_type = "completed"` and change all UI wording from lesson starts to lesson completions.
-- In the Profile activity query, select `event_type`. Calculate completion statistics from completed rows only, while optionally retaining started events for a separate engagement statistic. Do not count both a start and completion as two completed activities.
-- Keep account switching, saved-word sync, dictionary search, and all other existing flows unchanged.
+- `completeLesson()` calls `complete_permanent_lesson(p_difficulty, p_lesson_id)`; the direct browser-side UPDATE is removed.
+- A quota rejection leaves the lesson `in_progress`, preserves the learner's saved progress, and explains that completion can be retried after the local-day reset.
+- `loadLessonAllowance()` counts only `event_type = "completed"` records and uses completion-based wording.
+- The Profile activity query reads `event_type`, and completion totals count completed events only. The Profile activity categories now include the four approved daily activity types.
+- The obsolete start-limit error message has been removed.
+- Authentication, account switching, saved-word sync, dictionary search, and other unrelated flows were not intentionally changed.
 
-The frontend must not be merged or deployed until the database migration and RPC are installed and verified. The migration must not be applied to production as part of this draft review.
+The frontend is not live-compatible until the database migration and RPC are installed. Do not merge or deploy this branch until the database and browser validation checklist passes. The migration has not been applied to production.
 
 ## Validation checklist
 
