@@ -30,7 +30,7 @@ Existing owner-scoped RLS policies already cover user preference reads and updat
 
 Add an owner-scoped daily_activity_sessions table containing only:
 - session UUID and user UUID;
-- activity category;
+- activity category and a snapshot of the learning language;
 - stable content ID and optional stable topic ID;
 - optional difficulty;
 - assignment local date and IANA timezone snapshot;
@@ -41,7 +41,7 @@ Add an owner-scoped daily_activity_sessions table containing only:
 
 Do not store selected answers, free-text answers, typed responses, keystrokes, device identifiers, precise location, or unrelated behavioural data.
 
-A partial unique index should permit at most one unfinished session per user and activity category. A learner may resume that same session across devices and across a local-day boundary. Once completed or abandoned, a new session may be created if that day's completion allowance remains.
+A partial unique index should permit at most one unfinished session per user and activity category. A learner may resume that same session across devices and across a local-day boundary. Once completed or abandoned, a new session may be created if that day's completion allowance remains. The content ID identifies a specific assignment instance and must remain stable across retries; reopening already-completed content returns its existing completed session and is free. A later scheduled revision can use a new assignment content ID while retaining the same stable topic ID.
 
 ### Server-side functions
 
@@ -53,7 +53,7 @@ Daily Topic and Daily Discovery completions do not require question counts. Dail
 
 ## Local-day and resume behaviour
 
-The session stores its assignment date and timezone for content/history context. Quota consumption is recorded at completion time, using the existing activity-log trigger's current local-day boundary. Therefore, a session started yesterday and completed after midnight consumes today's allowance, not yesterday's. Resuming the same unfinished session does not create another session or consume quota.
+The session stores its assignment date, timezone, and learning-language snapshot for content/history context. Quota consumption is recorded at completion time, using the existing activity-log trigger's current local-day boundary. Therefore, a session started yesterday and completed after midnight consumes today's allowance, not yesterday's. Resuming the same unfinished session does not create another session or consume quota.
 
 ## Adaptive Revision inputs
 
@@ -84,3 +84,6 @@ Do not label a topic weak without a minimum amount of evidence. Low/declining ac
 6. Implement adaptive Daily Revision after reliable aggregate result history exists.
 7. Expand Profile statistics from persisted records.
 8. Complete browser and account-isolation regression testing before any production migration or Pages deployment.
+
+
+The proposed migration also prevents direct client INSERTs from forging a session's local date, timezone, or source: only the authenticated start RPC sets the transaction-local start marker accepted by the insert trigger. User preference updates are owner-scoped and synchronised through Supabase, not local browser storage.
