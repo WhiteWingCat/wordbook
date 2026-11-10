@@ -153,7 +153,7 @@ const runtimeContext = {
 vm.runInNewContext(dailyScript, runtimeContext, { filename: "daily-learning-runtime.js" });
 await runtimeWindow.initialiseDailyLearning();
 if (!mockElements.dailyLearningStatus.textContent.includes("Asia/Kuala_Lumpur")) {
-  throw new Error("Daily Learning did not load the saved timezone in the runtime fixture.");
+  throw new Error("Daily Learning runtime fixture failed: " + mockElements.dailyLearningStatus.textContent);
 }
 for (const activity of ["daily_topic","daily_application","daily_discovery","daily_revision"]) {
   if (!mockElements.dailyActivityGrid.innerHTML.includes(`data-start-daily="${activity}"`)) {
