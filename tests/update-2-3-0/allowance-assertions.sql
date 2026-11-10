@@ -95,25 +95,32 @@ do $$
 declare
   i integer;
 begin
-  perform set_config('request.jwt.claim.sub', '33333333-3333-4333-8333-333333333333', true);
+  insert into auth.users(id)
+  values ('55555555-5555-4555-8555-555555555555');
+  insert into public.user_preferences(user_id,timezone)
+  values ('55555555-5555-4555-8555-555555555555','UTC');
+  insert into public.user_entitlements(user_id,plan_code,status)
+  values ('55555555-5555-4555-8555-555555555555','free','active');
+
+  perform set_config('request.jwt.claim.sub', '55555555-5555-4555-8555-555555555555', true);
   for i in 1..5 loop
     insert into public.lesson_progress(user_id,difficulty,lesson_id,status)
-    values ('33333333-3333-4333-8333-333333333333','beginner','start-free-' || i,'in_progress');
+    values ('55555555-5555-4555-8555-555555555555','beginner','start-free-' || i,'in_progress');
     perform public.complete_permanent_lesson(
       'beginner','start-free-' || i,'test-topic',1,1
     );
   end loop;
 
   insert into public.learning_activity_log(user_id,activity_type,language_code,event_type)
-  values ('33333333-3333-4333-8333-333333333333','lesson','en','started');
+  values ('55555555-5555-4555-8555-555555555555','lesson','en','started');
 
   if (select count(*) from public.learning_activity_log
-      where user_id = '33333333-3333-4333-8333-333333333333'
+      where user_id = '55555555-5555-4555-8555-555555555555'
         and activity_type = 'lesson' and event_type = 'completed') <> 5 then
     raise exception 'The test user did not reach exactly five lesson completions';
   end if;
   if (select count(*) from public.learning_activity_log
-      where user_id = '33333333-3333-4333-8333-333333333333'
+      where user_id = '55555555-5555-4555-8555-555555555555'
         and activity_type = 'lesson' and event_type = 'started') <> 1 then
     raise exception 'A start-only event was not recorded after the completion quota was full';
   end if;
