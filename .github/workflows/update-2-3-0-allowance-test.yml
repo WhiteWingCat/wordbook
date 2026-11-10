@@ -35,6 +35,8 @@ jobs:
         run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/allowance-baseline.sql
       - name: Apply allowance migration draft to disposable PostgreSQL
         run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f docs/UPDATE-2.3.0-ALLOWANCE-MIGRATION-DRAFT.sql
+      - name: Apply daily activity migration draft to disposable PostgreSQL
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f docs/UPDATE-2.3.0-DAILY-ACTIVITY-MIGRATION-DRAFT.sql
       - name: Run migration and policy assertions
         run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/allowance-assertions.sql
       - name: Verify concurrent completion serialization
