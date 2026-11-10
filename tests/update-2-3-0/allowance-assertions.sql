@@ -33,6 +33,12 @@ begin
   if not has_function_privilege('authenticated', 'public.record_completed_lesson_practice_result(text,text,text,integer,integer)', 'EXECUTE') then
     raise exception 'Authenticated users cannot execute the replay practice RPC';
   end if;
+  if has_function_privilege('anon', 'public.abandon_daily_activity_session(uuid)', 'EXECUTE') then
+    raise exception 'Anonymous users can execute the daily abandon RPC';
+  end if;
+  if not has_function_privilege('authenticated', 'public.abandon_daily_activity_session(uuid)', 'EXECUTE') then
+    raise exception 'Authenticated users cannot execute the daily abandon RPC';
+  end if;
 
   -- Approved limits are installed, including independent daily categories.
   if (select daily_limit from public.learning_plan_limits
