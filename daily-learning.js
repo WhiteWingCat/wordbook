@@ -138,7 +138,10 @@
   }
 
   function makeRevisionContent(topicId, contentId, reason) {
-    const source = dailyApplications.find(item => item.topicId === topicId) || dailyApplications[0];
+    const source = dailyApplications.find(item =>
+      item.topicId === topicId && contentId.includes(":" + item.id + ":"))
+      || dailyApplications.find(item => item.topicId === topicId)
+      || dailyApplications[0];
     return {
       id: contentId,
       topicId: topicId || source.topicId,
@@ -154,24 +157,34 @@
     const combined = [...(lessonResults || []), ...(dailyResults || [])];
     const recordsByTopic = new Map();
     for (const row of combined) {
-      if (!row.topic_id || !Number.isFinite(Number(row.question_count)) || Number(row.question_count) <= 0) continue;
-      const records = recordsByTopic.get(row.topic_id) || [];
-      records.push({
-        correct:Number(row.correct_count || 0),
-        questions:Number(row.question_count),
-        at:row.attempted_at || row.completed_at || null
-      });
-      recordsByTopic.set(row.topic_id,records);
+      const topicId = typeof row.topic_id === "string" ? row.topic_id.trim() : "";
+      const questions = Number(row.question_count);
+      const correct = Number(row.correct_count);
+      const timestamp = Date.parse(row.attempted_at || row.completed_at || "");
+      if (!topicId || !Number.isInteger(questions) || questions <= 0
+          || !Number.isInteger(correct) || correct < 0 || correct > questions
+          || !Number.isFinite(timestamp)) continue;
+      const records = recordsByTopic.get(topicId) || [];
+      records.push({ correct, questions, at:timestamp });
+      recordsByTopic.set(topicId,records);
     }
 
     const evidenceByTopic = new Map();
     for (const [topicId,records] of recordsByTopic) {
-      records.sort((a,b) => Date.parse(b.at || 0) - Date.parse(a.at || 0));
+      records.sort((a,b) => b.at - a.at);
       const recent = records.slice(0,3);
       const correct = recent.reduce((sum,row) => sum + row.correct,0);
       const questions = recent.reduce((sum,row) => sum + row.questions,0);
+      const latest = recent[0];
+      const previous = recent.slice(1);
+      const previousQuestions = previous.reduce((sum,row) => sum + row.questions,0);
+      const previousAccuracy = previousQuestions
+        ? previous.reduce((sum,row) => sum + row.correct,0) / previousQuestions
+        : null;
+      const latestAccuracy = latest.correct / latest.questions;
       evidenceByTopic.set(topicId,{
-        topicId,correct,questions,attempts:recent.length,lastAt:recent[0]?.at || null
+        topicId,correct,questions,attempts:recent.length,lastAt:latest.at,
+        latestAccuracy,previousAccuracy
       });
     }
 
@@ -185,24 +198,44 @@
       "conditional-sentences","advanced-grammar","idioms-fixed-expressions",
       "academic-professional-english","precise-vocabulary"
     ])];
+    const now = Date.now();
     const candidates = topics.filter(topicId => !usedToday.has(topicId)).map(topicId => {
       const evidence = evidenceByTopic.get(topicId);
-      if (!evidence) return { topicId, priority:2, reason:"First review — building your learning history", accuracy:null, lastAt:null };
+      if (!evidence) return {
+        topicId,priority:2,overdueDays:0,
+        reason:"First review — building your learning history",accuracy:null,lastAt:null
+      };
       const accuracy = evidence.correct / evidence.questions;
       const enoughEvidence = evidence.attempts >= 2 && evidence.questions >= 6;
       const interval = accuracy < 0.65 ? 1 : accuracy < 0.8 ? 3 : accuracy < 0.9 ? 7 : 14;
-      const daysSince = evidence.lastAt ? (Date.now() - Date.parse(evidence.lastAt)) / 86400000 : 999;
+      const daysSince = Math.max(0,(now - evidence.lastAt) / 86400000);
+      const overdueDays = Math.max(0,daysSince - interval);
       const due = daysSince >= interval;
-      const weak = enoughEvidence && accuracy < 0.7;
+      const improving = enoughEvidence && evidence.previousAccuracy !== null
+        && evidence.latestAccuracy >= 0.8
+        && evidence.latestAccuracy - evidence.previousAccuracy >= 0.2;
+      // Do not keep labelling a learner weak when their latest attempt shows a clear recovery.
+      const weak = enoughEvidence && accuracy < 0.7
+        && evidence.latestAccuracy < 0.7 && !improving;
       const priority = weak && due ? 0 : due ? 1 : 3;
-      const reason = weak && due ? "Needs attention — recent accuracy is below 70%"
-        : !enoughEvidence ? "Building evidence — not enough recent practice to label this topic weak"
-        : due ? "Review due based on your spaced-practice interval"
-        : "Keep this topic fresh with a short review";
-      return { topicId, priority, reason, accuracy, lastAt:evidence.lastAt };
+      const daysUntilDue = Math.max(1,Math.ceil(interval - daysSince));
+      const reason = weak
+        ? (due ? "Needs attention — recent accuracy is below 70%" : "Needs attention — another review is due in " + daysUntilDue + " day(s)")
+        : improving
+          ? "Recent improvement — keep building consistency"
+          : !enoughEvidence
+            ? "Building evidence — not enough recent practice to label this topic weak"
+            : due
+              ? "Review due based on your spaced-practice interval"
+              : "Keep this topic fresh with a short review";
+      return {
+        topicId,priority,overdueDays,reason,accuracy,lastAt:new Date(evidence.lastAt).toISOString(),
+        improving,weak,due
+      };
     });
 
     candidates.sort((a,b) => a.priority-b.priority
+      || b.overdueDays-a.overdueDays
       || (a.accuracy ?? 2) - (b.accuracy ?? 2)
       || (a.lastAt ? Date.parse(a.lastAt) : 0) - (b.lastAt ? Date.parse(b.lastAt) : 0));
     return candidates;
@@ -230,7 +263,17 @@
     }
     const candidates = revisionCandidates(snapshot.lessonResults, snapshot.dailyResults, snapshot.completedToday);
     const candidate = candidates[0] || { topicId:dailyApplications[0].topicId, reason:"A short review to keep your knowledge active." };
-    const id = ["revision",candidate.topicId,day,String(slot+1)].join("-");
+    const topicPool = dailyApplications.filter(item => item.topicId === candidate.topicId);
+    const previouslyUsedSources = new Set((snapshot.dailyResults || [])
+      .filter(row => row.activity_type === "daily_revision" && row.topic_id === candidate.topicId)
+      .map(row => {
+        const match = String(row.content_id || "").match(/^revision:[^:]+:([^:]+):/);
+        return match ? match[1] : null;
+      }).filter(Boolean));
+    const unusedSources = topicPool.filter(item => !previouslyUsedSources.has(item.id));
+    const sourcePool = unusedSources.length ? unusedSources : topicPool;
+    const source = sourcePool[(dayOrdinal(day) + slot) % sourcePool.length] || dailyApplications[0];
+    const id = ["revision",candidate.topicId,source.id,day,String(slot+1)].join(":");
     return makeRevisionContent(candidate.topicId,id,candidate.reason);
   }
 
