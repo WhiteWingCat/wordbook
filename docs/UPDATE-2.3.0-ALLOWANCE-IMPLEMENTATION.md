@@ -194,3 +194,26 @@ Regression coverage verifies:
 - After the original boundary expires, the new preferred timezone is used for a subsequent Daily Activity session.
 
 The PostgreSQL 17 migration, policy, frontend syntax/runtime, and concurrency suite passed on commit `6de4013e3922362d0534fc6045e49405546831f2`: [GitHub Actions run #42794351935](https://github.com/WhiteWingCat/wordbook/actions/runs/42794351935). This is a disposable Supabase-compatible test fixture, not a live production database test. No production schema or website was changed.
+
+
+## Privacy and learning-history deletion design — 2026-11-10
+
+Two review documents have been added:
+
+- `docs/UPDATE-2.3.0-PRIVACY-AND-DELETION-DESIGN.md` — data inventory, recommended separation of allowance accounting from deletable learning history, transactional deletion workflow, account-deletion distinction, retention proposal, Malaysia PDPA review, and release gates.
+- `PRIVACY-POLICY-DRAFT.md` — plain-language draft notice with explicit placeholders for controller identity/contact, provider processing locations, subprocessors, retention and operational details that must be verified before publication.
+
+**Important architectural decision:** the current `learning_activity_log` is both learning history and the quota source. It must not be directly deleted while it remains authoritative for daily limits. The recommended design introduces a private, server-owned minimal current-window allowance ledger (one row per user/activity category) and makes learning history independently deletable. The ledger stores no lesson/content/topic identifiers, answers, language text or individual completion trail. All completion paths must update it atomically under the existing per-user lock.
+
+No deletion RPC, allowance-ledger schema, frontend control, Auth Admin deletion function, production migration, or deployment has been implemented in this task. These are design documents only. The implementation must be separately reviewed, tested in the free PostgreSQL harness and an isolated Supabase project, and explicitly approved before any production changes.
+
+### New release gates
+
+- [ ] Review and approve the allowance-ledger design before implementation; migrate quota enforcement away from `learning_activity_log` without changing plan limits or timezone protections.
+- [ ] Implement atomic, idempotent learning-history deletion; prove it cannot reset current-window usage or race with completion.
+- [ ] Verify all affected tables, foreign keys, RLS policies, triggers, private objects, Auth settings, and Storage ownership against the live schema.
+- [ ] Test that history deletion clears all learning-derived Profile/Daily Learning data but preserves saved words, account, preferences and current allowance usage.
+- [ ] Implement and test account deletion separately using a trusted server-side Auth Admin operation; never expose a service-role/secret key in the browser.
+- [ ] Finalise the privacy notice only after the controller/contact details, actual provider regions/subprocessors, backup/log retention and cross-border transfer safeguards are confirmed.
+- [ ] Complete Malaysia PDPA review, including DPO threshold/systematic-monitoring assessment, breach response, cross-border transfer and age-related obligations.
+
