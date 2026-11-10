@@ -497,16 +497,18 @@
           return;
         }
         input.disabled = true;
-        const {error} = await supabaseClient.from("user_preferences")
-          .update({[key]:input.checked}).eq("user_id",currentUser.id);
-        input.disabled = false;
-        if (error) {
-          input.checked = previous;
-          preferences[key] = previous;
-          byId("dailyLearningStatus").textContent = "Preference could not be saved: " + error.message;
-        } else {
+        try {
+          const {error} = await supabaseClient.from("user_preferences")
+            .update({[key]:input.checked}).eq("user_id",currentUser.id);
+          if (error) throw error;
           renderCards();
           byId("dailyLearningStatus").textContent = "Your daily activity preferences have been saved and will sync across devices.";
+        } catch (error) {
+          input.checked = previous;
+          preferences[key] = previous;
+          byId("dailyLearningStatus").textContent = "Preference could not be saved: " + (error.message || "Please try again.");
+        } finally {
+          input.disabled = false;
         }
       });
     });
