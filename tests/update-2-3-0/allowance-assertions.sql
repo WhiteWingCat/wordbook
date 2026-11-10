@@ -504,6 +504,14 @@ begin
     raise exception 'Daily abandon RPC did not mark the session abandoned';
   end if;
 
+  select count(*) into v_after
+  from public.learning_activity_log
+  where user_id = auth.uid() and activity_type = 'daily_topic'
+    and event_type = 'completed';
+  if v_after <> v_before then
+    raise exception 'Abandoning a daily session consumed allowance';
+  end if;
+
   select id into v_second
   from public.start_daily_activity_session(
     'daily_topic','topic-day-1','sentence-basics','beginner','daily'
