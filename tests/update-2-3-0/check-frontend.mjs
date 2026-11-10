@@ -61,6 +61,20 @@ for (const fragment of required) {
 for (const fragment of ["start_daily_activity_session","complete_daily_activity_session","abandon_daily_activity_session","daily_topic_enabled","daily_revision","revisionCandidates","learningLanguage","firstTry"]) {
   if (!dailyScript.includes(fragment)) throw new Error(`Daily Learning integration check failed: missing ${fragment}`);
 }
+const languageDeclaration = dailyScript.indexOf('const language = prefs.learning_language || "en";');
+const languageSnapshot = dailyScript.indexOf("learningLanguage:language");
+if (languageDeclaration < 0 || languageSnapshot < 0 || languageDeclaration > languageSnapshot) {
+  throw new Error("Daily Learning must declare the saved learning language before building its snapshot.");
+}
+for (const fragment of [
+  'from("lesson_practice_results").select("topic_id,correct_count,question_count,attempted_at")',
+  'from("daily_activity_sessions").select("topic_id,correct_count,question_count,completed_at")',
+  'getElementById("practiceAccuracy").textContent',
+  'getElementById("practiceTopicsDue").textContent',
+  'getElementById("practiceAttempts").textContent'
+]) {
+  if (!html.includes(fragment)) throw new Error(`Profile practice insights check failed: missing ${fragment}`);
+}
 for (const fragment of ['data-page="daily-learning"','id="dailyLearningPage"','data-daily-pref=']) {
   if (!html.includes(fragment)) throw new Error(`Daily Learning page shell check failed: missing ${fragment}`);
 }
