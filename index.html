@@ -17927,14 +17927,16 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
       try {
         await preferenceWriteQueue;
         await ensureProfileRows();
-        const [profileQ,prefsQ,activityQ,entitlementQ,limitsQ] = await Promise.all([
+        const [profileQ,prefsQ,activityQ,entitlementQ,limitsQ,lessonPracticeQ,dailyPracticeQ] = await Promise.all([
           supabaseClient.from("profiles").select("display_name,avatar_icon").eq("user_id",currentUser.id).maybeSingle(),
           supabaseClient.from("user_preferences").select("learning_language,translation_language,timezone").eq("user_id",currentUser.id).maybeSingle(),
           supabaseClient.from("learning_activity_log").select("activity_type,event_type,language_code,created_at").eq("user_id",currentUser.id),
           supabaseClient.from("user_entitlements").select("plan_code,status,valid_until").eq("user_id",currentUser.id).maybeSingle(),
-          supabaseClient.from("learning_plan_limits").select("plan_code,activity_type,daily_limit,is_enabled")
+          supabaseClient.from("learning_plan_limits").select("plan_code,activity_type,daily_limit,is_enabled"),
+          supabaseClient.from("lesson_practice_results").select("topic_id,correct_count,question_count,attempted_at").eq("user_id",currentUser.id).order("attempted_at",{ascending:false}).limit(60),
+          supabaseClient.from("daily_activity_sessions").select("topic_id,correct_count,question_count,completed_at").eq("user_id",currentUser.id).eq("status","completed").order("completed_at",{ascending:false}).limit(60)
         ]);
-        for (const q of [profileQ,prefsQ,activityQ,entitlementQ,limitsQ]) if (q.error) throw q.error;
+        for (const q of [profileQ,prefsQ,activityQ,entitlementQ,limitsQ,lessonPracticeQ,dailyPracticeQ]) if (q.error) throw q.error;
         const prefs = prefsQ.data || {learning_language:course,translation_language:translationLanguage,timezone:browserTimezone()};
         profilePreferences = prefs;
         const courseChanged = course !== prefs.learning_language;
@@ -17969,6 +17971,45 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
         document.getElementById("progressDetails").textContent = completedActivity.length ? types.map(type=>`${type.replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase())}: ${counts[type]} session(s)`).join(" · ") : "No completed learning activity recorded yet. Your completed lessons and daily activities will appear here.";
         const limitText = types.map(type=>{const row=limits.find(item=>item.plan_code===plan&&item.activity_type===type);const used=todayRows.filter(item=>item.activity_type===type).length;return `${type.replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase())}: ${row?.is_enabled ? Math.max(0,row.daily_limit-used)+" of "+row.daily_limit+" remaining" : "Unavailable"}`;});
         document.getElementById("allowanceDetails").textContent = `${plan === "premium" ? "Premium" : "Free"} plan · ${limitText.join(" · ")} · Resets at midnight (${tz}).`;
+
+        // Practice insights use aggregate counts only. No individual answers or
+        // response text are retrieved or retained.
+        const practiceRows = [
+          ...(lessonPracticeQ.data || []).map(row=>({...row,practice_at:row.attempted_at})),
+          ...(dailyPracticeQ.data || []).map(row=>({...row,practice_at:row.completed_at}))
+        ].filter(row=>row.topic_id && Number(row.question_count)>0
+          && Number.isFinite(Number(row.correct_count))
+          && Number(row.correct_count)>=0
+          && Number(row.correct_count)<=Number(row.question_count))
+          .sort((a,b)=>Date.parse(b.practice_at||0)-Date.parse(a.practice_at||0));
+        const recentPractice = practiceRows.slice(0,10);
+        const recentCorrect = recentPractice.reduce((sum,row)=>sum+Number(row.correct_count),0);
+        const recentQuestions = recentPractice.reduce((sum,row)=>sum+Number(row.question_count),0);
+        document.getElementById("practiceAccuracy").textContent = recentQuestions
+          ? Math.round(recentCorrect/recentQuestions*100)+"%" : "—";
+        document.getElementById("practiceAttempts").textContent = recentPractice.length;
+        const byTopic = new Map();
+        for (const row of practiceRows) {
+          const entries = byTopic.get(row.topic_id) || [];
+          if (entries.length < 3) entries.push(row);
+          byTopic.set(row.topic_id,entries);
+        }
+        const now = Date.now();
+        let topicsDue = 0;
+        for (const entries of byTopic.values()) {
+          const questions = entries.reduce((sum,row)=>sum+Number(row.question_count),0);
+          const correct = entries.reduce((sum,row)=>sum+Number(row.correct_count),0);
+          if (entries.length < 2 || questions < 6) continue;
+          const accuracy = correct/questions;
+          const intervalDays = accuracy < 0.65 ? 1 : accuracy < 0.8 ? 3 : accuracy < 0.9 ? 7 : 14;
+          const lastAt = Date.parse(entries[0].practice_at || "");
+          if (Number.isFinite(lastAt) && (now-lastAt)/86400000 >= intervalDays) topicsDue += 1;
+        }
+        document.getElementById("practiceTopicsDue").textContent = topicsDue;
+        document.getElementById("practiceInsightsDetails").textContent = recentPractice.length
+          ? `Based on your ${recentPractice.length} most recent practice attempts. Accuracy uses first-attempt aggregate results; topics are marked due only after at least two attempts and six questions.`
+          : "No scored practice has been recorded yet. Complete a lesson or Daily Application/Revision to build your learning insights. Individual answers are never stored.";
+
         document.getElementById("profileWelcome").textContent = `Welcome${profileQ.data?.display_name ? ", "+profileQ.data.display_name : ""}. Here is your learning overview.`;
       } catch (error) {
         document.getElementById("preferenceStatus").textContent = `Could not load profile data: ${error.message}`;
