@@ -150,6 +150,12 @@ begin
     raise exception 'Quota rejection did not roll back lesson completion';
   end if;
 
+  if (select count(*) from public.lesson_practice_results
+      where user_id = auth.uid() and difficulty = 'beginner'
+        and lesson_id = 'legacy-06') <> 0 then
+    raise exception 'Quota-rejected completion incorrectly saved a practice result';
+  end if;
+
   -- A direct REST-style update cannot bypass the completion RPC.
   begin
     update public.lesson_progress
