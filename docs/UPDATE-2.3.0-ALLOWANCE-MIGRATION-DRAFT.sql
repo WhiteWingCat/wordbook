@@ -1,6 +1,8 @@
 -- DRAFT ONLY — not an applied Supabase migration.
--- Before deployment, create the timestamped migration with the Supabase CLI,
--- move this reviewed SQL into that generated file, and test on a database branch.
+-- Before deployment, create the timestamped migration with the Supabase CLI
+-- and move this reviewed SQL into that generated file. This draft has only
+-- been tested in the free PostgreSQL compatibility harness; it is not a
+-- substitute for an isolated Supabase database test.
 -- SwiftDictionary Update 2.3.0 — completion-based allowance foundation
 
 -- 1) Preserve the meaning of historical activity rows. Before this change,
@@ -96,7 +98,11 @@ alter table public.learning_plan_limits
                             'daily_discovery', 'daily_revision'));
 
 update public.learning_plan_limits
-set daily_limit = case plan_code when 'free' then 5 when 'premium' then 15 end,
+set daily_limit = case plan_code
+      when 'free' then 5
+      when 'premium' then 15
+      else daily_limit
+    end,
     updated_at = now()
 where activity_type = 'lesson';
 
