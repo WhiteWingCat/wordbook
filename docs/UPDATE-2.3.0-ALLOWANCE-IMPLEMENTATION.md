@@ -33,7 +33,7 @@ This prevents abandoned starts from being counted and preserves completed histor
 
 The accompanying `UPDATE-2.3.0-ALLOWANCE-MIGRATION-DRAFT.sql` is a review artifact, not yet an executable migration.
 
-1. Add `event_type` = `started` or `completed` to the activity log.
+1. Add `event_type` = `started` or `completed` to the activity log, with no default so every trusted writer must choose the event type explicitly.
 2. Count only `completed` events in the existing server-side quota trigger.
 3. Remove the lesson-start charging trigger.
 4. Restrict direct lesson-progress INSERTs to `in_progress`; allow transition to `completed` only while the authenticated completion RPC is executing.
