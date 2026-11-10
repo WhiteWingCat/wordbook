@@ -344,6 +344,14 @@
     reader.querySelector("[data-daily-back]").addEventListener("click",() => { reader.hidden = true; reader.innerHTML = ""; readerState = null; });
     const checkButton = reader.querySelector("[data-check-daily]");
     if (checkButton) checkButton.addEventListener("click",checkDailyAnswers);
+    reader.querySelectorAll('input[type="radio"]').forEach(input => input.addEventListener("change",() => {
+      const index = Number(input.name.split("-").pop());
+      if (readerState && Number.isInteger(index)) readerState.passed[index] = false;
+      const complete = reader.querySelector("[data-complete-daily]");
+      if (complete) complete.hidden = true;
+      const practiceStatus = byId("dailyPracticeStatus");
+      if (practiceStatus) practiceStatus.textContent = "Your answer changed. Check your answers again before completing.";
+    }));
     const completeButton = reader.querySelector("[data-complete-daily]");
     if (completeButton) completeButton.addEventListener("click",completeDailyActivity);
     reader.scrollIntoView({behavior:"smooth",block:"start"});
@@ -378,7 +386,11 @@
 
   async function completeDailyActivity() {
     if (!readerState || !currentUser || !supabaseClient) return;
-    const {activityType,content,session,firstTry} = readerState;
+    const {activityType,content,session,firstTry,passed} = readerState;
+    if ((activityType === "daily_application" || activityType === "daily_revision") && !passed.every(Boolean)) {
+      byId("dailyPracticeStatus").textContent = "Check every answer and correct any mistakes before completing.";
+      return;
+    }
     const button = byId("dailyActivityReader").querySelector("[data-complete-daily]");
     if (button) { button.disabled = true; button.textContent = "Saving…"; }
     const args = { p_session_id:session.id, p_correct_count:null, p_question_count:null };
