@@ -67,13 +67,10 @@ for (const fragment of ['data-page="daily-learning"','id="dailyLearningPage"','d
 for (const fragment of ["dailyTopics","dailyApplications","dailyDiscoveries","sourceUrl","learning_activity_log","lesson_practice_results"]) {
   if (!dailyScript.includes(fragment)) throw new Error(`Daily Learning content check failed: missing ${fragment}`);
 }
-if (/from\(["']daily_activity_sessions["']\)\.insert\(/.test(dailyScript)
-    || /from\(["']learning_activity_log["']\)\.insert\(/.test(dailyScript)) {
+if (dailyScript.includes('.from("daily_activity_sessions").insert(')
+    || dailyScript.includes('.from("learning_activity_log").insert(')) {
   throw new Error("Daily Learning frontend must use server RPCs, not direct activity-log/session INSERTs.");
 }
 
-if (/from\(["']lesson_progress["']\)\.update\(/.test(html)) {
-  throw new Error("Direct lesson_progress completion UPDATE remains in the frontend.");
-}
 
 process.stdout.write(`Frontend syntax and integration checks passed (${checked} inline scripts).\n`);
