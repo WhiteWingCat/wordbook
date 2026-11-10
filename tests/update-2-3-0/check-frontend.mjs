@@ -2,6 +2,8 @@ import fs from "node:fs";
 import vm from "node:vm";
 
 const html = fs.readFileSync("index.html", "utf8");
+const dailyScript = fs.readFileSync("daily-learning.js", "utf8");
+new vm.Script(dailyScript, { filename: "daily-learning.js" });
 const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
 let checked = 0;
 
@@ -55,6 +57,9 @@ const required = [
 ];
 for (const fragment of required) {
   if (!html.includes(fragment)) throw new Error(`Frontend integration check failed: missing ${fragment}`);
+}
+for (const fragment of ["start_daily_activity_session","complete_daily_activity_session","daily_topic_enabled","daily_revision","revisionCandidates","record"]) {
+  if (!dailyScript.includes(fragment)) throw new Error(`Daily Learning integration check failed: missing ${fragment}`);
 }
 if (/from\(["']lesson_progress["']\)\.update\(/.test(html)) {
   throw new Error("Direct lesson_progress completion UPDATE remains in the frontend.");
