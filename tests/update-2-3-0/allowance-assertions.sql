@@ -27,6 +27,12 @@ begin
   if not has_function_privilege('authenticated', 'public.complete_permanent_lesson(text,text,text,integer,integer)', 'EXECUTE') then
     raise exception 'Authenticated users cannot execute the completion RPC';
   end if;
+  if has_function_privilege('anon', 'public.record_completed_lesson_practice_result(text,text,text,integer,integer)', 'EXECUTE') then
+    raise exception 'Anonymous users can execute the replay practice RPC';
+  end if;
+  if not has_function_privilege('authenticated', 'public.record_completed_lesson_practice_result(text,text,text,integer,integer)', 'EXECUTE') then
+    raise exception 'Authenticated users cannot execute the replay practice RPC';
+  end if;
 
   -- Approved limits are installed, including independent daily categories.
   if (select daily_limit from public.learning_plan_limits
@@ -163,6 +169,31 @@ begin
     where user_id = auth.uid() and lesson_id = 'legacy-06';
     raise exception 'Direct lesson completion unexpectedly succeeded';
   exception when insufficient_privilege then
+    null;
+  end;
+
+  -- Historical completed lessons can receive one aggregate replay summary
+  -- without consuming another lesson allowance.
+  if public.record_completed_lesson_practice_result(
+       'beginner','legacy-01','sentence-basics',1,3
+     ) is not true then
+    raise exception 'First replay practice summary was not recorded';
+  end if;
+  if public.record_completed_lesson_practice_result(
+       'beginner','legacy-01','sentence-basics',3,3
+     ) is not false then
+    raise exception 'Duplicate replay practice summary was not idempotent';
+  end if;
+  if (select count(*) from public.lesson_practice_results
+      where user_id = auth.uid() and lesson_id = 'legacy-01') <> 1 then
+    raise exception 'Historical lesson replay did not save exactly one practice summary';
+  end if;
+
+  begin
+    perform public.record_completed_lesson_practice_result(
+      'beginner','legacy-06','sentence-basics',1,3
+    );
+  exception when sqlstate 'P0002' then
     null;
   end;
 
