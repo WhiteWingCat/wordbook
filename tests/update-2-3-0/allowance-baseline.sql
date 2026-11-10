@@ -179,8 +179,8 @@ using (true);
 
 grant select, insert, update on public.lesson_progress to authenticated;
 grant select, insert on public.learning_activity_log to authenticated;
-grant select on public.user_preferences, public.user_entitlements,
-  public.learning_plan_limits to authenticated;
+grant select, update on public.user_preferences to authenticated;
+grant select on public.user_entitlements, public.learning_plan_limits to authenticated;
 grant usage, select on sequence public.learning_activity_log_id_seq to authenticated;
 
 insert into public.learning_plan_limits(plan_code, activity_type, daily_limit)
