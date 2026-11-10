@@ -92,4 +92,79 @@ end;
 $$;
 SQL
 
+# Concurrent retries for the same daily reading session must be idempotent:
+# both callers may receive the completed row, but only one completion event is written.
+daily_uid="66666666-6666-4666-8666-666666666666"
+psql "$db" -X -v ON_ERROR_STOP=1 <<SQL
+insert into auth.users(id) values ('$daily_uid');
+insert into public.user_preferences(user_id,timezone)
+values ('$daily_uid','UTC');
+insert into public.user_entitlements(user_id,plan_code,status)
+values ('$daily_uid','free','active');
+SQL
+
+daily_session_id="$(psql "$db" -qAtX -v ON_ERROR_STOP=1 <<SQL
+select set_config('request.jwt.claim.sub', '$daily_uid', false) \gset
+set role authenticated;
+select (public.start_daily_activity_session('daily_topic','daily-topic-concurrency-01',null,null,'daily')).id;
+SQL
+)"
+
+run_daily_completion() {
+  local label="$1"
+  local output="/tmp/daily-$label.out"
+  local status="/tmp/daily-$label.status"
+  set +e
+  psql "$db" -X -v ON_ERROR_STOP=1 >"$output" 2>&1 <<SQL
+begin;
+select set_config('request.jwt.claim.sub', '$daily_uid', true);
+set local role authenticated;
+select pg_sleep(1);
+select (public.complete_daily_activity_session('$daily_session_id', null, null)).status;
+commit;
+SQL
+  echo "$?" >"$status"
+  set -e
+}
+
+run_daily_completion a &
+daily_pid_a=$!
+run_daily_completion b &
+daily_pid_b=$!
+wait "$daily_pid_a"
+wait "$daily_pid_b"
+
+psql "$db" -X -v ON_ERROR_STOP=1 <<SQL
+do $
+declare
+  v_events integer;
+  v_status text;
+begin
+  select count(*) into v_events
+  from public.learning_activity_log
+  where user_id = '$daily_uid'
+    and activity_type = 'daily_topic'
+    and event_type = 'completed';
+  select status into v_status
+  from public.daily_activity_sessions
+  where id = '$daily_session_id';
+
+  if v_events <> 1 then
+    raise exception 'Concurrent daily completion retries wrote % events; expected exactly 1', v_events;
+  end if;
+  if v_status <> 'completed' then
+    raise exception 'Concurrent daily completion left the session in status %', v_status;
+  end if;
+end;
+$;
+SQL
+
+if [[ "$(cat /tmp/daily-a.status)" -ne 0 || "$(cat /tmp/daily-b.status)" -ne 0 ]]; then
+  echo "Concurrent daily completion retry unexpectedly failed."
+  cat /tmp/daily-a.out /tmp/daily-b.out
+  exit 1
+fi
+
+echo "Concurrent daily completion test passed: duplicate requests wrote exactly one event."
+
 echo "Concurrent completion test passed: one completion committed, one was rejected, and the quota remained at five."
