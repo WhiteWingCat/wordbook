@@ -772,14 +772,14 @@ commit;
 -- preserve the original boundary, and the server ignores client-forged override
 -- values. Daily sessions snapshot the effective (not merely preferred) zone.
 insert into auth.users(id)
-values ('66666666-6666-4666-8666-666666666666');
+values ('77777777-7777-4777-8777-777777777777');
 insert into public.user_preferences(user_id,timezone)
-values ('66666666-6666-4666-8666-666666666666','UTC');
+values ('77777777-7777-4777-8777-777777777777','UTC');
 insert into public.user_entitlements(user_id,plan_code,status)
-values ('66666666-6666-4666-8666-666666666666','free','active');
+values ('77777777-7777-4777-8777-777777777777','free','active');
 
 begin;
-select set_config('request.jwt.claim.sub', '66666666-6666-4666-8666-666666666666', true);
+select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
 set local role authenticated;
 do $timezone_test$
 declare
@@ -841,11 +841,11 @@ commit;
 alter table public.user_preferences disable trigger guard_learning_timezone_change;
 update public.user_preferences
 set allowance_timezone_until = now() - interval '1 second'
-where user_id = '66666666-6666-4666-8666-666666666666';
+where user_id = '77777777-7777-4777-8777-777777777777';
 alter table public.user_preferences enable trigger guard_learning_timezone_change;
 
 begin;
-select set_config('request.jwt.claim.sub', '66666666-6666-4666-8666-666666666666', true);
+select set_config('request.jwt.claim.sub', '77777777-7777-4777-8777-777777777777', true);
 set local role authenticated;
 do $$
 declare
