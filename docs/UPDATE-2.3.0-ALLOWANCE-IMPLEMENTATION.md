@@ -262,3 +262,18 @@ The GitHub Actions workflow now applies the ledger draft after the two existing 
 The workflow has been updated to run in this order: PostgreSQL baseline → permanent allowance migration → Daily Activity migration → legacy event seed → allowance-ledger migration → existing allowance assertions → new ledger assertions → concurrency tests.
 
 At the time of this documentation update, the GitHub workflow result for the latest commit has not yet been returned by the available status endpoint. Treat the new ledger tests as **pending**, not passed. No live Supabase or browser validation has been performed.
+
+
+## Learning-history deletion implementation draft
+
+The next implementation stage now includes:
+
+- `docs/UPDATE-2.3.0-LEARNING-HISTORY-DELETION-MIGRATION-DRAFT.sql`
+- `tests/update-2-3-0/learning-history-deletion-assertions.sql`
+- A Profile **Privacy and data** section with an explicit destructive confirmation.
+
+The authenticated RPC derives the target account exclusively from `auth.uid()`; the browser cannot supply another user ID. It requires a JWT `auth_time` within the previous 15 minutes, acquires the same per-user advisory transaction lock as completion writers, and deletes the user's Daily Activity sessions, practice summaries, lesson progress and activity history in one transaction. It deliberately leaves the Auth user, profile, preferences, entitlement, saved words and private current-window allowance ledger untouched. Repeated calls are idempotent.
+
+The Profile UI explains what is deleted and retained, warns that today's allowance is not restored, and only reports success after the RPC confirms it. If the authentication timestamp is too old, the user is instructed to sign out and sign in again before retrying.
+
+The disposable PostgreSQL workflow now applies the deletion migration after the allowance ledger and checks recent-authentication enforcement, idempotency, complete removal of learning history, unchanged allowance counts, and retention of account/preferences/saved words. These tests remain pending until a GitHub Actions run is confirmed; they have not been represented as passed. This is still a draft and has not been applied to production Supabase.
