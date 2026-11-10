@@ -20,6 +20,8 @@ if (checked === 0) throw new Error("No inline JavaScript blocks were checked.");
 
 const required = [
   'rpc("complete_permanent_lesson"',
+  'rpc("record_completed_lesson_practice_result"',
+  "saveCompletedLessonPractice",
   "p_topic_id:",
   "p_correct_count:",
   "p_question_count:",
