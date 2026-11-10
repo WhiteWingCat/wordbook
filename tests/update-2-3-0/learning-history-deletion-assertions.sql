@@ -8,7 +8,7 @@ values ('88888888-8888-4888-8888-888888888888','retain-me');
 insert into public.lesson_practice_results
   (user_id,difficulty,lesson_id,topic_id,correct_count,question_count)
 values
-  ('88888888-8888-4888-8888-888888888888','beginner','ledger-test-1','sentence-basics',2,3);
+  ('88888888-8888-4888-8888-888888888888','beginner','history-delete-practice-fixture','sentence-basics',2,3);
 
 begin;
 select set_config('request.jwt.claim.sub','88888888-8888-4888-8888-888888888888',true);
