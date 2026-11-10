@@ -25,10 +25,10 @@ begin
 
   new.created_at := now();
 
-  -- Explicitly granted by a trusted administrator in auth.users.raw_app_meta_data.
-  -- Never use user-editable user_metadata for authorization.
-  if new.activity_type = 'lesson'
-     and coalesce((auth.jwt() -> 'app_metadata' ->> 'swift_dictionary_testing_bypass')::boolean, false) then
+  -- Check the private server-side allowlist. This helper reads only the
+  -- authenticated user's private exemption record; no client-editable JWT
+  -- metadata or user_metadata is used to grant testing access.
+  if new.activity_type = 'lesson' and private.is_learning_limit_exempt() then
     return new;
   end if;
 
