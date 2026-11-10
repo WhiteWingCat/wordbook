@@ -165,6 +165,43 @@ if (springHours !== 23 || fallHours !== 25) {
   throw new Error(`DST boundary test failed: expected 23/25 hours, got ${springHours}/${fallHours}`);
 }
 
+const effectiveZoneStart = html.indexOf("function effectiveAllowanceTimezone(");
+const effectiveZoneEnd = html.indexOf("\n    function localDayStart(", effectiveZoneStart);
+if (effectiveZoneStart < 0 || effectiveZoneEnd < 0) {
+  throw new Error("Effective allowance timezone helper could not be located.");
+}
+const effectiveAllowanceTimezone = new Function(
+  html.slice(effectiveZoneStart, effectiveZoneEnd) + "; return effectiveAllowanceTimezone;"
+)();
+const pendingUntil = "2026-11-11T00:00:00.000Z";
+assertTime(
+  effectiveAllowanceTimezone({
+    timezone:"America/Los_Angeles",
+    allowance_timezone:"Asia/Kuala_Lumpur",
+    allowance_timezone_until:pendingUntil
+  }, Date.parse("2026-11-10T12:00:00.000Z")),
+  "Asia/Kuala_Lumpur",
+  "Pending timezone change keeps previous allowance timezone"
+);
+assertTime(
+  effectiveAllowanceTimezone({
+    timezone:"America/Los_Angeles",
+    allowance_timezone:"Asia/Kuala_Lumpur",
+    allowance_timezone_until:pendingUntil
+  }, Date.parse("2026-11-11T00:00:00.000Z")),
+  "America/Los_Angeles",
+  "New timezone becomes effective after preserved allowance boundary"
+);
+if (!html.includes("allowance_timezone,allowance_timezone_until")
+    || !html.includes("new timezone takes effect after the current allowance day ends")) {
+  throw new Error("Profile and lesson allowance UI do not explain/use deferred timezone changes.");
+}
+if (!dailyScript.includes("function effectiveAllowanceTimezone(")
+    || !dailyScript.includes("allowance_timezone,allowance_timezone_until")
+    || !dailyScript.includes("Your preferred timezone (")) {
+  throw new Error("Daily Learning does not use or explain the effective allowance timezone.");
+}
+
 const required = [
   'rpc("complete_permanent_lesson"',
   'rpc("record_completed_lesson_practice_result"',
