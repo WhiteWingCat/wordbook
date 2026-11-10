@@ -120,3 +120,31 @@ begin
 end;
 $$;
 rollback;
+
+
+-- A token whose session has been signed out/revoked must not authorize deletion.
+begin;
+select set_config('request.jwt.claim.sub','88888888-8888-4888-8888-888888888888',true);
+select set_config(
+  'request.jwt.claims',
+  pg_catalog.jsonb_build_object(
+    'sub','88888888-8888-4888-8888-888888888888',
+    'session_id','dddddddd-dddd-4ddd-8ddd-dddddddddddd'
+  )::text,
+  true
+);
+set local role authenticated;
+do $$
+declare
+  v_rejected boolean := false;
+begin
+  begin
+    perform public.delete_my_learning_history();
+  exception when insufficient_privilege then v_rejected := true;
+  end;
+  if not v_rejected then
+    raise exception 'Deletion accepted a token with no active Auth session';
+  end if;
+end;
+$$;
+rollback;
