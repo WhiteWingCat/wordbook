@@ -6,19 +6,21 @@ uid="33333333-3333-4333-8333-333333333333"
 
 # Add four completed lessons and two unfinished lessons after the migration.
 # The fifth slot is shared by two concurrent completion requests.
-psql "$db" -X -v ON_ERROR_STOP=1 <<'SQL'
+psql "$db" -X -v ON_ERROR_STOP=1 <<SQL
+select set_config('request.jwt.claim.sub', '$uid', false);
+
 insert into public.lesson_progress(user_id, difficulty, lesson_id, status, completed_at)
-select '33333333-3333-4333-8333-333333333333', 'beginner',
+select '$uid', 'beginner',
        'concurrent-' || lpad(n::text, 2, '0'), 'completed', now()
 from generate_series(1, 4) as n;
 
 insert into public.lesson_progress(user_id, difficulty, lesson_id, status)
-select '33333333-3333-4333-8333-333333333333', 'beginner',
+select '$uid', 'beginner',
        'concurrent-' || lpad(n::text, 2, '0'), 'in_progress'
 from generate_series(5, 6) as n;
 
 insert into public.learning_activity_log(user_id, activity_type, language_code, event_type)
-select '33333333-3333-4333-8333-333333333333', 'lesson', 'en',
+select '$uid', 'lesson', 'en',
        case when n <= 4 then 'completed' else 'started' end
 from generate_series(1, 6) as n;
 SQL
