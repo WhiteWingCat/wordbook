@@ -3,7 +3,66 @@ import vm from "node:vm";
 
 const html = fs.readFileSync("index.html", "utf8");
 const dailyScript = fs.readFileSync("daily-learning.js", "utf8");
+
 new vm.Script(dailyScript, { filename: "daily-learning.js" });
+
+function readCuratedArray(name) {
+  const declaration = `const ${name} = [`;
+  const start = dailyScript.indexOf(declaration);
+  const end = dailyScript.indexOf("\\n  ];", start);
+  if (start < 0 || end < 0) throw new Error(`Could not locate curated array ${name}.`);
+  const open = dailyScript.indexOf("[", start);
+  return vm.runInNewContext(`(${dailyScript.slice(open, end + 4)})`);
+}
+const curated = {
+  topics: readCuratedArray("dailyTopics"),
+  applications: readCuratedArray("dailyApplications"),
+  discoveries: readCuratedArray("dailyDiscoveries")
+};
+for (const [name, items, minimum] of [
+  ["Daily Topic", curated.topics, 20],
+  ["Daily Application", curated.applications, 20],
+  ["Daily Discovery", curated.discoveries, 20]
+]) {
+  if (items.length < minimum) throw new Error(`${name} content pool too small: ${items.length}`);
+  const ids = items.map(item => item.id);
+  if (new Set(ids).size !== ids.length) throw new Error(`${name} contains duplicate content IDs.`);
+}
+for (const item of curated.topics) {
+  if (!item.topicId || !item.title || !item.body || !item.example || !item.zh) {
+    throw new Error(`Daily Topic is missing required metadata or Chinese translation: ${item.id}`);
+  }
+}
+for (const item of curated.applications) {
+  if (!item.topicId || !item.questions?.length || !item.zh) {
+    throw new Error(`Daily Application is missing topic, questions or translation: ${item.id}`);
+  }
+  for (const question of item.questions) {
+    if (!question.q || !question.explanation || !question.zh
+        || !Array.isArray(question.options) || question.options.length < 2
+        || !Number.isInteger(question.answer) || question.answer < 0
+        || question.answer >= question.options.length) {
+      throw new Error(`Invalid Daily Application question in ${item.id}`);
+    }
+  }
+}
+for (const item of curated.discoveries) {
+  if (!item.category || !item.title || !item.body || !item.example || !item.zh) {
+    throw new Error(`Daily Discovery is missing required metadata or Chinese translation: ${item.id}`);
+  }
+}
+const revisionTopicIds = [
+  "sentence-basics","verb-tenses","nouns-and-articles","everyday-vocabulary",
+  "nouns-and-quantity","phrasal-verbs","collocations","word-formation",
+  "conditional-sentences","advanced-grammar","idioms-fixed-expressions",
+  "academic-professional-english","precise-vocabulary"
+];
+for (const topicId of revisionTopicIds) {
+  if (!curated.applications.some(item => item.topicId === topicId)) {
+    throw new Error(`Adaptive revision has no application content for topic ${topicId}`);
+  }
+}
+
 const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
 let checked = 0;
 
