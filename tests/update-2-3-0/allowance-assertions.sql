@@ -831,8 +831,9 @@ begin
   if v_session_zone <> 'UTC' then
     raise exception 'Daily session did not use the effective allowance timezone';
   end if;
+  perform public.abandon_daily_activity_session(v_session);
 end;
-$$;
+$;
 commit;
 
 -- Once the previous timezone's allowance boundary has passed, the next timezone
