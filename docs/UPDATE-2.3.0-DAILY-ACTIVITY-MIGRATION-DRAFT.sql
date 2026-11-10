@@ -17,6 +17,7 @@ create table public.daily_activity_sessions (
   user_id uuid not null references auth.users(id) on delete cascade,
   activity_type text not null
     check (activity_type in ('daily_topic','daily_application','daily_discovery','daily_revision')),
+  language_code text not null references public.languages(code),
   content_id text not null
     check (char_length(content_id) between 1 and 120),
   topic_id text
@@ -131,6 +132,7 @@ as $function$
 begin
   if new.user_id is distinct from old.user_id
      or new.activity_type is distinct from old.activity_type
+     or new.language_code is distinct from old.language_code
      or new.content_id is distinct from old.content_id
      or new.topic_id is distinct from old.topic_id
      or new.difficulty is distinct from old.difficulty
@@ -183,8 +185,6 @@ language plpgsql
 security definer
 set search_path = ''
 as $function$
-declare
-  v_language text;
 begin
   if auth.uid() is null or auth.uid() <> new.user_id then
     raise exception 'Authentication required for own daily activity completion'
@@ -192,14 +192,10 @@ begin
   end if;
 
   if old.status = 'in_progress' and new.status = 'completed' then
-    select p.learning_language into v_language
-    from public.user_preferences p
-    where p.user_id = new.user_id;
-
     insert into public.learning_activity_log
       (user_id, activity_type, language_code, event_type)
     values
-      (new.user_id, new.activity_type, coalesce(v_language, 'en'), 'completed');
+      (new.user_id, new.activity_type, new.language_code, 'completed');
   end if;
 
   return new;
@@ -232,6 +228,7 @@ as $function$
 declare
   v_user uuid := auth.uid();
   v_timezone text;
+  v_language text;
   v_plan text;
   v_entitlement_status text;
   v_valid_from timestamptz;
@@ -296,14 +293,14 @@ begin
     return v_session;
   end if;
 
-  select p.timezone,
+  select p.timezone, p.learning_language,
          case p_activity_type
            when 'daily_topic' then p.daily_topic_enabled
            when 'daily_application' then p.daily_application_enabled
            when 'daily_discovery' then p.daily_discovery_enabled
            when 'daily_revision' then p.daily_revision_enabled
          end
-  into v_timezone, v_preference_enabled
+  into v_timezone, v_language, v_preference_enabled
   from public.user_preferences p
   where p.user_id = v_user;
 
@@ -360,10 +357,10 @@ begin
   );
 
   insert into public.daily_activity_sessions
-    (user_id, activity_type, content_id, topic_id, difficulty, source,
+    (user_id, activity_type, language_code, content_id, topic_id, difficulty, source,
      local_date, timezone, status)
   values
-    (v_user, p_activity_type, p_content_id, p_topic_id, p_difficulty, p_source,
+    (v_user, p_activity_type, v_language, p_content_id, p_topic_id, p_difficulty, p_source,
      v_local_date, v_timezone, 'in_progress')
   returning * into v_session;
 
