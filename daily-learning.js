@@ -236,6 +236,7 @@
     const completed = {};
     for (const row of logResult.data || []) completed[row.activity_type] = (completed[row.activity_type] || 0) + 1;
     const completedToday = (dailyResult.data || []).filter(row => row.completed_at && row.completed_at >= start && row.completed_at < finish);
+    const language = prefs.learning_language || "en";
     snapshot = {
       timezone, day, learningLanguage:language, plan, limits, completed, completedToday,
       lessonResults:lessonResult.data || [],
@@ -246,8 +247,6 @@
     const slots = {};
     for (const type of Object.keys(activityMeta)) slots[type] = completed[type] || 0;
     for (const type of Object.keys(activityMeta)) snapshot.content[type] = chooseContent(type,slots[type]);
-
-    const language = prefs.learning_language || "en";
     status.textContent = "Your daily activities reset at midnight (" + timezone + "). Plan: " + (plan === "premium" ? "Premium" : "Free") + ". Daily content currently focuses on English learning.";
     if (language !== "en" || course !== "en") {
       status.textContent += " Switch the learning course to English to start these activities.";
