@@ -57,13 +57,15 @@ The live database contains `lesson_practice_results`, but it currently has zero 
 
 **Approved direction:** Add a reliable aggregate-result write after a practice attempt has a final outcome. Store only the minimum necessary summary (stable topic ID, difficulty, correct count, question count, attempt timestamp, and activity/session reference where applicable). Do not store the learner's selected answers, free-text responses, typed sentences, or raw keystrokes. Do not collect names, email addresses, device fingerprints, precise location, or unrelated behavioural data in learning records. Keep records owner-scoped with RLS, restrict reads to the authenticated owner, and use aggregate metrics for adaptive revision. Provide a clear privacy explanation that practice performance is used to personalise revision and progress statistics. Define a retention/deletion approach so users can request deletion of their learning history without deleting their account.
 
-### 3.2 Migration history requires reconciliation
+### 3.2 Migration history reconciliation — baseline recorded
 
-The live Supabase migration list includes the Update 2.1.0 migrations and the personal testing-allowlist migrations, but does not show a recorded Update 2.2.0 migration entry. The live `lesson_progress` and `lesson_practice_results` tables and their triggers do exist.
+The live Supabase migration list initially contained the Update 2.1.0 migrations and the personal testing-allowlist migrations, but no Update 2.2.0 migration record. The 2.2.0 lesson tables and triggers were already present in production.
 
-This indicates that the deployed schema and migration history are not currently represented by a single, fully reconciled migration record. Do not blindly re-run `SUPABASE-MIGRATION-2.2.0.sql` or assume the file has been applied through migration tracking.
+A reconciliation baseline named `swiftdictionary_update_2_2_0_reconciliation_baseline` has now been applied and recorded. Its SQL is committed in `supabase/migrations/202611100001_swiftdictionary_update_2_2_0_reconciliation_baseline.sql`. It performs read-only assertions that the deployed lesson tables, key triggers, functions, and RLS enablement exist. It does not recreate, drop, or alter application tables, policies, triggers, functions, or user data. Its purpose is to establish a verified migration-history checkpoint without falsely replaying the original additive migration.
 
-**Decision:** Before applying any 2.3.0 DDL, compare the live schema with repository SQL, identify which 2.2.0 statements were applied outside migration history, and prepare a safe baseline/reconciliation plan. No production migration-history edits are part of this planning task.
+**Known schema drift:** The live `guard_lesson_progress_update()` includes a safeguard that clears `completed_at` when a row remains `in_progress`; the checked-in `SUPABASE-MIGRATION-2.2.0.sql` does not include that line. The live definition is therefore not byte-for-byte identical to the root SQL file. Future migrations must use the inspected live definitions as their baseline and explicitly document any intentional changes. Do not replay the root 2.2.0 migration.
+
+This reconciles the missing history checkpoint, but does not retroactively claim that the original 2.2.0 SQL file was executed by Supabase migration tooling.
 
 ### 3.3 Approved allowance policy and required enforcement redesign
 
@@ -235,9 +237,10 @@ Plan status must be checked server-side at the time of completion. Daily boundar
 ## 9. Current verification snapshot
 
 - Repository `main` was inspected; this document is based on the merged Update 2.2.0 code.
-- Production Supabase tables, columns, RLS policies, triggers, and migration records were inspected read-only.
+- Production Supabase tables, columns, RLS policies, triggers, and migration records were inspected.
+- The reconciliation migration was applied successfully. It added a migration-history record and verified expected objects; it did not alter application schema or user data.
 - Current row counts at review time: 13 lesson progress records, 0 lesson practice result records, and 13 learning activity log records. No user identifiers or answer content were queried for this summary.
-- No application code, production data, schema, migrations, or GitHub Pages deployment was changed during this review.
+- No application code or GitHub Pages deployment was changed during this review.
 
 
 ## 10. Owner-approved decisions added after the initial review
@@ -246,3 +249,12 @@ Plan status must be checked server-side at the time of completion. Daily boundar
 - Migration-history reconciliation is an explicit next engineering task. Do not mark migrations as applied or execute a baseline script until live schema equivalence has been verified statement by statement and a rollback/recovery plan exists.
 - Daily allowance policy is final for planning: Free = 5 permanent lesson completions/day and 1 completion in each of the four daily categories/day; Premium = 15 permanent lesson completions/day and 3 completions in each daily category/day.
 - Allowances are consumed only on successful completion. Starting, resuming, and abandoning do not consume allowance. Completion accounting must be atomic, concurrency-safe, and idempotent.
+
+
+## 11. Migration reconciliation execution record
+
+- Applied successfully to the connected SwiftDictionary Supabase project on 2026-11-10: `swiftdictionary_update_2_2_0_reconciliation_baseline`.
+- Source-controlled at `supabase/migrations/202611100001_swiftdictionary_update_2_2_0_reconciliation_baseline.sql` on the Update 2.3.0 planning branch.
+- The migration asserts the presence of the deployed 2.2.0 lesson tables, key triggers/functions, and RLS enablement. It intentionally performs no schema alteration or data rewrite.
+- This creates an auditable migration-history checkpoint; it does not misrepresent the original root-level 2.2.0 SQL as having been run through migration tooling.
+- The live guard-function difference described in Section 3.2 remains documented and must be respected by the next migration.
