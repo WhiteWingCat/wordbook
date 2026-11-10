@@ -63,6 +63,66 @@ for (const topicId of revisionTopicIds) {
   }
 }
 
+const revisionStart = dailyScript.indexOf("  function revisionCandidates(");
+const revisionEnd = dailyScript.indexOf("\n  function chooseContent(", revisionStart);
+if (revisionStart < 0 || revisionEnd < 0) throw new Error("Adaptive revision function could not be isolated for tests.");
+const revisionFunction = dailyScript.slice(revisionStart, revisionEnd);
+const fixedNow = Date.parse("2026-11-10T12:00:00.000Z");
+const RevisionDate = class extends Date { static now() { return fixedNow; } };
+const revisionRunner = vm.runInNewContext(
+  `const dailyApplications = ${JSON.stringify(revisionTopicIds.map(topicId => ({ topicId })))};\n${revisionFunction}\nrevisionCandidates;`,
+  { Date: RevisionDate, Map, Set }
+);
+const revisionRow = (topic_id, correct_count, question_count, daysAgo, id) => ({
+  topic_id, correct_count, question_count,
+  attempted_at: new Date(fixedNow - daysAgo * 86400000).toISOString(), id
+});
+const weakDue = revisionRunner([
+  revisionRow("verb-tenses",1,3,3,"weak-old"),
+  revisionRow("verb-tenses",1,3,2,"weak-new")
+],[],[]);
+const weakCandidate = weakDue.find(item => item.topicId === "verb-tenses");
+if (!weakCandidate?.weak || !weakCandidate.due || weakCandidate.priority !== 0) {
+  throw new Error("Adaptive revision failed to prioritise a sufficiently evidenced weak, overdue topic.");
+}
+const overdue = revisionRunner([
+  revisionRow("collocations",3,3,20,"overdue-old"),
+  revisionRow("collocations",3,3,20.1,"overdue-new")
+],[],[]);
+const overdueCandidate = overdue.find(item => item.topicId === "collocations");
+if (!overdueCandidate?.due || overdueCandidate.weak || overdueCandidate.overdueDays < 5) {
+  throw new Error("Adaptive revision failed to distinguish a strong but overdue topic from a weak topic.");
+}
+const improving = revisionRunner([
+  revisionRow("word-formation",0,3,2,"improve-old"),
+  revisionRow("word-formation",3,3,0.5,"improve-new")
+],[],[]);
+const improvingCandidate = improving.find(item => item.topicId === "word-formation");
+if (!improvingCandidate?.improving || improvingCandidate.weak || !improvingCandidate.reason.includes("improvement")) {
+  throw new Error("Adaptive revision did not recognise a clear recent improvement.");
+}
+const insufficient = revisionRunner([
+  revisionRow("advanced-grammar",0,3,10,"single-attempt")
+],[],[]);
+const insufficientCandidate = insufficient.find(item => item.topicId === "advanced-grammar");
+if (insufficientCandidate?.weak || !insufficientCandidate.reason.includes("not enough recent practice")) {
+  throw new Error("Adaptive revision labelled a topic weak without the minimum evidence threshold.");
+}
+const usedToday = revisionRunner([
+  revisionRow("idioms-fixed-expressions",0,3,5,"today-used")
+],[],[{ activity_type:"daily_revision",topic_id:"idioms-fixed-expressions" }]);
+if (usedToday.some(item => item.topicId === "idioms-fixed-expressions")) {
+  throw new Error("Adaptive revision repeated a topic already completed today.");
+}
+const invalidHistory = revisionRunner([
+  { topic_id:"precise-vocabulary",correct_count:9,question_count:3,attempted_at:"not-a-date" },
+  { topic_id:"precise-vocabulary",correct_count:1,question_count:3,attempted_at:"2026-11-09T12:00:00.000Z" }
+],[],[]);
+const invalidCandidate = invalidHistory.find(item => item.topicId === "precise-vocabulary");
+if (invalidCandidate?.accuracy !== null || invalidCandidate?.weak) {
+  throw new Error("Adaptive revision accepted malformed practice history as valid evidence.");
+}
+
 const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
 let checked = 0;
 
