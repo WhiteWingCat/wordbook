@@ -79,6 +79,11 @@ begin
   where user_id = '88888888-8888-4888-8888-888888888888';
   if v_count <> 1 then raise exception 'History deletion removed user preferences'; end if;
 
+  select count(*) into v_count from public.profiles
+  where user_id = '88888888-8888-4888-8888-888888888888'
+    and display_name = 'Keep Profile';
+  if v_count <> 1 then raise exception 'History deletion removed the user profile'; end if;
+
   select count(*) into v_count from public.user_entitlements
   where user_id = '88888888-8888-4888-8888-888888888888';
   if v_count <> 1 then raise exception 'History deletion removed the entitlement row'; end if;
