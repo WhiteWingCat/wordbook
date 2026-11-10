@@ -38,6 +38,7 @@ begin
     and s.user_id = v_user;
 
   if not found
+     or v_session_created_at is null
      or v_session_created_at < pg_catalog.now() - interval '15 minutes'
      or v_session_created_at > pg_catalog.now() + interval '60 seconds' then
     raise exception 'Recent authentication required to delete learning history'
