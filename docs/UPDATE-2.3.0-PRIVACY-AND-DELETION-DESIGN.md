@@ -206,7 +206,7 @@ Do not mark the 2.3.0 PR ready, merge it, apply production SQL, or deploy the we
 
 - [ ] Verify the live schema, FK delete actions, triggers, grants, RLS policies, private schema objects, Storage usage and Auth configuration.
 - [ ] Validate the private allowance ledger migration and all permanent-lesson/Daily Learning quota paths in CI and an isolated Supabase project; the implementation draft and disposable PostgreSQL assertions are now present.
-- [ ] Validate the new authenticated, recent-authentication-gated history-deletion RPC (using the signed AMR timestamp) in CI and an isolated Supabase project; prove current-day usage remains unchanged for Free and Premium, including concurrent completion/deletion races.
+- [ ] Validate the new authenticated, recent-authentication-gated history-deletion RPC (by checking the signed JWT session_id against auth.sessions.created_at) in CI and an isolated Supabase project; prove current-day usage remains unchanged for Free and Premium, including concurrent completion/deletion races.
 - [ ] Prove the ledger rolls into the next valid effective-timezone window and does not allow client spoofing or timezone-change bypass.
 - [ ] Test all history tables are deleted, all Profile/Daily Learning caches are cleared, and saved words/preferences/authentication remain intact.
 - [ ] Test deletion as a normal authenticated user, a signed-out user, another user's session, and an owner with the personal testing exemption.
@@ -279,7 +279,7 @@ This is not yet the history-deletion feature. The next work is to run and fix th
 
 ## Learning-history deletion implementation status — 2026-11-10
 
-A draft server-side RPC and Profile control have now been added to the feature branch. The RPC requires a recent signed Supabase AMR authentication-method timestamp (15 minutes, excluding token refresh), derives the target from `auth.uid()`, serializes with completion operations using the same advisory lock, and deletes only learning-history tables. It does not delete saved words, profile, preferences, entitlements, the Auth account, or the private allowance ledger.
+A draft server-side RPC and Profile control have now been added to the feature branch. The RPC requires a recent signed JWT session_id and Auth session creation timestamp (15 minutes, excluding token refresh), derives the target from `auth.uid()`, serializes with completion operations using the same advisory lock, and deletes only learning-history tables. It does not delete saved words, profile, preferences, entitlements, the Auth account, or the private allowance ledger.
 
 The UI requires explicit confirmation and explains the retained data and unchanged current-day allowance. It asks the user to sign out and sign in again if recent authentication is required.
 
