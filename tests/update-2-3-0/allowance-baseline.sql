@@ -12,7 +12,8 @@ create table auth.users (id uuid primary key);
 create table auth.sessions (
   id uuid primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  not_after timestamptz
 );
 create table public.languages (code text primary key);
 insert into public.languages(code) values ('en'), ('zh');
