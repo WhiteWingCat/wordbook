@@ -255,3 +255,10 @@ The GitHub Actions workflow now applies the ledger draft after the two existing 
 - Validate the ledger backfill query against a production snapshot in an isolated project immediately before release.
 - Confirm all completion writers insert a completed `learning_activity_log` event in the same transaction. Any future completion type must use this same path or be explicitly integrated with the ledger.
 - Keep the ledger out of user-facing Profile history and do not add client-side write or delete access.
+
+
+### CI validation status for the ledger draft
+
+The workflow has been updated to run in this order: PostgreSQL baseline → permanent allowance migration → Daily Activity migration → legacy event seed → allowance-ledger migration → existing allowance assertions → new ledger assertions → concurrency tests.
+
+At the time of this documentation update, the GitHub workflow result for the latest commit has not yet been returned by the available status endpoint. Treat the new ledger tests as **pending**, not passed. No live Supabase or browser validation has been performed.
