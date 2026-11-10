@@ -379,3 +379,24 @@ This section supersedes the preceding 12-lesson / 40-question status. The three 
 - No third-party question bank, workbook, or textbook exercise was copied.
 - Grammar rules have been checked for general accuracy. A qualified language editor or native-speaker review is still recommended before public release.
 - This is a content-only expansion. It introduces no subscription gate and does not restrict dictionary search.
+
+
+## Owner browser verification and Update 2.2.0 merge — 2026-11-10
+
+The project owner completed browser testing and reported the following behaviours working as intended:
+
+- All lessons open and function as expected.
+- Switching between English and Simplified Chinese lesson content works.
+- Shuffled answer options preserve correct-answer validation.
+- Lesson completion saves successfully after the required practice is completed.
+- Lesson progress tracking behaves as intended.
+
+This owner-reported browser verification supersedes the earlier pending browser-check items for these tested behaviours. It does not imply independent browser automation by the assistant.
+
+### Merge status
+
+- Pull request #1, **SwiftDictionary Update 2.2.0 — English Lessons Foundation**, was merged into `main`.
+- Merge commit: `dd26e746a2779c35c52d8ebe04f7588898d938ab`.
+- The merged release contains 15 lessons (five per difficulty), 52 original practice questions, matching Simplified Chinese lesson content, and the documented account-specific lesson-testing allowance.
+- The development branch is one merge commit behind `main`; no unmerged feature commits remain.
+- GitHub Pages deployment status is separate from the Git merge and must be checked in the repository's Pages deployment settings/actions.
