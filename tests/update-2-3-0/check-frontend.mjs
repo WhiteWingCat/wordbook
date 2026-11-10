@@ -9,7 +9,7 @@ new vm.Script(dailyScript, { filename: "daily-learning.js" });
 function readCuratedArray(name) {
   const declaration = `const ${name} = [`;
   const start = dailyScript.indexOf(declaration);
-  const end = dailyScript.indexOf("\\n  ];", start);
+  const end = dailyScript.indexOf("\n  ];", start);
   if (start < 0 || end < 0) throw new Error(`Could not locate curated array ${name}.`);
   const open = dailyScript.indexOf("[", start);
   return vm.runInNewContext(`(${dailyScript.slice(open, end + 4)})`);
