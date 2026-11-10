@@ -373,13 +373,21 @@
       <div id="profileSignedOut" class="coming-card" hidden><h2>Sign in to view your Profile</h2><p class="page-intro" style="margin:0 auto 16px">Your profile and learning progress are available after signing in.</p><button type="button" class="primary-button" id="profileSignIn">Sign in</button></div>
       <div id="profileContent" hidden>
         <div class="profile-grid">
-          <div class="stat-card"><strong id="totalActivity">0</strong><span>Total learning sessions</span></div>
-          <div class="stat-card"><strong id="todayActivity">0</strong><span>Sessions today</span></div>
+          <div class="stat-card"><strong id="totalActivity">0</strong><span>Completed learning activities</span></div>
+          <div class="stat-card"><strong id="todayActivity">0</strong><span>Completions today</span></div>
           <div class="stat-card"><strong id="activeLanguages">0</strong><span>Learning languages</span></div>
         </div>
-        <section class="profile-card"><h3>Learning progress</h3><p class="muted-note">Your progress is based on recorded lesson, quiz, and flashcard session starts. Dictionary searches and saved words are not restricted or counted as lesson activity.</p>
+        <section class="profile-card"><h3>Learning progress</h3><p class="muted-note">Your progress is based on successful lesson and daily activity completions. Dictionary searches and saved words are not restricted or counted as lesson activity.</p>
           <details open><summary>Activity overview</summary><div id="progressDetails" class="muted-note">No learning activity recorded yet.</div></details>
           <details><summary>Daily allowance</summary><div id="allowanceDetails" class="muted-note">Daily allowances will appear here.</div></details>
+        </section>
+        <section class="profile-card"><h3>Practice insights</h3>
+          <div class="profile-grid">
+            <div class="stat-card"><strong id="practiceAccuracy">—</strong><span>Recent practice accuracy</span></div>
+            <div class="stat-card"><strong id="practiceTopicsDue">0</strong><span>Topics needing review</span></div>
+            <div class="stat-card"><strong id="practiceAttempts">0</strong><span>Recorded practice attempts</span></div>
+          </div>
+          <p id="practiceInsightsDetails" class="muted-note">Complete lessons or daily practice to build your learning insights. Only aggregate correct/question counts are saved; individual answers are not stored.</p>
         </section>
         <section class="profile-card"><h3>Account preferences</h3>
           <form id="preferencesForm" class="preference-form">
