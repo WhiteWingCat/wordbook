@@ -216,6 +216,20 @@ $function$;
 drop trigger if exists lesson_progress_charge_on_first_start
   on public.lesson_progress;
 
+-- Prevent clients from bypassing the completion RPC by inserting a row
+-- that is already marked completed.
+drop policy if exists "Users can start their own lessons"
+  on public.lesson_progress;
+create policy "Users can start their own lessons"
+  on public.lesson_progress
+  for insert
+  to authenticated
+  with check (
+    (select auth.uid()) = user_id
+    and status = 'in_progress'
+    and completed_at is null
+  );
+
 -- A completion can only be made through the authenticated RPC below.
 create or replace function public.guard_lesson_progress_update()
 returns trigger
@@ -392,7 +406,7 @@ commit;
 -- 3. Old completed lesson rows have event_type='completed' and completion timestamps.
 -- 4. Existing in-progress lesson rows, if any, remain event_type='started'.
 -- 5. INSERT into learning_activity_log from authenticated client is denied.
--- 6. Direct REST update from in_progress to completed is denied.
+-- 6. Direct INSERT as completed and direct REST update to completed are denied.
 -- 7. RPC completion succeeds once; duplicate RPC returns the same completed row.
 -- 8. Concurrent completions at the quota boundary cannot exceed the limit.
 -- 9. A quota failure rolls back status/completed_at and creates no usage row.
