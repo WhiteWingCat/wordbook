@@ -781,7 +781,7 @@ values ('66666666-6666-4666-8666-666666666666','free','active');
 begin;
 select set_config('request.jwt.claim.sub', '66666666-6666-4666-8666-666666666666', true);
 set local role authenticated;
-do $$
+do $timezone_test$
 declare
   v_zone text;
   v_until timestamptz;
@@ -833,7 +833,7 @@ begin
   end if;
   perform public.abandon_daily_activity_session(v_session);
 end;
-$;
+$timezone_test$;
 commit;
 
 -- Once the previous timezone's allowance boundary has passed, the next timezone
