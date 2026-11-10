@@ -88,23 +88,35 @@
 
   function revisionCandidates(lessonResults, dailyResults, completedToday) {
     const combined = [...(lessonResults || []), ...(dailyResults || [])];
-    const byTopic = new Map();
+    const recordsByTopic = new Map();
     for (const row of combined) {
       if (!row.topic_id || !Number.isFinite(Number(row.question_count)) || Number(row.question_count) <= 0) continue;
-      const current = byTopic.get(row.topic_id) || { topicId:row.topic_id, correct:0, questions:0, attempts:0, lastAt:null };
-      current.correct += Number(row.correct_count || 0);
-      current.questions += Number(row.question_count || 0);
-      current.attempts += 1;
-      const stamp = row.attempted_at || row.completed_at;
-      if (stamp && (!current.lastAt || Date.parse(stamp) > Date.parse(current.lastAt))) current.lastAt = stamp;
-      byTopic.set(row.topic_id, current);
+      const records = recordsByTopic.get(row.topic_id) || [];
+      records.push({
+        correct:Number(row.correct_count || 0),
+        questions:Number(row.question_count),
+        at:row.attempted_at || row.completed_at || null
+      });
+      recordsByTopic.set(row.topic_id,records);
     }
 
-    const day = snapshot.day;
-    const usedToday = new Set((completedToday || []).filter(row => row.activity_type === "daily_revision").map(row => row.topic_id).filter(Boolean));
+    const evidenceByTopic = new Map();
+    for (const [topicId,records] of recordsByTopic) {
+      records.sort((a,b) => Date.parse(b.at || 0) - Date.parse(a.at || 0));
+      const recent = records.slice(0,3);
+      const correct = recent.reduce((sum,row) => sum + row.correct,0);
+      const questions = recent.reduce((sum,row) => sum + row.questions,0);
+      evidenceByTopic.set(topicId,{
+        topicId,correct,questions,attempts:recent.length,lastAt:recent[0]?.at || null
+      });
+    }
+
+    const usedToday = new Set((completedToday || [])
+      .filter(row => row.activity_type === "daily_revision")
+      .map(row => row.topic_id).filter(Boolean));
     const topics = [...new Set(dailyApplications.map(item => item.topicId))];
     const candidates = topics.filter(topicId => !usedToday.has(topicId)).map(topicId => {
-      const evidence = byTopic.get(topicId);
+      const evidence = evidenceByTopic.get(topicId);
       if (!evidence) return { topicId, priority:2, reason:"First review — building your learning history", accuracy:null, lastAt:null };
       const accuracy = evidence.correct / evidence.questions;
       const enoughEvidence = evidence.attempts >= 2 && evidence.questions >= 6;
@@ -114,7 +126,7 @@
       const weak = enoughEvidence && accuracy < 0.7;
       const priority = weak && due ? 0 : due ? 1 : 3;
       const reason = weak && due ? "Needs attention — recent accuracy is below 70%"
-        : !enoughEvidence ? "Building evidence — not enough practice to label this topic weak"
+        : !enoughEvidence ? "Building evidence — not enough recent practice to label this topic weak"
         : due ? "Review due based on your spaced-practice interval"
         : "Keep this topic fresh with a short review";
       return { topicId, priority, reason, accuracy, lastAt:evidence.lastAt };
