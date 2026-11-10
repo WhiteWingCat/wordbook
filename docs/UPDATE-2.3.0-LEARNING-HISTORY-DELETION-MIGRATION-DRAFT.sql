@@ -17,31 +17,29 @@ as $function$
 declare
   v_user uuid := auth.uid();
   v_jwt jsonb;
-  v_auth_time bigint;
+  v_session_id uuid;
+  v_session_created_at timestamptz;
 begin
   if v_user is null then
     raise exception 'Authentication required'
       using errcode = '42501';
   end if;
 
-  -- Supabase JWTs expose the authentication-method timestamps in the signed
-  -- amr claim. Exclude token_refresh: refreshing an old session is not a
-  -- recent authentication event.
+  -- Require a recently created, still-existing Supabase Auth session.
+  -- Refreshing an old access token keeps the same session_id and does not
+  -- reset created_at. Signing out removes the session row.
   v_jwt := auth.jwt();
-  select max((entry.value ->> 'timestamp')::bigint)
-  into v_auth_time
-  from pg_catalog.jsonb_array_elements(
-    coalesce(v_jwt -> 'amr', '[]'::jsonb)
-  ) as entry(value)
-  where entry.value ->> 'method' in (
-    'oauth','password','otp','totp','sso/saml','magiclink',
-    'email/signup','email_change','recovery','invite'
-  )
-    and entry.value ->> 'timestamp' ~ '^[0-9]+$';
+  v_session_id := nullif(v_jwt ->> 'session_id', '')::uuid;
 
-  if v_auth_time is null
-     or pg_catalog.to_timestamp(v_auth_time) < pg_catalog.now() - interval '15 minutes'
-     or pg_catalog.to_timestamp(v_auth_time) > pg_catalog.now() + interval '60 seconds' then
+  select s.created_at
+  into v_session_created_at
+  from auth.sessions s
+  where s.id = v_session_id
+    and s.user_id = v_user;
+
+  if not found
+     or v_session_created_at < pg_catalog.now() - interval '15 minutes'
+     or v_session_created_at > pg_catalog.now() + interval '60 seconds' then
     raise exception 'Recent authentication required to delete learning history'
       using errcode = '42501';
   end if;
