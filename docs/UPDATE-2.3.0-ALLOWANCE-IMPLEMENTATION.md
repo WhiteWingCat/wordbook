@@ -70,6 +70,7 @@ Files:
 - `tests/update-2-3-0/allowance-assertions.sql`
 - `docs/UPDATE-2.3.0-DAILY-ACTIVITY-DATA-DESIGN.md`
 - `docs/UPDATE-2.3.0-DAILY-ACTIVITY-MIGRATION-DRAFT.sql`
+- `daily-learning.js` (Daily Learning page behaviour and initial curated content)
 - `tests/update-2-3-0/test-concurrency.sh`
 
 The test baseline is a minimal Supabase-compatible schema fixture, not a dump of production. It now mirrors the relevant production column types, constraints, foreign keys, plan codes, plan limits, roles, RLS policies, triggers, and `auth.uid()` behaviour needed by this migration. The existing production Free Quiz/Flashcard limits (5) and Premium Quiz/Flashcard limits (12) are included and asserted unchanged. It is useful for PostgreSQL syntax and transaction/permission logic, but it cannot prove compatibility with every Supabase-managed setting or the exact production schema.
@@ -120,4 +121,9 @@ The latest compatibility fixture was expanded after a read-only production schem
 
 ## Current implementation boundary
 
-The permanent lesson completion and aggregate-result foundation, plus the daily activity preference/session database draft, have passed the free PostgreSQL compatibility suite. The frontend has been patched for permanent lesson aggregate capture and completion-based allowance display. The daily activity content catalogues, Daily Learning page/cards, actual Daily Topic/Application/Discovery/Revision lesson experiences, adaptive scheduling algorithm, and Profile accuracy/revision analytics are still outstanding. These drafts are not production migrations, and the frontend is not deployed.
+The permanent lesson completion and aggregate-result foundation, plus the daily activity preference/session database draft, have passed the free PostgreSQL compatibility suite. The frontend now includes the Daily Learning page shell and four activity cards, account-synchronised preference toggles, a first curated set of Daily Topic/Application/Discovery content, and an adaptive Daily Revision selector. Application and Revision save only first-attempt aggregate outcomes; Topic and Discovery are reading activities. The initial content set currently targets English learning, with Chinese explanations shown when Chinese is selected as the translation language. Expanded content libraries, broader language support, and Profile accuracy/revision analytics are still outstanding. These drafts are not production migrations, and the frontend is not deployed.
+
+
+The daily activity content is authored for SwiftDictionary and includes source links for factual Daily Discovery notes. The etymology entry about salary explicitly notes that the popular Roman-soldier salt-pay story is debated. No long third-party passages or textbook exercises are copied. The page is still a draft and has not been deployed.
+
+During this work, the existing browser helper for converting a user's local midnight to UTC was found to ignore the time-of-day offset. It has been corrected to account for hour/minute/second as well as the calendar date. The free CI tests now verify Asia/Kuala_Lumpur and America/Los_Angeles midnight conversions, plus New York spring-forward and fall-back day lengths.
