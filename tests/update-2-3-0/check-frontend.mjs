@@ -110,7 +110,15 @@ const mockData = {
     .map(activity_type => ({ activity_type, daily_limit: 1, is_enabled: true })),
   learning_activity_log: [],
   lesson_practice_results: [],
-  daily_activity_sessions: []
+  daily_activity_sessions: [{
+    activity_type: "daily_topic",
+    content_id: "topic-present-perfect-01",
+    topic_id: "verb-tenses",
+    correct_count: null,
+    question_count: null,
+    completed_at: "2026-11-09T08:00:00.000Z",
+    status: "completed"
+  }]
 };
 const mockSupabase = {
   from(table) {
@@ -161,6 +169,9 @@ for (const activity of ["daily_topic","daily_application","daily_discovery","dai
   if (!mockElements.dailyActivityGrid.innerHTML.includes(`data-start-daily="${activity}"`)) {
     throw new Error(`Daily Learning runtime did not render ${activity}.`);
   }
+}
+if (mockElements.dailyActivityGrid.innerHTML.includes("Past simple or present perfect?")) {
+  throw new Error("Daily Learning selected a previously completed topic as a new daily assignment.");
 }
 
 process.stdout.write(`Frontend syntax and integration checks passed (${checked} inline scripts).\n`);
