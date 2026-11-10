@@ -42,7 +42,7 @@ as $$
   )
 $$;
 
-grant usage on schema auth, public, private to anon, authenticated;
+grant usage on schema auth, public to anon, authenticated;
 grant execute on function auth.uid() to anon, authenticated;
 grant execute on function auth.jwt() to anon, authenticated;
 
