@@ -37,7 +37,7 @@ The accompanying `UPDATE-2.3.0-ALLOWANCE-MIGRATION-DRAFT.sql` is a review artifa
 2. Count only `completed` events in the existing server-side quota trigger.
 3. Remove the lesson-start charging trigger.
 4. Restrict direct lesson-progress INSERTs to `in_progress`; allow transition to `completed` only while the authenticated completion RPC is executing.
-5. Add `complete_permanent_lesson(difficulty, lesson_id)` as a SECURITY INVOKER RPC. It checks ownership through RLS, serializes per-user completion, updates progress, and lets the database completion trigger insert the quota event.
+5. Add `complete_permanent_lesson(difficulty, lesson_id, topic_id, correct_count, question_count)` as a SECURITY INVOKER RPC. It checks ownership through RLS, serializes per-user completion, updates progress, and lets the database completion trigger insert the quota event and aggregate practice result.
 6. Because the progress update and quota insert are in one transaction, quota rejection rolls back completion. Repeated RPC calls return an already completed row without adding another event.
 7. Remove direct browser INSERT access to `learning_activity_log`.
 8. Preserve the existing plan/entitlement/timezone checks and the private lesson-only exemption.
@@ -75,7 +75,7 @@ Files:
 
 The test baseline is a minimal Supabase-compatible schema fixture, not a dump of production. It now mirrors the relevant production column types, constraints, foreign keys, plan codes, plan limits, roles, RLS policies, triggers, and `auth.uid()` behaviour needed by this migration. The existing production Free Quiz/Flashcard limits (5) and Premium Quiz/Flashcard limits (12) are included and asserted unchanged. It is useful for PostgreSQL syntax and transaction/permission logic, but it cannot prove compatibility with every Supabase-managed setting or the exact production schema.
 
-**Latest confirmed run at this revision:** [GitHub Actions run 42782349126](https://github.com/WhiteWingCat/wordbook/actions/runs/42782349126) — passed on branch head `39e7717be5f82eb764b3d15bb909a8ef14147bd9`. It checked inline/external JavaScript syntax, Daily Learning runtime initialisation with a mocked Supabase client, both SQL drafts on PostgreSQL 17, historical event backfill, Free/Premium limits, unchanged Quiz/Flashcard limits, completion-only charging, start-only events remaining free at a full quota, abandon/resume/replay behaviour, rollback on quota failure, duplicate completion idempotency, direct-write restrictions, lesson-only exemption, independent daily categories, owner-scoped RLS, and concurrent quota-boundary serialization.
+**Latest confirmed run:** [GitHub Actions run 42782802321](https://github.com/WhiteWingCat/wordbook/actions/runs/42782802321) — passed on branch head `037592fce0dc199579f535e5083d4eba7e74aed3`. It checked inline/external JavaScript syntax, Daily Learning runtime initialisation with a mocked Supabase client, selection that skips previously completed daily assignments, both SQL drafts on PostgreSQL 17, historical event backfill, Free/Premium limits, unchanged Quiz/Flashcard limits, completion-only charging, start-only events remaining free at a full quota, abandon/resume/replay behaviour, rollback on quota failure, duplicate completion idempotency, direct-write restrictions, lesson-only exemption, independent daily categories, owner-scoped RLS, and concurrent quota-boundary serialization.
 
 The first run exposed a missing authenticated identity in the concurrency test setup. The fixture was corrected, and the subsequent run passed. This was a test-harness setup issue, not a migration failure.
 
@@ -101,6 +101,7 @@ The first run exposed a missing authenticated identity in the concurrency test s
 - [x] Daily session start/resume/abandon/replay and completion RPC flows pass the PostgreSQL compatibility tests.
 - [x] Start-only activity events remain uncharged even after the completion quota is full.
 - [x] Daily Learning page initialisation renders all four activity cards in the mocked frontend runtime test.
+- [x] Daily content selection skips a previously completed assignment when choosing the next daily item.
 - [x] Daily preferences default to enabled, and owner-scoped RLS prevents cross-account session reads/updates.
 - [ ] Daily reset is validated against the exact Supabase production configuration and a browser using a non-UTC stored timezone.
 - [ ] Historical backfill is rechecked against the live production rows immediately before any production migration.
@@ -110,7 +111,16 @@ The first run exposed a missing authenticated identity in the concurrency test s
 
 ## Legal and privacy check
 
-This step records only the learning activity category, event type, language code, and timestamps already needed for progress/allowance. It does not add raw answers, keystrokes, device fingerprints, precise location, or unrelated behavioural tracking. Keep the privacy notice accurate about completion history and daily limits, provide a deletion route for learning history, and explain the free/premium limits clearly before any future paid plan is offered. For Malaysia, review the app's privacy notice and data-handling practices against applicable PDPA obligations before public release or paid subscriptions.
+This step records only the learning activity category, event type, language code, and timestamps already needed for progress/allowance. Practice insights store aggregate correct/question counts and topic identifiers only; they do not store raw answers, typed responses, keystrokes, device fingerprints, precise location, or unrelated behavioural tracking.
+
+**Release legal/privacy gates:**
+- The repository currently has no dedicated Privacy Policy or Terms page. Before public release, add a clear notice describing Google/Supabase account data, saved words, learning preferences (including the IANA timezone), lesson progress, completion history, aggregate practice results, purposes, retention, hosting/service providers, and how users can request deletion.
+- A deletion route is not implemented. Do not grant browser users direct DELETE access to learning_activity_log: it is also the completion allowance ledger, so deleting current-day events could let a user reset their quota. Design a server-mediated deletion process that removes learning content/results while preserving the current-day quota accounting until its reset, or move quota accounting to a separate minimal ledger.
+- Timezone changes are currently user-editable. Before release, decide how to prevent a timezone change from granting a second allowance window (for example, defer the new timezone until the next reset or carry today's usage across the change). This protection is not yet implemented.
+- The current seed library contains only 5 Daily Topic, 5 Daily Application, and 6 Daily Discovery entries. A Premium user can request up to 3 completions per category per day; the pools are too small for sustained daily use. Expand and fact-check the content libraries before advertising the full Premium allowance as a sustained learning experience.
+- Daily Discovery notes are paraphrased and link to Cambridge Dictionary, British Council, and Wordorigins references. Keep the examples independently authored; do not copy dictionary definitions, exercises, textbook passages, or third-party images. Verify attribution and the applicable source terms before any commercial use.
+
+For Malaysia, review the app's privacy notice and data-handling practices against applicable PDPA obligations before public release or paid subscriptions. This is a practical risk checklist, not legal advice.
 
 
 ## No-cost testing boundary
