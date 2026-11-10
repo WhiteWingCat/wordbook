@@ -104,22 +104,24 @@ Definitions, Chinese glosses, example sentences, and character notes are learner
 The avatar icon is a small profile preference, not an identity-verification feature. No additional activity tracking is introduced by these changes.
 
 
-## Update 2.2.0 — Lessons
-- Three independent difficulty levels with separate progress.
-- Initial lesson library contains three authored lessons per difficulty. This is a foundation release; the course library will be expanded in later content batches.
-- Lesson reader includes learning goals, explanations, contextual examples, common mistakes and one practice question per lesson.
-- The selected translation language is used for the lesson interface headings; English instructional content remains the source language in this initial content batch.
-- Signed-in users can start lessons and sync progress. Signed-out visitors can browse the library but must sign in to start.
-- A new lesson is charged at first start. Resuming an in-progress lesson and revisiting a completed lesson are free.
-- Additive Supabase migration: `SUPABASE-MIGRATION-2.2.0.sql`. The migration has been applied to the connected project during development; do not re-run it blindly.
-- This work is on the development branch and is not deployed. Keep `supabase-config.js` and `banner.svg` unchanged.
+## Update 2.2.0 — English Lessons Foundation
 
+- The permanent lesson library currently contains **15 lessons**: five each at Beginner, Intermediate, and Advanced. The catalogue can grow in later content updates; 15 is not a cap.
+- The lessons cover grammar, vocabulary, word formation, conditionals, and precise word usage.
+- The current catalogue contains **52 original practice questions**, with corresponding Simplified Chinese lesson content and practice prompts/options.
+- Each difficulty has independent learning progress. Learners can browse the library while signed out; signing in is required to start and sync lessons.
+- Lesson completion is automatic after every practice question is answered correctly and the completion update is successfully saved.
+- Practice answer options are shuffled on lesson entry, with correct-answer mapping preserved. Changing translation language during practice preserves the learner's current answers and progress.
+- Starting a lesson for the first time consumes one lesson-start allowance. Resuming an unfinished lesson and revisiting a completed lesson are free.
+- Daily allowances reset at midnight in the user's configured IANA timezone. The database trigger remains the enforcement authority.
+- The owner's personal testing exception is stored in a private database allowlist, is limited to lesson starts for that account, and does not affect other users or other activity categories. Its account UUID is not stored in this repository.
+- Additive Supabase schema: `SUPABASE-MIGRATION-2.2.0.sql`. The private testing allowance setup is recorded in `supabase/migrations/202611090001_swiftdictionary_personal_lesson_testing_allowlist.sql`; the owner-approved allowlist row is seeded separately through a private database operation. Review migration history before applying SQL again.
+- Quiz and Flashcards remain Coming Soon and are scheduled for their respective roadmap updates.
+- Dictionary search remains free and unlimited. This update does not introduce subscription gating.
 
-## Update 2.2.0 lesson allowance and practice behaviour
+### Verification and release notes
 
-- A new lesson consumes one lesson start when its progress record is first created. Resuming the same in-progress lesson does not consume another start; completed lessons can be revisited free of charge.
-- The allowance display shows remaining new lesson starts for the current day in the user's configured timezone. The database-side quota trigger remains authoritative; the display is informational and may briefly lag concurrent activity.
-- The lesson library shows each lesson as a single horizontal row with its progress state at the right.
-- Objectives, explanations, examples, and common mistakes share one content panel. Practice is separate and can contain multiple questions.
-- Some lessons include structured visual breakdowns. Current translation support localizes selected interface labels; complete translation of lesson teaching content is still being developed.
-- The initial course contains nine authored lessons (three per difficulty). This is a foundation, not a complete course curriculum.
+- The owner reports browser testing passed for all lessons, Simplified Chinese translation switching, shuffled answer options, completion saves, and progress tracking.
+- Static source checks passed for inline JavaScript syntax, unique lesson IDs, matching English/Chinese question coverage, and valid answer indexes.
+- GitHub Pages deployment is a separate action and is not triggered merely by merging this branch.
+- Keep `supabase-config.js` and `banner.svg` intact when preparing the Pages deployment.
