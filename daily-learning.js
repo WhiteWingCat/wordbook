@@ -223,10 +223,11 @@
         .gte("created_at",start).lt("created_at",finish),
       supabaseClient.from("lesson_practice_results")
         .select("topic_id,correct_count,question_count,attempted_at")
-        .eq("user_id",userId),
+        .eq("user_id",userId).order("attempted_at",{ascending:false}).limit(200),
       supabaseClient.from("daily_activity_sessions")
         .select("activity_type,topic_id,correct_count,question_count,completed_at,status")
         .eq("user_id",userId).eq("status","completed")
+        .order("completed_at",{ascending:false}).limit(200)
     ]);
     if (sequence !== loadSequence) return;
     for (const result of [limitResult,logResult,lessonResult,dailyResult]) if (result.error) throw result.error;
