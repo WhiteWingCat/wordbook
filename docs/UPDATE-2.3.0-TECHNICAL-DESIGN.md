@@ -61,7 +61,7 @@ The live database contains `lesson_practice_results`, but it currently has zero 
 
 The live Supabase migration list initially contained the Update 2.1.0 migrations and the personal testing-allowlist migrations, but no Update 2.2.0 migration record. The 2.2.0 lesson tables and triggers were already present in production.
 
-A reconciliation baseline named `swiftdictionary_update_2_2_0_reconciliation_baseline` has now been applied and recorded. Its SQL is committed in `supabase/migrations/202611100001_swiftdictionary_update_2_2_0_reconciliation_baseline.sql`. It performs read-only assertions that the deployed lesson tables, key triggers, functions, and RLS enablement exist. It does not recreate, drop, or alter application tables, policies, triggers, functions, or user data. Its purpose is to establish a verified migration-history checkpoint without falsely replaying the original additive migration.
+A reconciliation baseline named `swiftdictionary_update_2_2_0_reconciliation_baseline` has now been applied and recorded. Its SQL is committed in `supabase/migrations/20261110041007_swiftdictionary_update_2_2_0_reconciliation_baseline.sql`. It performs read-only assertions that the deployed lesson tables, key triggers, functions, and RLS enablement exist. It does not recreate, drop, or alter application tables, policies, triggers, functions, or user data. Its purpose is to establish a verified migration-history checkpoint without falsely replaying the original additive migration.
 
 **Known schema drift:** The live `guard_lesson_progress_update()` includes a safeguard that clears `completed_at` when a row remains `in_progress`; the checked-in `SUPABASE-MIGRATION-2.2.0.sql` does not include that line. The live definition is therefore not byte-for-byte identical to the root SQL file. Future migrations must use the inspected live definitions as their baseline and explicitly document any intentional changes. Do not replay the root 2.2.0 migration.
 
@@ -254,7 +254,7 @@ Plan status must be checked server-side at the time of completion. Daily boundar
 ## 11. Migration reconciliation execution record
 
 - Applied successfully to the connected SwiftDictionary Supabase project on 2026-11-10: `swiftdictionary_update_2_2_0_reconciliation_baseline`.
-- Source-controlled at `supabase/migrations/202611100001_swiftdictionary_update_2_2_0_reconciliation_baseline.sql` on the Update 2.3.0 planning branch.
+- Source-controlled at `supabase/migrations/20261110041007_swiftdictionary_update_2_2_0_reconciliation_baseline.sql` on the Update 2.3.0 planning branch.
 - The migration asserts the presence of the deployed 2.2.0 lesson tables, key triggers/functions, and RLS enablement. It intentionally performs no schema alteration or data rewrite.
 - This creates an auditable migration-history checkpoint; it does not misrepresent the original root-level 2.2.0 SQL as having been run through migration tooling.
 - The live guard-function difference described in Section 3.2 remains documented and must be respected by the next migration.
