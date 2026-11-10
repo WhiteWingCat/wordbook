@@ -1,0 +1,41 @@
+name: Update 2.3.0 allowance migration checks
+
+on:
+  push:
+    branches:
+      - feature/update-2-3-0-allowance-foundation
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-migration-check:
+    name: PostgreSQL 17 migration and allowance tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: swiftdictionary_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d swiftdictionary_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/swiftdictionary_test
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Create Supabase-compatible baseline fixture
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/allowance-baseline.sql
+      - name: Apply allowance migration draft to disposable PostgreSQL
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f docs/UPDATE-2.3.0-ALLOWANCE-MIGRATION-DRAFT.sql
+      - name: Run migration and policy assertions
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/allowance-assertions.sql
+      - name: Verify concurrent completion serialization
+        run: bash tests/update-2-3-0/test-concurrency.sh
