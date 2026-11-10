@@ -1,6 +1,6 @@
 # SwiftDictionary Privacy Policy — Draft for Review
 
-**Draft only — not approved for publication.** This document contains placeholders and must be checked against the deployed application, actual provider settings, and applicable law before it is published.
+**Draft only — not approved for publication.** This document is a proposed notice for the 2.3.0 design, not a description of every feature currently deployed. On 10 November 2026, the connected production database was still on the pre-2.3.0 schema; the proposed current-window allowance ledger and Daily Activity session table were not live. Update this notice to match the actual release deployed at publication time, and check the provider settings and applicable law.
 
 **Effective date:** [Insert date]  
 **Last updated:** [Insert date]  
@@ -52,7 +52,7 @@ SwiftDictionary uses:
 - **Google** for the sign-in method you choose; and
 - **Supabase** for authentication and database services.
 
-[Before publication: identify the relevant Google and Supabase entities, current project/database region, subprocessors, support/operations access, backup locations, and any other services used by the deployed site. Add links to the applicable provider privacy notices and contractual information.]
+At the time of the 10 November 2026 read-only review, the primary SwiftDictionary Supabase database was hosted in the Tokyo region (Japan, `ap-northeast-1`). This does not establish the locations used for Supabase Auth, backups, logs, support access or all subprocessors. [Before publication: verify and describe those processing locations, the relevant Google and Supabase entities, subprocessors, support/operations access, backup locations, and any other services used by the deployed site. Add links to the applicable provider privacy notices and contractual information.]
 
 Information may be processed or stored outside Malaysia. Before publication, the operator must document the applicable cross-border transfer basis and safeguards, and update this section to describe the actual processing locations accurately. A database region alone may not describe every support, logging, backup or subprocessor transfer.
 
@@ -68,7 +68,7 @@ We keep account information and preferences while your account remains active an
 
 Learning progress, Daily Learning session history and aggregate practice results are retained until you request learning-history deletion or delete your account.
 
-A minimal daily allowance usage count may be retained until the current allowance window ends. This prevents deleting learning history from restoring a daily completion allowance. The count is not used to reconstruct lesson answers or detailed learning activity and is cleared or replaced when the next valid allowance window begins.
+The proposed 2.3.0 design is to retain only a minimal current-window allowance count until the current allowance window ends. This is not implemented in the live database at the time of the 10 November 2026 review. The current pre-2.3.0 database uses the activity log itself for allowance checks. Before enabling history deletion, the implementation must separate the quota ledger from deletable learning history and verify that deletion cannot restore a daily allowance.
 
 Security logs and backup copies may be retained for periods determined by provider configurations, security needs and applicable law. [Insert verified periods and explain backup expiry after checking provider terms. Do not promise immediate deletion from backups unless verified.]
 
