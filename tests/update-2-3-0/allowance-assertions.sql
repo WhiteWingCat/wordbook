@@ -94,6 +94,7 @@ declare
   v_count integer;
   v_status text;
   v_quota_rejected boolean := false;
+  v_in_progress_rejected boolean := false;
 begin
   -- Reject null/invalid lesson identity and completion without a started row.
   begin
@@ -194,8 +195,11 @@ begin
       'beginner','legacy-06','sentence-basics',1,3
     );
   exception when sqlstate 'P0002' then
-    null;
+    v_in_progress_rejected := true;
   end;
+  if not v_in_progress_rejected then
+    raise exception 'Replay practice summary was accepted for an in-progress lesson';
+  end if;
 
   -- Browser roles cannot forge aggregate practice history.
   begin
