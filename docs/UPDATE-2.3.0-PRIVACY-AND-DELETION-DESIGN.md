@@ -214,7 +214,49 @@ Do not mark the 2.3.0 PR ready, merge it, apply production SQL, or deploy the we
 - [ ] Finalise the public privacy notice with accurate controller identity, contact, processing locations, subprocessor details, retention and request handling.
 - [ ] Complete Malaysia PDPA review and target-market legal review with qualified advice where needed.
 
-## 10. References
+
+
+## 11. Read-only review of the connected Supabase project — 2026-11-10
+
+The connected SwiftDictionary project was inspected using read-only project/table metadata and SELECT-only catalog queries. No database writes, migrations, user-row reads, or production changes were made.
+
+### Observed live environment
+
+- Supabase project status: active/healthy.
+- Primary database region: `ap-northeast-1` (Tokyo, Japan).
+- PostgreSQL version: `17.11.0.003`.
+- The live project is still on the pre-2.3.0 database shape at the time of inspection:
+  - `learning_activity_log` does **not** yet have the draft `event_type` column.
+  - `daily_activity_sessions` does **not** yet exist.
+  - `user_preferences` does not yet have the draft Daily Learning preference and allowance-timezone-transition fields.
+  - `learning_plan_limits` still has the pre-2.3 activity-type constraint.
+- The current live tables include `saved_words`, `profiles`, `user_preferences`, `user_entitlements`, `learning_activity_log`, `lesson_progress`, `lesson_practice_results`, and private `learning_limit_exemptions`.
+
+### Foreign-key findings
+
+Every inspected user-owned table currently has a foreign key to `auth.users(id)` with `ON DELETE CASCADE`: saved words, profiles, preferences, entitlements, learning activity, lesson progress, lesson practice results, and the private testing exemption. This supports account-level cascade deletion for the currently observed tables. It does **not** mean a learning-history-only deletion can delete the Auth user; doing so would also delete saved words, profile and preferences.
+
+The new draft `daily_activity_sessions` table also declares an `ON DELETE CASCADE` reference to Auth users. Confirm this constraint after any approved migration.
+
+### RLS and access findings
+
+- RLS is enabled on the inspected public/private user-owned tables.
+- Current live `learning_activity_log` has an owner-scoped SELECT policy and an authenticated owner-scoped INSERT policy.
+- Current live `lesson_practice_results` has owner-scoped SELECT and INSERT policies.
+- Current live `lesson_progress` has owner-scoped SELECT, INSERT and UPDATE policies.
+- No direct browser DELETE policy was observed for these learning tables.
+- The 2.3.0 draft intends to revoke direct browser INSERT paths for activity and practice results and use trusted database completion writers. Those changes are not yet live.
+
+### Consequences for implementation
+
+1. Treat the production database as pre-2.3.0. Never apply the history-deletion operation against a schema that does not first have the reviewed 2.3.0 completion/ledger architecture.
+2. Account deletion can use the observed cascades only after the full live FK inventory is rechecked at release time. Any future Storage objects or new user-linked tables need separate handling.
+3. Do not grant browser DELETE access to `learning_activity_log`, `lesson_progress` or `lesson_practice_results` as a shortcut.
+4. The primary database is in Japan, so the privacy notice should identify Japan as the current primary database hosting location if that remains true at publication. This does not establish the location of Supabase Auth, backups, logs, support access, Google processing or every subprocessor. Verify those separately.
+5. The observed PostgreSQL version is `17.11.0.003`, which meets the minimum version cited in the earlier Supabase timezone-data notice; still run timezone boundary tests against the live managed environment before release.
+
+
+## 12. References
 
 - Supabase [User Management and deleting users](https://supabase.com/docs/guides/auth/managing-user-data)
 - Supabase [Auth Admin deleteUser](https://supabase.com/docs/reference/javascript/auth-admin-deleteuser)
