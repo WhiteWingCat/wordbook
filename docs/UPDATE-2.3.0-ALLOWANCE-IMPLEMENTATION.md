@@ -272,7 +272,7 @@ The next implementation stage now includes:
 - `tests/update-2-3-0/learning-history-deletion-assertions.sql`
 - A Profile **Privacy and data** section with an explicit destructive confirmation.
 
-The authenticated RPC derives the target account exclusively from `auth.uid()`; the browser cannot supply another user ID. It requires a JWT `auth_time` within the previous 15 minutes, acquires the same per-user advisory transaction lock as completion writers, and deletes the user's Daily Activity sessions, practice summaries, lesson progress and activity history in one transaction. It deliberately leaves the Auth user, profile, preferences, entitlement, saved words and private current-window allowance ledger untouched. Repeated calls are idempotent.
+The authenticated RPC derives the target account exclusively from `auth.uid()`; the browser cannot supply another user ID. Its privileged implementation is in the non-exposed `private` schema, called through a `SECURITY INVOKER` public RPC wrapper. It requires a signed Supabase `amr` authentication-method timestamp within the previous 15 minutes (excluding token refresh), acquires the same per-user advisory transaction lock as completion writers, and deletes the user's Daily Activity sessions, practice summaries, lesson progress and activity history in one transaction. It deliberately leaves the Auth user, profile, preferences, entitlement, saved words and private current-window allowance ledger untouched. Repeated calls are idempotent.
 
 The Profile UI explains what is deleted and retained, warns that today's allowance is not restored, and only reports success after the RPC confirms it. If the authentication timestamp is too old, the user is instructed to sign out and sign in again before retrying.
 
