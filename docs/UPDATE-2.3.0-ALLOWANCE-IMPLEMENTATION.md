@@ -36,7 +36,7 @@ The accompanying `UPDATE-2.3.0-ALLOWANCE-MIGRATION-DRAFT.sql` is a review artifa
 1. Add `event_type` = `started` or `completed` to the activity log.
 2. Count only `completed` events in the existing server-side quota trigger.
 3. Remove the lesson-start charging trigger.
-4. Allow status transition to `completed` only while the authenticated completion RPC is executing.
+4. Restrict direct lesson-progress INSERTs to `in_progress`; allow transition to `completed` only while the authenticated completion RPC is executing.
 5. Add `complete_permanent_lesson(difficulty, lesson_id)` as a SECURITY INVOKER RPC. It checks ownership through RLS, serializes per-user completion, updates progress, and lets the database completion trigger insert the quota event.
 6. Because the progress update and quota insert are in one transaction, quota rejection rolls back completion. Repeated RPC calls return an already completed row without adding another event.
 7. Remove direct browser INSERT access to `learning_activity_log`.
