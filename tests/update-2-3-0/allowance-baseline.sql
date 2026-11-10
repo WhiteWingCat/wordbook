@@ -9,6 +9,11 @@ create schema auth;
 create schema private;
 
 create table auth.users (id uuid primary key);
+create table auth.sessions (
+  id uuid primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
 create table public.languages (code text primary key);
 insert into public.languages(code) values ('en'), ('zh');
 
