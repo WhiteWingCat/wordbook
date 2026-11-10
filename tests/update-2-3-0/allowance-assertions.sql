@@ -190,6 +190,12 @@ begin
     raise exception 'Historical lesson replay did not save exactly one practice summary';
   end if;
 
+  if (select count(*) from public.learning_activity_log
+      where user_id = auth.uid() and activity_type = 'lesson'
+        and event_type = 'completed') <> 5 then
+    raise exception 'Historical lesson replay incorrectly consumed another lesson allowance';
+  end if;
+
   begin
     perform public.record_completed_lesson_practice_result(
       'beginner','legacy-06','sentence-basics',1,3
