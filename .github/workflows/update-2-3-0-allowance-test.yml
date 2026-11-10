@@ -33,6 +33,32 @@ jobs:
       - name: Verify real Supabase Auth schema, roles and JWT helpers
         working-directory: ${{ runner.temp }}/swiftdictionary-supabase
         run: supabase db query --local --file "$GITHUB_WORKSPACE/tests/update-2-3-0/supabase-local-auth-contract.sql"
+      - name: Create synthetic SwiftDictionary application baseline on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: supabase db query --local --file "$GITHUB_WORKSPACE/tests/update-2-3-0/supabase-local-app-baseline.sql"
+      - name: Apply completion-based allowance migration on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: supabase db query --local --file "$GITHUB_WORKSPACE/docs/UPDATE-2.3.0-ALLOWANCE-MIGRATION-DRAFT.sql"
+      - name: Apply Daily Learning migration on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: supabase db query --local --file "$GITHUB_WORKSPACE/docs/UPDATE-2.3.0-DAILY-ACTIVITY-MIGRATION-DRAFT.sql"
+      - name: Seed legacy completions for local ledger backfill
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: supabase db query --local --file "$GITHUB_WORKSPACE/tests/update-2-3-0/allowance-ledger-seed.sql"
+      - name: Apply private allowance ledger migration on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: supabase db query --local --file "$GITHUB_WORKSPACE/docs/UPDATE-2.3.0-ALLOWANCE-LEDGER-MIGRATION-DRAFT.sql"
+      - name: Run allowance, policy and ledger assertions on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          supabase db query --local --file "$GITHUB_WORKSPACE/tests/update-2-3-0/allowance-assertions.sql"
+          supabase db query --local --file "$GITHUB_WORKSPACE/tests/update-2-3-0/allowance-ledger-assertions.sql"
+      - name: Apply learning-history deletion migration on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: supabase db query --local --file "$GITHUB_WORKSPACE/docs/UPDATE-2.3.0-LEARNING-HISTORY-DELETION-MIGRATION-DRAFT.sql"
+      - name: Verify learning-history deletion on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: supabase db query --local --file "$GITHUB_WORKSPACE/tests/update-2-3-0/learning-history-deletion-assertions.sql"
       - name: Stop disposable local Supabase services
         if: always()
         working-directory: ${{ runner.temp }}/swiftdictionary-supabase
