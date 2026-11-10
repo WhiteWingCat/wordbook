@@ -278,21 +278,6 @@ begin
     return v_session;
   end if;
 
-  -- Replaying content already completed by this learner is free, including
-  -- when the same stable content ID is surfaced again on a later day.
-  select * into v_session
-  from public.daily_activity_sessions
-  where user_id = v_user
-    and activity_type = p_activity_type
-    and content_id = p_content_id
-    and status = 'completed'
-  order by completed_at desc
-  limit 1;
-
-  if found then
-    return v_session;
-  end if;
-
   select p.timezone, p.learning_language,
          case p_activity_type
            when 'daily_topic' then p.daily_topic_enabled
@@ -308,6 +293,22 @@ begin
      or not exists (select 1 from pg_catalog.pg_timezone_names z where z.name = v_timezone) then
     raise exception 'A valid saved IANA timezone is required'
       using errcode = '22023';
+  end if;
+
+  -- Replaying the same completed content in the same learning language is free,
+  -- including when it is surfaced again on a later day.
+  select * into v_session
+  from public.daily_activity_sessions
+  where user_id = v_user
+    and activity_type = p_activity_type
+    and content_id = p_content_id
+    and language_code = v_language
+    and status = 'completed'
+  order by completed_at desc
+  limit 1;
+
+  if found then
+    return v_session;
   end if;
 
   if not v_preference_enabled then
