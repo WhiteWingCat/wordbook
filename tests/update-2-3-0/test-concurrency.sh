@@ -63,6 +63,7 @@ do $$
 declare
   v_completed integer;
   v_in_progress integer;
+  v_practice_results integer;
 begin
   select count(*) into v_completed
   from public.learning_activity_log
@@ -78,6 +79,14 @@ begin
   end if;
   if v_in_progress <> 1 then
     raise exception 'Concurrent quota race left % unfinished lessons; expected exactly 1', v_in_progress;
+  end if;
+
+  select count(*) into v_practice_results
+  from public.lesson_practice_results
+  where user_id = '33333333-3333-4333-8333-333333333333';
+
+  if v_practice_results <> 1 then
+    raise exception 'Concurrent quota race saved % practice results; expected exactly 1', v_practice_results;
   end if;
 end;
 $$;
