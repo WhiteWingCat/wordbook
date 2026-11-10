@@ -766,3 +766,112 @@ begin
 end;
 $$;
 commit;
+
+
+-- A timezone change cannot reset the current allowance window. Repeated changes
+-- preserve the original boundary, and the server ignores client-forged override
+-- values. Daily sessions snapshot the effective (not merely preferred) zone.
+insert into auth.users(id)
+values ('66666666-6666-4666-8666-666666666666');
+insert into public.user_preferences(user_id,timezone)
+values ('66666666-6666-4666-8666-666666666666','UTC');
+insert into public.user_entitlements(user_id,plan_code,status)
+values ('66666666-6666-4666-8666-666666666666','free','active');
+
+begin;
+select set_config('request.jwt.claim.sub', '66666666-6666-4666-8666-666666666666', true);
+set local role authenticated;
+do $$
+declare
+  v_zone text;
+  v_until timestamptz;
+  v_original_until timestamptz;
+  v_session uuid;
+  v_session_zone text;
+begin
+  update public.user_preferences set timezone = 'America/Los_Angeles'
+  where user_id = auth.uid();
+
+  select allowance_timezone, allowance_timezone_until
+  into v_zone, v_original_until
+  from public.user_preferences where user_id = auth.uid();
+  if v_zone <> 'UTC' or v_original_until <= now()
+     or v_original_until > now() + interval '1 day' then
+    raise exception 'First timezone change did not preserve the current UTC allowance window';
+  end if;
+
+  update public.user_preferences set timezone = 'Europe/London'
+  where user_id = auth.uid();
+  select allowance_timezone, allowance_timezone_until
+  into v_zone, v_until
+  from public.user_preferences where user_id = auth.uid();
+  if v_zone <> 'UTC' or v_until <> v_original_until then
+    raise exception 'A second timezone change moved the already-pending allowance boundary';
+  end if;
+
+  -- Attempts to forge or extend the server-owned override are discarded.
+  update public.user_preferences
+  set timezone = 'America/Los_Angeles',
+      allowance_timezone = 'Pacific/Honolulu',
+      allowance_timezone_until = now() + interval '30 days'
+  where user_id = auth.uid();
+  select allowance_timezone, allowance_timezone_until
+  into v_zone, v_until
+  from public.user_preferences where user_id = auth.uid();
+  if v_zone <> 'UTC' or v_until <> v_original_until then
+    raise exception 'Client was able to forge or extend the allowance timezone override';
+  end if;
+
+  select id into v_session
+  from public.start_daily_activity_session(
+    'daily_topic','timezone-window-check','sentence-basics','beginner','daily'
+  );
+  select timezone into v_session_zone
+  from public.daily_activity_sessions where id = v_session;
+  if v_session_zone <> 'UTC' then
+    raise exception 'Daily session did not use the effective allowance timezone';
+  end if;
+end;
+$$;
+commit;
+
+-- Once the previous timezone's allowance boundary has passed, the next timezone
+-- change starts a fresh one-day transition using the then-current preference.
+alter table public.user_preferences disable trigger guard_learning_timezone_change;
+update public.user_preferences
+set allowance_timezone_until = now() - interval '1 second'
+where user_id = '66666666-6666-4666-8666-666666666666';
+alter table public.user_preferences enable trigger guard_learning_timezone_change;
+
+begin;
+select set_config('request.jwt.claim.sub', '66666666-6666-4666-8666-666666666666', true);
+set local role authenticated;
+do $$
+declare
+  v_zone text;
+  v_until timestamptz;
+  v_session uuid;
+  v_session_zone text;
+begin
+  update public.user_preferences set timezone = 'Asia/Kuala_Lumpur'
+  where user_id = auth.uid();
+
+  select allowance_timezone, allowance_timezone_until
+  into v_zone, v_until
+  from public.user_preferences where user_id = auth.uid();
+  if v_zone <> 'America/Los_Angeles' or v_until <= now() then
+    raise exception 'Expired timezone override did not transition from the previous preferred timezone';
+  end if;
+
+  select id into v_session
+  from public.start_daily_activity_session(
+    'daily_topic','timezone-window-after-boundary','sentence-basics','beginner','daily'
+  );
+  select timezone into v_session_zone
+  from public.daily_activity_sessions where id = v_session;
+  if v_session_zone <> 'America/Los_Angeles' then
+    raise exception 'Daily session ignored the new effective timezone after the old boundary';
+  end if;
+end;
+$$;
+commit;
