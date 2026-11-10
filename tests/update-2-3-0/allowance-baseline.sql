@@ -172,11 +172,11 @@ grant usage, select on sequence public.learning_activity_log_id_seq to authentic
 insert into public.learning_plan_limits(plan_code, activity_type, daily_limit)
 values
   ('free', 'lesson', 5),
-  ('free', 'quiz', 1),
-  ('free', 'flashcard', 1),
+  ('free', 'quiz', 5),
+  ('free', 'flashcard', 5),
   ('premium', 'lesson', 12),
-  ('premium', 'quiz', 3),
-  ('premium', 'flashcard', 3);
+  ('premium', 'quiz', 12),
+  ('premium', 'flashcard', 12);
 
 insert into public.user_preferences(user_id, timezone)
 values
