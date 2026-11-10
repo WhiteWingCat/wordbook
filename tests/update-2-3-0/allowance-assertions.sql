@@ -5,7 +5,26 @@ do $$
 declare
   v_count integer;
   v_status text;
+  v_default text;
 begin
+  -- Event classification must be explicit; the browser cannot write usage rows.
+  select column_default into v_default
+  from information_schema.columns
+  where table_schema = 'public' and table_name = 'learning_activity_log'
+    and column_name = 'event_type';
+  if v_default is not null then
+    raise exception 'event_type unexpectedly has a default';
+  end if;
+  if has_table_privilege('authenticated', 'public.learning_activity_log', 'INSERT') then
+    raise exception 'Authenticated users still have direct activity-log INSERT privilege';
+  end if;
+  if has_function_privilege('anon', 'public.complete_permanent_lesson(text,text)', 'EXECUTE') then
+    raise exception 'Anonymous users can execute the completion RPC';
+  end if;
+  if not has_function_privilege('authenticated', 'public.complete_permanent_lesson(text,text)', 'EXECUTE') then
+    raise exception 'Authenticated users cannot execute the completion RPC';
+  end if;
+
   -- Approved limits are installed, including independent daily categories.
   if (select daily_limit from public.learning_plan_limits
       where plan_code = 'free' and activity_type = 'lesson') <> 5 then
