@@ -18,6 +18,11 @@ create table public.saved_words (
   word text not null
 );
 
+create table public.profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  display_name text
+);
+
 create function auth.uid()
 returns uuid
 language sql
