@@ -180,7 +180,8 @@ The notice should explain:
 SwiftDictionary is intended for a global audience and is operated from Malaysia. This is a practical product-risk review, not legal advice.
 
 - Review the Personal Data Protection Act 2010 (Act 709), as amended by the Personal Data Protection (Amendment) Act 2024. The official Commissioner site publishes the Act, amendment, commencement material and current circulars/guidelines.
-- Provide a clear written privacy notice and identify the actual data controller. The controller's legal identity and contact details must not be left as placeholders at launch.
+- Determine whether the operation falls within the PDPA's commercial-transaction scope; do not assume that a free-to-use service is automatically outside the Act. Obtain qualified advice on the operator's status and activities.
+- Provide a clear written privacy notice and identify the actual data controller. The controller's legal identity and contact details must not be left as placeholders at launch. Where the PDPA applies, prepare the notice in both Bahasa Malaysia (the national language) and English, and make the choice/request route accessible in both languages.
 - Assess the data protection principles, purpose limitation, notice/choice, security, retention, data integrity, access and correction processes against the actual implementation.
 - Assess the enhanced cross-border transfer requirements and the Commissioner's Cross-Border Personal Data Transfer Guideline. Verify the live Supabase project region, Google processing, subprocessors, support access, backups and contractual terms; do not assume that selecting a Tokyo database region proves all processing remains in Japan.
 - Assess the breach-notification obligations and the Commissioner's current Data Breach Notification Guideline/circular, including internal incident detection, decision ownership, records and notification timelines.
@@ -197,6 +198,7 @@ Official Malaysian sources:
 - [Data Breach Notification Guidelines](https://www.pdp.gov.my/en/akta/personal-data-protection-guidelines-on-data-breach-notification-dbn/)
 - [Cross-Border Transfer Guidelines](https://www.pdp.gov.my/en/akta/personal-data-protection-guidelines-on-cross-border-transfer-of-personal-data-cbpdt/)
 - [Commissioner's FAQ](https://www.pdp.gov.my/en/faq/)
+- [Commissioner's Quick Guide to Privacy Notice](https://www.pdp.gov.my/ppdpv1/wp-content/uploads/2025/01/A-Quick-Guide-to-PRIVACY-NOTICE.pdf)
 
 ## 9. Implementation and release gates
 
