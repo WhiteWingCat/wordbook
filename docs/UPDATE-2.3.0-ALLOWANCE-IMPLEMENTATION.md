@@ -157,3 +157,18 @@ The Daily Learning draft now contains:
 The learning explanations, examples and questions are independently authored for SwiftDictionary. Discovery entries include reference links where an external grammar or usage claim is useful; links are references for further reading, not permission to reproduce the linked publisher's content. The salary etymology entry retains an explicit uncertainty note. Before any future paid distribution or substantial reuse of third-party materials, review source terms, licensing and attribution requirements. The content is English learning with Chinese translations; a native Chinese learning curriculum is not included in this expansion.
 
 The expanded pools provide at least eight days of distinct curated content at the proposed Premium rate of three completions per category per day (the smallest pool is 25). This is a practical initial buffer, not an unlimited content pipeline.
+
+
+## Adaptive Daily Revision review — 2026-11-10
+
+The revision selector was strengthened and covered by deterministic regression fixtures:
+
+- Practice rows with missing/invalid timestamps, non-integer counts, zero questions, negative correct counts, or correct counts above the question total are ignored rather than influencing mastery.
+- The selector still uses the three most recent valid aggregate attempts and the existing 1/3/7/14-day interval bands.
+- Weak-topic status still requires at least two attempts and six questions, and now also requires the latest attempt to remain below 70%. A clear latest-attempt recovery (at least 80% and at least 20 percentage points above the previous attempt(s)) suppresses the weak label while the rolling accuracy and due interval continue to be tracked.
+- Overdue topics are ranked by how far past their interval they are, after weak-and-due topics receive the highest priority. Strong but overdue topics remain due without being mislabeled weak.
+- Topics already completed in Daily Revision today remain excluded.
+- Revision content IDs now encode the selected application-set ID. The selector rotates through unused application sets for that topic before replaying earlier material, and resumed sessions recover the matching content set from the session ID.
+- Added deterministic tests for weak-topic priority, overdue-but-not-weak topics, recent improvement, minimum evidence, same-day repeat prevention, and malformed history.
+
+The GitHub Actions run for commit `e7a6f66209b410ef219b8f57d446fc29706c981e` passed: [run #42792996028](https://github.com/WhiteWingCat/wordbook/actions/runs/42792996028). This validates the frontend syntax/integration checks and the existing PostgreSQL 17 migration, RLS, allowance, and concurrency suite. It does not replace live browser testing or a live Supabase integration test. No production database or deployment was changed.
