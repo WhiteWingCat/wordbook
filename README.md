@@ -1,6 +1,6 @@
-# SwiftDictionary Update 2.1.0
+# SwiftDictionary Update 2.2.0 — English Lessons Foundation
 
-SwiftDictionary is a GitHub Pages-compatible vocabulary-learning website for English and Simplified Chinese. This update establishes the shared five-page learning interface, signed-in Profile, account preferences, learning-progress overview, configurable daily learning allowances, and Coming Soon pages for Lessons, Quiz, and Flashcards. The English and Simplified Chinese dictionary courses, stroke-order lesson, Google authentication, account switching, and saved-word synchronization are retained.
+SwiftDictionary is a GitHub Pages-compatible vocabulary-learning website for English and Simplified Chinese. This update introduces an English Lessons foundation with Beginner, Intermediate and Advanced levels, a topic-filtered lesson library, guided lesson reader, multi-question practice where appropriate, visible lesson-start allowances, and account-synchronised lesson progress. Quiz and Flashcards remain Coming Soon. The English and Simplified Chinese dictionary courses, stroke-order lesson, Google authentication, account switching, and saved-word synchronization are retained.
 
 ## Release contents
 
@@ -16,10 +16,10 @@ The existing `banner.svg` and `supabase-config.js` remain external project files
 
 - Five-page navigation: **Dictionary**, **Lessons**, **Quiz**, **Flashcards**, and **Profile**.
 - Dictionary remains the default page and its English/Chinese word-grid search remains free and unlimited.
-- Lessons, Quiz, and Flashcards have functional Coming Soon placeholder pages in this release. Their learning features are scheduled for later releases.
+- Lessons provides a topic-filtered library with Beginner, Intermediate and Advanced levels, separate progress per difficulty, a focused lesson reader, and practice. Quiz and Flashcards remain Coming Soon. The current development catalogue contains 15 lessons (five per difficulty) and 52 original practice questions, with English and Simplified Chinese lesson content.
 - Pages can be opened directly using the in-app hash routes `#dictionary`, `#lessons`, `#quiz`, `#flashcards`, and `#profile`.
 - Profile is restricted to signed-in users. Signed-out visitors who select or directly open Profile are redirected to Dictionary.
-- Profile includes a learning overview, expandable activity and daily-allowance details, and account preferences for display name, learning language, translation language, and IANA timezone.
+- Profile includes a learning overview, expandable activity and daily-allowance details, and account preferences for display name, learning language, translation language, and IANA timezone. The Lessons page also shows remaining daily new-lesson starts and the configured timezone reset.
 - Daily activity allowances are configured in Supabase by plan and activity category. Initial values are Free: 5 starts per day per category; Premium: 12 starts per day per category. Premium entitlement infrastructure is present, but no payment, checkout, or subscription purchase flow is included.
 - Daily resets use each user's configured timezone. A timezone change is blocked after learning activity has been recorded for that user's current local day.
 - Learning activity records store only activity type, language code, and timestamp; they do not store answers, response content, or word-level activity.
@@ -102,3 +102,26 @@ Definitions, Chinese glosses, example sentences, and character notes are learner
 - The account menu closes on outside click or Escape.
 
 The avatar icon is a small profile preference, not an identity-verification feature. No additional activity tracking is introduced by these changes.
+
+
+## Update 2.2.0 — English Lessons Foundation
+
+- The permanent lesson library currently contains **15 lessons**: five each at Beginner, Intermediate, and Advanced. The catalogue can grow in later content updates; 15 is not a cap.
+- The lessons cover grammar, vocabulary, word formation, conditionals, and precise word usage.
+- The current catalogue contains **52 original practice questions**, with corresponding Simplified Chinese lesson content and practice prompts/options.
+- Each difficulty has independent learning progress. Learners can browse the library while signed out; signing in is required to start and sync lessons.
+- Lesson completion is automatic after every practice question is answered correctly and the completion update is successfully saved.
+- Practice answer options are shuffled on lesson entry, with correct-answer mapping preserved. Changing translation language during practice preserves the learner's current answers and progress.
+- Starting a lesson for the first time consumes one lesson-start allowance. Resuming an unfinished lesson and revisiting a completed lesson are free.
+- Daily allowances reset at midnight in the user's configured IANA timezone. The database trigger remains the enforcement authority.
+- The owner's personal testing exception is stored in a private database allowlist, is limited to lesson starts for that account, and does not affect other users or other activity categories. Its account UUID is not stored in this repository.
+- Additive Supabase schema: `SUPABASE-MIGRATION-2.2.0.sql`. The private testing allowance setup is recorded in `supabase/migrations/202611090001_swiftdictionary_personal_lesson_testing_allowlist.sql`; the owner-approved allowlist row is seeded separately through a private database operation. Review migration history before applying SQL again.
+- Quiz and Flashcards remain Coming Soon and are scheduled for their respective roadmap updates.
+- Dictionary search remains free and unlimited. This update does not introduce subscription gating.
+
+### Verification and release notes
+
+- The owner reports browser testing passed for all lessons, Simplified Chinese translation switching, shuffled answer options, completion saves, and progress tracking.
+- Static source checks passed for inline JavaScript syntax, unique lesson IDs, matching English/Chinese question coverage, and valid answer indexes.
+- GitHub Pages deployment is a separate action and is not triggered merely by merging this branch.
+- Keep `supabase-config.js` and `banner.svg` intact when preparing the Pages deployment.
