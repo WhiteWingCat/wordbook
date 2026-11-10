@@ -261,7 +261,7 @@ The GitHub Actions workflow now applies the ledger draft after the two existing 
 
 The workflow has been updated to run in this order: PostgreSQL baseline → permanent allowance migration → Daily Activity migration → legacy event seed → allowance-ledger migration → existing allowance assertions → new ledger assertions → concurrency tests.
 
-At the time of this documentation update, the GitHub workflow result for the latest commit has not yet been returned by the available status endpoint. Treat the new ledger tests as **pending**, not passed. No live Supabase or browser validation has been performed.
+GitHub Actions run [#42799773985](https://github.com/WhiteWingCat/wordbook/actions/runs/42799773985) passed on commit `9687bebe2b77441563e1f015c8a8babb234d6e9b`. It completed frontend syntax/runtime checks, the three SQL migration drafts, legacy ledger backfill, plan/permission assertions, ledger deletion-resistance and rollover assertions, learning-history deletion and data-preservation assertions, existing completion concurrency tests, and the new completion-versus-history-deletion serialization test. This remains a disposable PostgreSQL 17 compatibility test, not a live Supabase migration test. No production database, website, or user data has been changed.
 
 
 ## Learning-history deletion implementation draft
@@ -276,4 +276,4 @@ The authenticated RPC derives the target account exclusively from `auth.uid()`; 
 
 The Profile UI explains what is deleted and retained, warns that today's allowance is not restored, and only reports success after the RPC confirms it. If the authentication timestamp is too old, the user is instructed to sign out and sign in again before retrying.
 
-The disposable PostgreSQL workflow now applies the deletion migration after the allowance ledger and checks recent-authentication enforcement, idempotency, complete removal of learning history, unchanged allowance counts, and retention of account/preferences/saved words. These tests remain pending until a GitHub Actions run is confirmed; they have not been represented as passed. This is still a draft and has not been applied to production Supabase.
+The disposable PostgreSQL workflow now applies the deletion migration after the allowance ledger and checks recent-authentication enforcement, idempotency, complete removal of learning history, unchanged allowance counts, and retention of account/preferences/saved words. These tests passed in GitHub Actions run [#42799773985](https://github.com/WhiteWingCat/wordbook/actions/runs/42799773985) on commit `9687bebe2b77441563e1f015c8a8babb234d6e9b`. Isolated Supabase integration and browser validation are still outstanding. This is still a draft and has not been applied to production Supabase.
