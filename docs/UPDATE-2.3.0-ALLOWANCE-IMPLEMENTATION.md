@@ -105,6 +105,8 @@ The first run exposed a missing authenticated identity in the concurrency test s
 - [x] An exhausted curated pool is labelled as a free replay rather than implying another completion can be charged.
 - [x] Concurrent duplicate daily completion requests are idempotent and write exactly one completion event.
 - [x] Daily preferences default to enabled, and owner-scoped RLS prevents cross-account session reads/updates.
+- [x] Expanded curated content pools meet the initial minimum size, contain unique IDs, include required Chinese translations, and cover all 13 lesson topic IDs.
+- [x] Daily Application questions have valid answer indexes and explanations in the frontend content validation test.
 - [ ] Daily reset is validated against the exact Supabase production configuration and a browser using a non-UTC stored timezone.
 - [ ] Historical backfill is rechecked against the live production rows immediately before any production migration.
 - [ ] Supabase security and performance advisors reviewed after any approved production migration.
