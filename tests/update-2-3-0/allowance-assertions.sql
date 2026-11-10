@@ -85,6 +85,21 @@ declare
   v_count integer;
   v_status text;
 begin
+  -- Reject null/invalid lesson identity and completion without a started row.
+  begin
+    perform public.complete_permanent_lesson(null, 'legacy-06');
+    raise exception 'Null difficulty unexpectedly passed validation';
+  exception when sqlstate '22023' then
+    null;
+  end;
+
+  begin
+    perform public.complete_permanent_lesson('beginner', 'not-started');
+    raise exception 'Completion without a started lesson unexpectedly succeeded';
+  exception when sqlstate 'P0002' then
+    null;
+  end;
+
   perform public.complete_permanent_lesson('beginner', 'legacy-05');
   perform public.complete_permanent_lesson('beginner', 'legacy-05');
 
