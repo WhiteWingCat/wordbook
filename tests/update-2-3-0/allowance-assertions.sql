@@ -47,6 +47,20 @@ begin
     raise exception 'Premium daily category limits are incomplete';
   end if;
 
+  -- Existing Quiz and Flashcard quotas are deliberately unchanged by 2.3.0.
+  if (select daily_limit from public.learning_plan_limits
+      where plan_code = 'free' and activity_type = 'quiz') <> 5
+     or (select daily_limit from public.learning_plan_limits
+      where plan_code = 'free' and activity_type = 'flashcard') <> 5 then
+    raise exception 'Free Quiz/Flashcard limits changed unexpectedly';
+  end if;
+  if (select daily_limit from public.learning_plan_limits
+      where plan_code = 'premium' and activity_type = 'quiz') <> 12
+     or (select daily_limit from public.learning_plan_limits
+      where plan_code = 'premium' and activity_type = 'flashcard') <> 12 then
+    raise exception 'Premium Quiz/Flashcard limits changed unexpectedly';
+  end if;
+
   -- Historical progress/log pairs were backfilled according to their status.
   if (select count(*) from public.learning_activity_log
       where user_id = '11111111-1111-4111-8111-111111111111'
