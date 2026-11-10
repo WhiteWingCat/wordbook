@@ -129,6 +129,13 @@
   const esc = value => escapeHTML(String(value ?? ""));
   const dayOrdinal = day => Math.floor(Date.parse(day + "T00:00:00Z") / 86400000);
   const addDays = day => new Date(Date.parse(day + "T00:00:00Z") + 86400000).toISOString().slice(0,10);
+  function effectiveAllowanceTimezone(prefs, now = Date.now()) {
+    const until = Date.parse(prefs?.allowance_timezone_until || "");
+    if (prefs?.allowance_timezone && Number.isFinite(until) && until > now) {
+      return prefs.allowance_timezone;
+    }
+    return prefs?.timezone || "UTC";
+  }
 
   function selectedTranslation(item) {
     if (typeof translationLanguage !== "undefined" && translationLanguage === "zh" && item.zh) {
@@ -308,7 +315,7 @@
     const userId = currentUser.id;
     const [prefResult, entitlementResult] = await Promise.all([
       supabaseClient.from("user_preferences")
-        .select("timezone,learning_language,translation_language,daily_topic_enabled,daily_application_enabled,daily_discovery_enabled,daily_revision_enabled")
+        .select("timezone,allowance_timezone,allowance_timezone_until,learning_language,translation_language,daily_topic_enabled,daily_application_enabled,daily_discovery_enabled,daily_revision_enabled")
         .eq("user_id",userId).maybeSingle(),
       supabaseClient.from("user_entitlements")
         .select("plan_code,status,valid_from,valid_until")
@@ -321,7 +328,7 @@
     const prefs = prefResult.data;
     preferences = Object.fromEntries(preferenceKeys.map(key => [key,prefs[key] !== false]));
     applyPreferenceInputs(true);
-    const timezone = prefs.timezone || browserTimezone();
+    const timezone = effectiveAllowanceTimezone(prefs);
     const day = localDayStart(timezone);
     const nextDay = addDays(day);
     const start = zonedMidnightUtc(day,timezone);
@@ -369,7 +376,9 @@
     const slots = {};
     for (const type of Object.keys(activityMeta)) slots[type] = completed[type] || 0;
     for (const type of Object.keys(activityMeta)) snapshot.content[type] = chooseContent(type,slots[type]);
+    const timezoneChangePending = prefs.allowance_timezone && Date.parse(prefs.allowance_timezone_until || "") > Date.now();
     status.textContent = "Your daily activities reset at midnight (" + timezone + "). Plan: " + (plan === "premium" ? "Premium" : "Free") + ". Daily content currently focuses on English learning.";
+    if (timezoneChangePending) status.textContent += " Your preferred timezone (" + prefs.timezone + ") will take effect after this allowance day ends.";
     if (language !== "en" || course !== "en") {
       status.textContent += " Switch the learning course to English to start these activities.";
     }
