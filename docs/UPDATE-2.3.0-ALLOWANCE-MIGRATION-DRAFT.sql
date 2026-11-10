@@ -283,7 +283,7 @@ $function$;
 
 -- The existing practice-results table is empty in production. Refuse to add
 -- a uniqueness rule if unexpected duplicate summaries have appeared meanwhile.
-do $
+do $$
 begin
   if exists (
     select 1
@@ -294,7 +294,7 @@ begin
     raise exception 'Cannot enforce one practice summary per completed permanent lesson: duplicates exist';
   end if;
 end
-$;
+$$;
 
 create unique index if not exists lesson_practice_results_one_per_lesson
   on public.lesson_practice_results(user_id, difficulty, lesson_id);
