@@ -61,6 +61,17 @@ for (const fragment of required) {
 for (const fragment of ["start_daily_activity_session","complete_daily_activity_session","daily_topic_enabled","daily_revision","revisionCandidates","record"]) {
   if (!dailyScript.includes(fragment)) throw new Error(`Daily Learning integration check failed: missing ${fragment}`);
 }
+for (const fragment of ['data-page="daily-learning"','id="dailyLearningPage"','data-daily-pref=']) {
+  if (!html.includes(fragment)) throw new Error(`Daily Learning page shell check failed: missing ${fragment}`);
+}
+for (const fragment of ["dailyTopics","dailyApplications","dailyDiscoveries","sourceUrl","learning_activity_log","lesson_practice_results"]) {
+  if (!dailyScript.includes(fragment)) throw new Error(`Daily Learning content check failed: missing ${fragment}`);
+}
+if (/from\\(["']daily_activity_sessions["']\\)\\.insert\\(/.test(dailyScript)
+    || /from\\(["']learning_activity_log["']\\)\\.insert\\(/.test(dailyScript)) {
+  throw new Error("Daily Learning frontend must use server RPCs, not direct activity-log/session INSERTs.");
+}
+
 if (/from\(["']lesson_progress["']\)\.update\(/.test(html)) {
   throw new Error("Direct lesson_progress completion UPDATE remains in the frontend.");
 }
