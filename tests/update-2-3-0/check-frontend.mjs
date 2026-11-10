@@ -72,7 +72,7 @@ for (const fragment of [
   'from("daily_activity_sessions").select("topic_id,correct_count,question_count,completed_at")',
   'getElementById("practiceAccuracy").textContent',
   'getElementById("practiceTopicsDue").textContent',
-  'getElementById("practiceAttempts").textContent'
+  'getElementById("practiceSummaries").textContent'
 ]) {
   if (!html.includes(fragment)) throw new Error(`Profile practice insights check failed: missing ${fragment}`);
 }
