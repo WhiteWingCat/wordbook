@@ -148,3 +148,31 @@ begin
 end;
 $$;
 rollback;
+
+
+-- A session that has passed its Auth not_after boundary is rejected.
+begin;
+select set_config('request.jwt.claim.sub','88888888-8888-4888-8888-888888888888',true);
+select set_config(
+  'request.jwt.claims',
+  pg_catalog.jsonb_build_object(
+    'sub','88888888-8888-4888-8888-888888888888',
+    'session_id','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
+  )::text,
+  true
+);
+set local role authenticated;
+do $$
+declare
+  v_rejected boolean := false;
+begin
+  begin
+    perform public.delete_my_learning_history();
+  exception when insufficient_privilege then v_rejected := true;
+  end;
+  if not v_rejected then
+    raise exception 'Deletion accepted an expired Auth session';
+  end if;
+end;
+$$;
+rollback;
