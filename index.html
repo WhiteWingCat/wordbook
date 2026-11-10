@@ -385,7 +385,7 @@
           <div class="profile-grid">
             <div class="stat-card"><strong id="practiceAccuracy">—</strong><span>Recent practice accuracy</span></div>
             <div class="stat-card"><strong id="practiceTopicsDue">0</strong><span>Topics needing review</span></div>
-            <div class="stat-card"><strong id="practiceAttempts">0</strong><span>Recorded practice attempts</span></div>
+            <div class="stat-card"><strong id="practiceSummaries">0</strong><span>Recorded practice summaries</span></div>
           </div>
           <p id="practiceInsightsDetails" class="muted-note">Complete lessons or daily practice to build your learning insights. Only aggregate correct/question counts are saved; individual answers are not stored.</p>
         </section>
@@ -17987,7 +17987,7 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
         const recentQuestions = recentPractice.reduce((sum,row)=>sum+Number(row.question_count),0);
         document.getElementById("practiceAccuracy").textContent = recentQuestions
           ? Math.round(recentCorrect/recentQuestions*100)+"%" : "—";
-        document.getElementById("practiceAttempts").textContent = recentPractice.length;
+        document.getElementById("practiceSummaries").textContent = recentPractice.length;
         const byTopic = new Map();
         for (const row of practiceRows) {
           const entries = byTopic.get(row.topic_id) || [];
@@ -18007,7 +18007,7 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
         }
         document.getElementById("practiceTopicsDue").textContent = topicsDue;
         document.getElementById("practiceInsightsDetails").textContent = recentPractice.length
-          ? `Based on your ${recentPractice.length} most recent practice attempts. Accuracy uses first-attempt aggregate results; topics are marked due only after at least two attempts and six questions.`
+          ? `Based on your ${recentPractice.length} most recent practice summaries. Accuracy uses first-attempt aggregate results; topics are marked due only after at least two attempts and six questions.`
           : "No scored practice has been recorded yet. Complete a lesson or Daily Application/Revision to build your learning insights. Individual answers are never stored.";
 
         document.getElementById("profileWelcome").textContent = `Welcome${profileQ.data?.display_name ? ", "+profileQ.data.display_name : ""}. Here is your learning overview.`;
