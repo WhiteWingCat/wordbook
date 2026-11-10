@@ -122,6 +122,69 @@ do update set daily_limit = excluded.daily_limit,
               is_enabled = excluded.is_enabled,
               updated_at = now();
 
+-- 2b) Freeze the current allowance timezone until its existing local midnight
+-- whenever a user changes their preferred timezone. The override is server-owned:
+-- clients cannot write or extend it directly.
+alter table public.user_preferences
+  add column if not exists allowance_timezone text,
+  add column if not exists allowance_timezone_until timestamptz;
+
+create or replace function private.guard_learning_timezone_change()
+returns trigger
+language plpgsql
+set search_path = ''
+as $function$
+declare
+  v_now timestamptz := pg_catalog.statement_timestamp();
+begin
+  if not exists (
+    select 1 from pg_catalog.pg_timezone_names z where z.name = new.timezone
+  ) then
+    raise exception 'Invalid IANA timezone in user preferences'
+      using errcode = '22023';
+  end if;
+
+  if tg_op = 'INSERT' then
+    new.allowance_timezone := null;
+    new.allowance_timezone_until := null;
+    return new;
+  end if;
+
+  if new.timezone is distinct from old.timezone then
+    -- If a previous change is already waiting for the old day to end, do not
+    -- move that boundary when the user changes timezone again.
+    if old.allowance_timezone is not null
+       and old.allowance_timezone_until > v_now then
+      new.allowance_timezone := old.allowance_timezone;
+      new.allowance_timezone_until := old.allowance_timezone_until;
+    else
+      new.allowance_timezone := old.timezone;
+      new.allowance_timezone_until :=
+        ((((v_now at time zone old.timezone)::date + 1)::timestamp)
+          at time zone old.timezone);
+    end if;
+  elsif old.allowance_timezone is not null
+        and old.allowance_timezone_until > v_now then
+    new.allowance_timezone := old.allowance_timezone;
+    new.allowance_timezone_until := old.allowance_timezone_until;
+  else
+    new.allowance_timezone := null;
+    new.allowance_timezone_until := null;
+  end if;
+
+  return new;
+end;
+$function$;
+
+revoke all on function private.guard_learning_timezone_change()
+  from public, anon, authenticated;
+
+drop trigger if exists guard_learning_timezone_change
+  on public.user_preferences;
+create trigger guard_learning_timezone_change
+before insert or update on public.user_preferences
+for each row execute function private.guard_learning_timezone_change();
+
 -- 3) Daily quota checks count completed events only. Keep the existing
 -- server-side entitlement, IANA timezone, advisory lock, and lesson-only
 -- personal testing exemption logic.
@@ -159,7 +222,13 @@ begin
     pg_catalog.hashtextextended(new.user_id::text, 0)
   );
 
-  select coalesce(p.timezone, 'UTC') into v_timezone
+  select coalesce(
+           case when p.allowance_timezone is not null
+                     and p.allowance_timezone_until > pg_catalog.now()
+                then p.allowance_timezone else p.timezone end,
+           'UTC'
+         )
+  into v_timezone
   from public.user_preferences p
   where p.user_id = new.user_id;
 
