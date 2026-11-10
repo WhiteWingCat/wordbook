@@ -461,6 +461,76 @@ revoke all on function public.complete_permanent_lesson(text, text, text, intege
 grant execute on function public.complete_permanent_lesson(text, text, text, integer, integer)
   to authenticated;
 
+-- Historical completed lessons predate aggregate practice capture. Allow a
+-- learner to record one aggregate summary when they voluntarily practise a
+-- previously completed lesson again. This RPC never writes an allowance event.
+create or replace function public.record_completed_lesson_practice_result(
+  p_difficulty text,
+  p_lesson_id text,
+  p_topic_id text,
+  p_correct_count integer,
+  p_question_count integer
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_user uuid := auth.uid();
+  v_progress_id bigint;
+  v_inserted_id bigint;
+begin
+  if v_user is null then
+    raise exception 'Authentication required'
+      using errcode = '42501';
+  end if;
+
+  if p_difficulty is null
+     or p_difficulty not in ('beginner','intermediate','advanced')
+     or p_lesson_id is null
+     or p_lesson_id <> pg_catalog.btrim(p_lesson_id)
+     or pg_catalog.char_length(p_lesson_id) < 1
+     or pg_catalog.char_length(p_lesson_id) > 120
+     or p_topic_id is null
+     or p_topic_id <> pg_catalog.btrim(p_topic_id)
+     or pg_catalog.char_length(p_topic_id) < 1
+     or pg_catalog.char_length(p_topic_id) > 120
+     or p_correct_count is null or p_question_count is null
+     or p_question_count <= 0 or p_correct_count < 0
+     or p_correct_count > p_question_count then
+    raise exception 'Invalid lesson identity or aggregate practice result'
+      using errcode = '22023';
+  end if;
+
+  select id into v_progress_id
+  from public.lesson_progress
+  where user_id = v_user
+    and difficulty = p_difficulty
+    and lesson_id = p_lesson_id
+    and status = 'completed';
+
+  if not found then
+    raise exception 'Only a completed lesson can receive a replay practice summary'
+      using errcode = 'P0002';
+  end if;
+
+  insert into public.lesson_practice_results
+    (user_id, difficulty, lesson_id, topic_id, correct_count, question_count)
+  values
+    (v_user, p_difficulty, p_lesson_id, p_topic_id, p_correct_count, p_question_count)
+  on conflict (user_id, difficulty, lesson_id) do nothing
+  returning id into v_inserted_id;
+
+  return v_inserted_id is not null;
+end;
+$function$;
+
+revoke all on function public.record_completed_lesson_practice_result(text,text,text,integer,integer)
+  from public, anon;
+grant execute on function public.record_completed_lesson_practice_result(text,text,text,integer,integer)
+  to authenticated;
+
 -- The former start-trigger function is now dormant; prevent direct execution.
 revoke all on function public.record_lesson_start_allowance()
   from public, anon, authenticated;
