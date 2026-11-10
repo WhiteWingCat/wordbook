@@ -58,7 +58,7 @@ const required = [
 for (const fragment of required) {
   if (!html.includes(fragment)) throw new Error(`Frontend integration check failed: missing ${fragment}`);
 }
-for (const fragment of ["start_daily_activity_session","complete_daily_activity_session","daily_topic_enabled","daily_revision","revisionCandidates","record"]) {
+for (const fragment of ["start_daily_activity_session","complete_daily_activity_session","daily_topic_enabled","daily_revision","revisionCandidates","learningLanguage","firstTry"]) {
   if (!dailyScript.includes(fragment)) throw new Error(`Daily Learning integration check failed: missing ${fragment}`);
 }
 for (const fragment of ['data-page="daily-learning"','id="dailyLearningPage"','data-daily-pref=']) {
