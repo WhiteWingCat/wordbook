@@ -8,6 +8,7 @@ rm -f "$marker"
 
 psql "$db" -X -v ON_ERROR_STOP=1 <<SQL
 insert into auth.users(id) values ('$uid');
+insert into auth.sessions(id,user_id,created_at) values ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','$uid',now());
 insert into public.user_preferences(user_id,timezone) values ('$uid','UTC');
 insert into public.user_entitlements(user_id,plan_code,status) values ('$uid','free','active');
 insert into public.lesson_progress(user_id,difficulty,lesson_id,status)
@@ -37,7 +38,7 @@ select set_config(
   'request.jwt.claims',
   pg_catalog.jsonb_build_object(
     'sub','$uid',
-    'amr',pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object('method','oauth','timestamp',extract(epoch from pg_catalog.now())::bigint))
+    'session_id','cccccccc-cccc-4ccc-8ccc-cccccccccccc'
   )::text,
   true
 );
