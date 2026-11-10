@@ -3,8 +3,6 @@
 -- move this reviewed SQL into that generated file, and test on a database branch.
 -- SwiftDictionary Update 2.3.0 — completion-based allowance foundation
 
-begin;
-
 -- 1) Preserve the meaning of historical activity rows. Before this change,
 -- every lesson_progress insert produced one lesson activity row (a start).
 -- Pair those rows with progress rows in per-user chronological order. Abort
@@ -398,7 +396,6 @@ grant execute on function public.complete_permanent_lesson(text, text)
 revoke all on function public.record_lesson_start_allowance()
   from public, anon, authenticated;
 
-commit;
 
 -- Required post-migration checks:
 -- 1. Free lesson limit = 5; Premium lesson limit = 15.
