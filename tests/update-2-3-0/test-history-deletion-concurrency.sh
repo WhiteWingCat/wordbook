@@ -2,7 +2,7 @@
 set -euo pipefail
 
 db="${DATABASE_URL:?DATABASE_URL is required}"
-uid="77777777-7777-4777-8777-777777777777"
+uid="99999999-9999-4999-8999-999999999999"
 marker="/tmp/swiftdictionary-history-delete-lock-acquired"
 rm -f "$marker"
 
