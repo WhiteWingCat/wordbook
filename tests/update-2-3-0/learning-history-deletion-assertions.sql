@@ -96,7 +96,10 @@ select set_config(
   'request.jwt.claims',
   pg_catalog.jsonb_build_object(
     'sub','88888888-8888-4888-8888-888888888888',
-    'amr',pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object('method','oauth','timestamp',extract(epoch from pg_catalog.now() - interval '1 hour')::bigint))
+    'amr',pg_catalog.jsonb_build_array(
+      pg_catalog.jsonb_build_object('method','oauth','timestamp',extract(epoch from pg_catalog.now() - interval '1 hour')::bigint),
+      pg_catalog.jsonb_build_object('method','token_refresh','timestamp',extract(epoch from pg_catalog.now())::bigint)
+    )
   )::text,
   true
 );
