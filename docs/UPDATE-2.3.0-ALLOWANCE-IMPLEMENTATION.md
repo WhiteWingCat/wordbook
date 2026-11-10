@@ -58,7 +58,7 @@ The `index.html` patch is now staged alongside the SQL review draft:
 
 The frontend is not live-compatible until the database migration and RPC are installed. Do not merge or deploy this branch until the database and browser validation checklist passes. The migration has not been applied to production.
 
-## Free local PostgreSQL test harness
+## Free GitHub Actions PostgreSQL compatibility test harness
 
 To avoid any paid Supabase database branch or plan, this branch now includes a GitHub Actions workflow that starts a temporary PostgreSQL 17 service for the duration of a test run. The repository is public, and GitHub documents standard GitHub-hosted runner usage in public repositories as free. The workflow uses no Supabase credentials and does not connect to the production project. The service is destroyed when the job ends.
 
@@ -68,9 +68,9 @@ Files:
 - `tests/update-2-3-0/allowance-assertions.sql`
 - `tests/update-2-3-0/test-concurrency.sh`
 
-The test baseline is a minimal Supabase-compatible schema fixture, not a dump of production. It reproduces the relevant tables, roles, RLS policies, triggers, and `auth.uid()` behaviour needed by this migration. It is useful for PostgreSQL syntax and transaction/permission logic, but it cannot prove compatibility with every Supabase-managed setting or the exact production schema.
+The test baseline is a minimal Supabase-compatible schema fixture, not a dump of production. It now mirrors the relevant production column types, constraints, foreign keys, plan codes, plan limits, roles, RLS policies, triggers, and `auth.uid()` behaviour needed by this migration. The existing production Free Quiz/Flashcard limits (5) and Premium Quiz/Flashcard limits (12) are included and asserted unchanged. It is useful for PostgreSQL syntax and transaction/permission logic, but it cannot prove compatibility with every Supabase-managed setting or the exact production schema.
 
-**Latest run:** [GitHub Actions run 42756920996](https://github.com/WhiteWingCat/wordbook/actions/runs/42756920996) — passed. The workflow successfully applied the migration draft, checked historical event backfill and Free/Premium limits, verified completion-only charging, rollback on quota failure, duplicate completion idempotency, direct-write restrictions, the lesson-only exemption, independent daily categories, and concurrent quota-boundary serialization.
+**Latest run:** [GitHub Actions run 42757819319](https://github.com/WhiteWingCat/wordbook/actions/runs/42757819319) — passed. The workflow successfully applied the migration draft and tested historical event backfill, Free/Premium lesson and daily-category limits, unchanged Quiz/Flashcard limits, completion-only charging, abandoned starts, rollback on quota failure, duplicate completion idempotency, direct-write restrictions, the lesson-only exemption, independent daily categories, DST-aware 23-hour/25-hour local days, and concurrent quota-boundary serialization.
 
 The first run exposed a missing authenticated identity in the concurrency test setup. The fixture was corrected, and the subsequent run passed. This was a test-harness setup issue, not a migration failure.
 
@@ -86,8 +86,12 @@ The first run exposed a missing authenticated identity in the concurrency test s
 - [x] Two concurrent completions at the quota boundary cannot exceed the daily limit in the compatibility test.
 - [x] Direct status update to completed and direct activity-log INSERT are denied in the compatibility test.
 - [x] The private test exemption remains lesson-only in the compatibility test.
+- [x] Starting and abandoning a lesson do not consume a completion allowance.
+- [x] Premium users can complete exactly 15 permanent lessons in the compatibility test.
+- [x] Quiz and Flashcard limits remain unchanged (Free 5 / Premium 12).
+- [x] IANA timezone boundary calculations correctly produce 23-hour spring-forward and 25-hour fall-back days.
 - [x] Daily categories have independent limits; the exemption does not bypass them.
-- [ ] Daily reset uses the stored IANA timezone, including DST-aware boundaries, against the exact Supabase production configuration.
+- [ ] Daily reset is validated against the exact Supabase production configuration and a browser using a non-UTC stored timezone.
 - [ ] Historical backfill is rechecked against the live production rows immediately before any production migration.
 - [ ] Supabase security and performance advisors reviewed after any approved production migration.
 - [ ] Existing account switching, saved-word isolation, and unlimited dictionary search still work in browser regression tests.
@@ -101,3 +105,6 @@ This step records only the learning activity category, event type, language code
 ## No-cost testing boundary
 
 The GitHub Actions workflow uses standard hosted runners on this public repository. It does not require a paid Supabase branch, Supabase plan upgrade, new Supabase project, paid GitHub runner, or payment method. Do not switch the workflow to a larger runner or connect it to production credentials. The local compatibility checks are an additional safety layer, not a substitute for final review of the real Supabase schema and managed Auth/RLS behaviour.
+
+
+The latest compatibility fixture was expanded after a read-only production schema review. It now uses the production `bigint` progress ID shape, auth-user foreign keys, the lesson completion-consistency constraint, and the actual Free/Premium Quiz and Flashcard limits. No production data was copied into the fixture.
