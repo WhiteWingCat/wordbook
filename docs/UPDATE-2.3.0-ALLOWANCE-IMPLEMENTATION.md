@@ -1,6 +1,6 @@
 # Update 2.3.0 — Allowance foundation implementation notes
 
-**Status:** Draft implementation review. No production database or live website changes have been made.
+**Status:** Draft implementation review. The migration draft has passed a free PostgreSQL 17 compatibility test suite in GitHub Actions. No production database or live website changes have been made.
 
 ## Scope of this step
 
@@ -58,23 +58,46 @@ The `index.html` patch is now staged alongside the SQL review draft:
 
 The frontend is not live-compatible until the database migration and RPC are installed. Do not merge or deploy this branch until the database and browser validation checklist passes. The migration has not been applied to production.
 
+## Free local PostgreSQL test harness
+
+To avoid any paid Supabase database branch or plan, this branch now includes a GitHub Actions workflow that starts a temporary PostgreSQL 17 service for the duration of a test run. The repository is public, and GitHub documents standard GitHub-hosted runner usage in public repositories as free. The workflow uses no Supabase credentials and does not connect to the production project. The service is destroyed when the job ends.
+
+Files:
+- `.github/workflows/update-2-3-0-allowance-test.yml`
+- `tests/update-2-3-0/allowance-baseline.sql`
+- `tests/update-2-3-0/allowance-assertions.sql`
+- `tests/update-2-3-0/test-concurrency.sh`
+
+The test baseline is a minimal Supabase-compatible schema fixture, not a dump of production. It reproduces the relevant tables, roles, RLS policies, triggers, and `auth.uid()` behaviour needed by this migration. It is useful for PostgreSQL syntax and transaction/permission logic, but it cannot prove compatibility with every Supabase-managed setting or the exact production schema.
+
+**Latest run:** [GitHub Actions run 42756920996](https://github.com/WhiteWingCat/wordbook/actions/runs/42756920996) — passed. The workflow successfully applied the migration draft, checked historical event backfill and Free/Premium limits, verified completion-only charging, rollback on quota failure, duplicate completion idempotency, direct-write restrictions, the lesson-only exemption, independent daily categories, and concurrent quota-boundary serialization.
+
+The first run exposed a missing authenticated identity in the concurrency test setup. The fixture was corrected, and the subsequent run passed. This was a test-harness setup issue, not a migration failure.
+
 ## Validation checklist
 
-- [ ] Migration applied to a disposable Supabase database branch first.
-- [ ] Historical event backfill preserves all existing progress and activity records.
-- [ ] Free lesson allowance is 5 and Premium is 15.
-- [ ] Opening, resuming, or abandoning a lesson does not consume allowance.
-- [ ] First successful completion consumes exactly one lesson allowance.
-- [ ] A failed completion save consumes none.
-- [ ] Duplicate completion retries consume no additional allowance.
-- [ ] Two simultaneous completions at the quota boundary cannot exceed the daily limit.
-- [ ] Daily reset uses the stored IANA timezone, including DST-aware boundaries.
-- [ ] Personal test exemption remains lesson-only.
-- [ ] Direct client INSERT as completed, direct status update to completed, and direct activity-log INSERT are denied.
-- [ ] Existing account switching, saved-word isolation, and unlimited dictionary search still work.
-- [ ] Supabase security and performance advisors reviewed after applying the migration.
+- [x] Migration SQL applies successfully to the PostgreSQL 17 compatibility fixture.
+- [x] Historical event backfill preserves the fixture's completed and in-progress states.
+- [x] Free lesson allowance is 5 and Premium is 15.
+- [x] Free daily category limits are 1 each and Premium daily category limits are 3 each.
+- [x] A successful first completion consumes exactly one lesson allowance.
+- [x] A quota-rejected completion rolls back the progress transition and usage event.
+- [x] Duplicate completion retries consume no additional allowance.
+- [x] Two concurrent completions at the quota boundary cannot exceed the daily limit in the compatibility test.
+- [x] Direct status update to completed and direct activity-log INSERT are denied in the compatibility test.
+- [x] The private test exemption remains lesson-only in the compatibility test.
+- [x] Daily categories have independent limits; the exemption does not bypass them.
+- [ ] Daily reset uses the stored IANA timezone, including DST-aware boundaries, against the exact Supabase production configuration.
+- [ ] Historical backfill is rechecked against the live production rows immediately before any production migration.
+- [ ] Supabase security and performance advisors reviewed after any approved production migration.
+- [ ] Existing account switching, saved-word isolation, and unlimited dictionary search still work in browser regression tests.
 - [ ] Browser tests pass before the PR is marked ready.
 
 ## Legal and privacy check
 
 This step records only the learning activity category, event type, language code, and timestamps already needed for progress/allowance. It does not add raw answers, keystrokes, device fingerprints, precise location, or unrelated behavioural tracking. Keep the privacy notice accurate about completion history and daily limits, provide a deletion route for learning history, and explain the free/premium limits clearly before any future paid plan is offered. For Malaysia, review the app's privacy notice and data-handling practices against applicable PDPA obligations before public release or paid subscriptions.
+
+
+## No-cost testing boundary
+
+The GitHub Actions workflow uses standard hosted runners on this public repository. It does not require a paid Supabase branch, Supabase plan upgrade, new Supabase project, paid GitHub runner, or payment method. Do not switch the workflow to a larger runner or connect it to production credentials. The local compatibility checks are an additional safety layer, not a substitute for final review of the real Supabase schema and managed Auth/RLS behaviour.
