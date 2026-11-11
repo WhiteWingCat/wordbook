@@ -1,8 +1,6 @@
 const { defineConfig } = require("@playwright/test");
 
 module.exports = defineConfig({
-
-module.exports = defineConfig({
   testDir: "./tests/browser",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
