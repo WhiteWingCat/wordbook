@@ -45,7 +45,8 @@ test("Daily Learning does not expose account progress while signed out", async (
   await page.locator('[data-page="daily-learning"]').click();
   await expect(page.locator("#dailyLearningPage")).toBeVisible();
   await expect(page.locator("#dailyLearningStatus")).toContainText("Sign in");
-  await expect(page.locator("#dailyActivityGrid")).toBeEmpty();
+  await expect(page.locator("#dailyActivityGrid [data-activity-card]")).toHaveCount(4);
+  await expect(page.locator("#dailyActivityGrid [data-start-daily]:disabled")).toHaveCount(4);
   await expect(page.locator('[data-daily-pref="daily_topic_enabled"]')).toBeChecked();
   await expect(page.locator('[data-daily-pref="daily_application_enabled"]')).toBeChecked();
   await expect(page.locator('[data-daily-pref="daily_discovery_enabled"]')).toBeChecked();
