@@ -96,7 +96,7 @@ window.__SWIFT_TEST_INITIAL_USER = ${JSON.stringify(initialUser)};`
       }
       const client = {
         auth: {
-          async getSession() { return { data: { session: state.user ? { user: state.user } : null }, error: null }; },
+          async getSession() { state.user = window.__SWIFT_TEST_INITIAL_USER || state.user; return { data: { session: state.user ? { user: state.user } : null }, error: null }; },
           onAuthStateChange(callback) { state.listeners.push(callback); return { data: { subscription: { unsubscribe() {} } } }; },
           async signInWithOAuth(options) { state.oauthCalls.push(options); return { data: {}, error: null }; },
           async signOut() { state.setUser(null); return { error: null }; }
