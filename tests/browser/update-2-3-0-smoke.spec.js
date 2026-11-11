@@ -138,6 +138,7 @@ test("account switching clears the previous account state before another sign-in
   await page.locator("#menuSwitchAccount").click();
   await expect(page.locator("#accountDialog")).toHaveClass(/open/);
   await expect(page.locator("#accountButtonLabel")).toHaveText("Sign in");
+  await page.locator("#accountButton").click();
   await expect(page.locator("#menuSignIn")).toBeVisible();
   await expect(page.locator("#menuSwitchAccount")).toBeHidden();
   expect(await page.evaluate(() => localStorage.getItem("swiftdictionary-saved"))).toBeNull();
