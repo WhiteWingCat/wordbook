@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+const { test, expect } = require("@playwright/test");
 
 test.beforeEach(async ({ page }) => {
   // Keep browser CI isolated from the hosted project. The signed-out UI only
