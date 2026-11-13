@@ -455,3 +455,57 @@ The 13 November legal review was refined to clarify the PDPA personal/household 
 - Distinguish static checks, automated browser tests, mocked Supabase tests, real hosted OAuth tests and owner live-site tests.
 - No production Supabase writes/migrations, PR merge or GitHub Pages deployment without explicit owner approval.
 - After implementation, prepare one consolidated Update 2.3.1 candidate and update this record with exact commit, PR, CI and test evidence.
+
+
+---
+
+## 14. Free-first development, hosting and testing policy
+
+**Owner preference:** SwiftDictionary should be developed, hosted, tested and maintained using free alternatives wherever reasonably practical. Avoid recurring payments, paid tiers, paid domains, paid developer tools and unnecessary infrastructure. Do not recommend a paid upgrade as the default solution. If a paid service appears necessary, first investigate a genuinely free alternative or a lower-cost workflow, explain the trade-offs and obtain the owner's approval before any commitment.
+
+This is a standing project constraint, not a guarantee that every free service will remain free or have sufficient quotas. Check current provider pricing, free-tier limits, usage caps, project sleep/pause rules, storage/egress limits and terms at the time of use. Never enable billing, add a payment method, purchase a domain or upgrade a plan without explicit approval.
+
+### Preferred free-first choices and alternatives
+
+- **Source control:** Continue using the existing GitHub repository and branches. Prefer GitHub's free features and ordinary pull requests; do not assume paid team or enterprise features.
+- **Production hosting:** Keep the existing GitHub Pages deployment unless the owner explicitly approves a migration. Do not disrupt the live URL or its integrations in order to experiment.
+- **Testing/preview hosting:** Use the existing Cloudflare Pages project `swiftdictionary-testing` and its automatically generated branch preview URLs. The project is connected to `WhiteWingCat/wordbook`; production branch is `main`; preview branches are configured for all non-production branches. This is a separate test host and does not replace GitHub Pages.
+- **Free preview URLs:** Prefer the supplied `.pages.dev` and `.github.io` hostnames. A custom domain generally requires domain registration/renewal fees; do not buy one just to remove a username or use a branded URL until free options have been assessed.
+- **Build and CI:** Prefer static hosting with no build step where suitable, and free GitHub Actions allowances. Keep workflows efficient and check current minutes/concurrency quotas. Do not introduce paid build services without approval.
+- **Database/authentication:** Prefer the existing Supabase setup while protecting production data. For isolated integration tests, investigate a separate free Supabase project if the current free-plan project allowance and quotas permit, or use a local Supabase stack through the CLI/Docker where practical. Do not assume paid Supabase Branching or paid compute is available.
+- **Local testing:** Prefer browser automation, local static hosting, deterministic fixtures, mock service adapters and local database tests before using live services. Use existing tools and free/open-source tooling where practical.
+- **Secrets and configuration:** Never copy production service-role keys, OAuth client secrets or private credentials into source control, browser bundles, test fixtures or public preview settings. Use separate test credentials and redirect URLs for an isolated environment.
+- **Alternatives review:** Before proposing a new paid dependency, compare at least one free/open-source, local, or existing-provider alternative. Record why it is sufficient or why it does not meet the requirement.
+
+### Testing levels and what a “mock account” means
+
+A mock account can mean two different things; do not conflate them:
+
+1. **Frontend mock user (no real Supabase account):** A deterministic test fixture or mocked Supabase client returns a synthetic user/session and simulated profile, preferences, saved words and activity data. This is suitable for testing UI states, navigation, account-menu behaviour, empty/loading/error states and basic account-isolation logic. It does **not** prove real Google OAuth, Supabase Auth, JWT/session handling, Row Level Security (RLS), database triggers, RPC permissions or cross-device synchronisation. Label these tests as mocked.
+2. **Real test user in an isolated backend:** Create a dedicated test identity in a separate local or staging Supabase project. This can exercise real authentication, database policies, migrations, RPCs and account data without touching production. Prefer this for end-to-end integration testing. Use synthetic data only and keep test credentials separate from production.
+
+**Do not create a mock/test user in the production Supabase project as a substitute for an isolated test environment.** A real Auth user in production is still a production account; its records, quotas, logs, email/identity provider behaviour and cleanup may affect the live project. A separate email/password test identity in production would not isolate database changes or prove the preview is using a separate backend.
+
+### Current Cloudflare preview / Supabase separation status (13 November 2026)
+
+- Cloudflare Pages project `swiftdictionary-testing` has successfully deployed the `main` production branch and the non-production feature-branch preview for `feature/update-2-3-1-bug-fix-and-changes`. The owner confirmed the preview deployment updated and the `.pages.dev` preview website opens.
+- The feature branch preview is a separate frontend deployment only. It must **not** be assumed to have a separate Supabase database or Auth tenant.
+- The application configuration may still point to the existing production Supabase project. This must be checked read-only before testing sign-in, account switching, saved-word writes, preferences, learning completions, allowance usage, history deletion or any other data-changing flow.
+- Until backend separation is confirmed, limit preview testing to static layout, navigation and safe read-only checks. Do not use real user accounts or submit test activity that could alter production data.
+- Next environment audit: inspect the branch's Supabase URL/public key configuration and Cloudflare environment-variable settings without exposing secrets; identify the exact Supabase project reference used by the preview; inspect Auth URL allowlists and redirect configuration read-only. Do not change production Site URL, redirect URLs, database schema or data as part of this audit.
+- If the preview currently points to production, choose between (a) a separate free staging Supabase project, subject to current free-tier availability/limits, or (b) a local Supabase stack for isolated integration tests. A frontend mock can be used in parallel for fast UI tests, but is not a replacement for backend integration tests.
+- Before configuring a separate backend, inventory the minimum schema/migrations, Auth provider setup, OAuth redirect URLs, RLS policies, RPCs and synthetic seed data needed. Do not copy production personal data into staging. Do not expose or duplicate production secrets.
+- No production Supabase configuration, production data, GitHub Pages deployment or PR merge was changed merely by creating the Cloudflare Pages preview or by adding this record section.
+
+### Free-first decision checklist
+
+Before adopting any service or workflow, record:
+- What exact capability is needed?
+- Can the existing GitHub, Cloudflare Pages, Supabase, browser or local development setup already provide it?
+- Is there a free/open-source/local alternative?
+- What are the current free-tier quotas, limitations, data-retention and inactivity rules?
+- Does the option require a payment method, billing activation, domain purchase or future recurring payment?
+- Could it affect production data, user privacy, account isolation, security or legal obligations?
+- What is the migration/exit path if the free tier changes or is discontinued?
+
+Default decision: choose the safest adequate free option; keep production isolated; document limitations; ask before incurring any cost.
