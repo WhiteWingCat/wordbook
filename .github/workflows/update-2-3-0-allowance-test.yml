@@ -106,7 +106,7 @@ jobs:
           psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/learning-history-deletion-assertions.sql"
       - name: Run Supabase security advisors against the local 2.3.0 schema
         working-directory: ${{ runner.temp }}/swiftdictionary-supabase
-        run: supabase db advisors --type security
+        run: supabase db advisors --type security --fail-on error
       - name: Stop disposable local Supabase services
         if: always()
         working-directory: ${{ runner.temp }}/swiftdictionary-supabase
