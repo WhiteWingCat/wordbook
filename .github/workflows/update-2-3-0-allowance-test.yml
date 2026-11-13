@@ -1,0 +1,194 @@
+name: Update 2.3.0 allowance migration checks
+# Keep the disposable regression suite branch-scoped; never connect it to production Supabase.
+
+on:
+  push:
+    branches:
+      - feature/update-2-3-0-allowance-foundation
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  supabase-local-auth-contract:
+    name: Supabase CLI local Auth compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Verify approved catalogue exactly matches frontend content
+        run: node tests/update-2-3-0/check-content-catalog.mjs
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Initialise an isolated local Supabase workspace
+        run: |
+          mkdir -p "$RUNNER_TEMP/swiftdictionary-supabase"
+          cd "$RUNNER_TEMP/swiftdictionary-supabase"
+          supabase init
+      - name: Start disposable local Supabase services
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: supabase start -x studio,edge-runtime,logflare,vector,imgproxy
+      - name: Verify real Supabase Auth schema, roles and JWT helpers
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/supabase-local-auth-contract.sql"
+      - name: Create synthetic SwiftDictionary application baseline on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/supabase-local-app-baseline.sql"
+      - name: Apply saved words least-privilege draft on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/docs/UPDATE-2.3.0-SAVED-WORDS-PRIVILEGE-HARDENING-DRAFT.sql"
+      - name: Verify saved words least-privilege grants on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/saved-words-privilege-assertions.sql"
+      - name: Apply private approved content catalogue migration on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/docs/UPDATE-2.3.0-CONTENT-CATALOG-MIGRATION-DRAFT.sql"
+      - name: Apply completion-based allowance migration on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/docs/UPDATE-2.3.0-ALLOWANCE-MIGRATION-DRAFT.sql"
+      - name: Apply Daily Learning migration on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/docs/UPDATE-2.3.0-DAILY-ACTIVITY-MIGRATION-DRAFT.sql"
+      - name: Verify approved content catalogue and RPC validation
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/content-catalog-assertions.sql"
+      - name: Seed synthetic content IDs for isolated tests
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/content-catalog-test-fixtures.sql"
+      - name: Seed legacy completions for local ledger backfill
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/allowance-ledger-seed.sql"
+      - name: Apply private allowance ledger migration on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/docs/UPDATE-2.3.0-ALLOWANCE-LEDGER-MIGRATION-DRAFT.sql"
+      - name: Run allowance, policy and ledger assertions on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/allowance-assertions.sql"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/allowance-ledger-assertions.sql"
+      - name: Apply learning-history deletion migration on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/docs/UPDATE-2.3.0-LEARNING-HISTORY-DELETION-MIGRATION-DRAFT.sql"
+      - name: Verify learning-history deletion on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/learning-history-deletion-assertions.sql"
+      - name: Run Supabase security advisors against the local 2.3.0 schema
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: supabase db advisors --type security --fail-on error
+      - name: Stop disposable local Supabase services
+        if: always()
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: supabase stop --no-backup
+
+  postgres-migration-check:
+    name: PostgreSQL 17 migration and allowance tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: swiftdictionary_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d swiftdictionary_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/swiftdictionary_test
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Check frontend JavaScript syntax and RPC integration
+        run: node tests/update-2-3-0/check-frontend.mjs
+      - name: Verify approved catalogue exactly matches frontend content
+        run: node tests/update-2-3-0/check-content-catalog.mjs
+      - name: Create Supabase-compatible baseline fixture
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/allowance-baseline.sql
+      - name: Apply saved words least-privilege draft to disposable PostgreSQL
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f docs/UPDATE-2.3.0-SAVED-WORDS-PRIVILEGE-HARDENING-DRAFT.sql
+      - name: Verify saved words least-privilege grants
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/saved-words-privilege-assertions.sql
+      - name: Apply private approved content catalogue migration to disposable PostgreSQL
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f docs/UPDATE-2.3.0-CONTENT-CATALOG-MIGRATION-DRAFT.sql
+      - name: Apply allowance migration draft to disposable PostgreSQL
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f docs/UPDATE-2.3.0-ALLOWANCE-MIGRATION-DRAFT.sql
+      - name: Apply daily activity migration draft to disposable PostgreSQL
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f docs/UPDATE-2.3.0-DAILY-ACTIVITY-MIGRATION-DRAFT.sql
+      - name: Verify approved content catalogue and RPC validation
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/content-catalog-assertions.sql
+      - name: Seed synthetic content IDs for isolated tests
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/content-catalog-test-fixtures.sql
+      - name: Seed legacy current-window completions for ledger backfill
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/allowance-ledger-seed.sql
+      - name: Apply separate allowance-ledger migration draft
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f docs/UPDATE-2.3.0-ALLOWANCE-LEDGER-MIGRATION-DRAFT.sql
+      - name: Run migration and policy assertions
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/allowance-assertions.sql
+      - name: Verify private allowance ledger and deletion resistance
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/allowance-ledger-assertions.sql
+      - name: Apply learning-history deletion migration draft
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f docs/UPDATE-2.3.0-LEARNING-HISTORY-DELETION-MIGRATION-DRAFT.sql
+      - name: Verify learning-history deletion and data preservation
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/learning-history-deletion-assertions.sql
+      - name: Verify concurrent completion serialization
+        run: bash tests/update-2-3-0/test-concurrency.sh
+      - name: Verify completion and history deletion serialize
+        run: bash tests/update-2-3-0/test-history-deletion-concurrency.sh
+      - name: Verify replay practice and history deletion serialize
+        run: bash tests/update-2-3-0/test-history-replay-deletion-concurrency.sh
+
+  browser-smoke:
+    name: Chromium browser regression smoke tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Install Playwright
+        run: |
+          npm install --no-save @playwright/test
+          npx playwright install --with-deps chromium
+      - name: Run isolated signed-out browser regression tests
+        env:
+          CI: "true"
+        run: npx playwright test --config=playwright.config.js
