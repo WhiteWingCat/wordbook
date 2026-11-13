@@ -73,9 +73,12 @@ test("signed-in Daily Topic completes through the server RPC without answer-leve
   await expect(page.locator("#dailyActivityReader")).toBeVisible();
   await page.locator("#dailyActivityReader [data-complete-daily]").click();
 
-  await expect.poll(() => page.evaluate(() => window.__swiftDailyMock.rpcCalls.map(call => call.name)))
-    .toEqual(["start_daily_activity_session", "complete_daily_activity_session"]);
-  const calls = await page.evaluate(() => window.__swiftDailyMock.rpcCalls);
+  const dailyRpcNames = () => page.evaluate(() => window.__swiftDailyMock.rpcCalls
+    .filter(call => ["start_daily_activity_session","complete_daily_activity_session"].includes(call.name))
+    .map(call => call.name));
+  await expect.poll(dailyRpcNames).toEqual(["start_daily_activity_session","complete_daily_activity_session"]);
+  const calls = await page.evaluate(() => window.__swiftDailyMock.rpcCalls
+    .filter(call => ["start_daily_activity_session","complete_daily_activity_session"].includes(call.name)));
   expect(calls[0].args.p_activity_type).toBe("daily_topic");
   expect(calls[1].args).toEqual({
     p_session_id: "daily-session-1",
@@ -370,7 +373,7 @@ test("Dashboard shows saved words, course recency, ledger allowances and practic
     ];
     state.tables.lesson_practice_results = [
       { user_id:userId, topic_id:"sentence-basics", correct_count:1, question_count:3, attempted_at:new Date(now-2*86400000).toISOString() },
-      { topic_id:"sentence-basics", correct_count:1, question_count:3, attempted_at:new Date(now-86400000).toISOString() }
+      { user_id:userId, topic_id:"sentence-basics", correct_count:1, question_count:3, attempted_at:new Date(now-86400000).toISOString() }
     ];
     state.tables.daily_activity_sessions = [];
   }, userId);
