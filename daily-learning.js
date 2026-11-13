@@ -629,8 +629,14 @@
     try {
       await loadDailyData();
     } catch (error) {
-      byId("dailyLearningStatus").textContent = "Daily Learning could not load: " + (error.message || "Please try again.");
-      byId("dailyActivityGrid").innerHTML = "";
+      const message = String(error.message || "");
+      const needsServerUpdate = /PGRST202|PGRST204|PGRST205|42703|42P01|does not exist|schema cache/i.test(message);
+      byId("dailyLearningStatus").textContent = needsServerUpdate
+        ? "Daily Learning is temporarily unavailable because the matching server database update has not been applied yet. No activity allowance has been consumed."
+        : "Daily Learning could not load. Please refresh and try again.";
+      byId("dailyActivityGrid").innerHTML = needsServerUpdate
+        ? '<div class="coming-card"><h3>Daily Learning is waiting for a server update</h3><p>Your daily activities and completion allowances will become available after the matching database update is installed.</p></div>'
+        : "";
     }
   }
 
