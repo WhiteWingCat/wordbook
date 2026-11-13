@@ -8,5 +8,7 @@ begin;
 
 revoke all privileges on table public.saved_words from public, anon, authenticated;
 grant select, insert, delete on table public.saved_words to authenticated;
+revoke all privileges on sequence public.saved_words_id_seq from public, anon, authenticated;
+grant usage on sequence public.saved_words_id_seq to authenticated;
 
 commit;
