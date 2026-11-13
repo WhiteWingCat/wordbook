@@ -12,6 +12,7 @@ rm -f "$marker"
 # shared per-user advisory lock, deletion must wait and then remove the summary.
 psql "$db" -X -v ON_ERROR_STOP=1 <<SQL
 insert into auth.users(id) values ('$uid');
+select set_config('request.jwt.claim.sub', '$uid', false);
 insert into auth.sessions(id,user_id,created_at) values ('$session_id','$uid',now());
 insert into public.user_preferences(user_id,timezone) values ('$uid','UTC');
 insert into public.user_entitlements(user_id,plan_code,status) values ('$uid','free','active');
