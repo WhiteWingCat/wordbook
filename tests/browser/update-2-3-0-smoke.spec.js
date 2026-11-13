@@ -81,7 +81,7 @@ test("signed-in Daily Topic completes through the server RPC without answer-leve
   });
   expect(JSON.stringify(calls)).not.toMatch(/selectedAnswer|answerIndex|questionAnswer/i);
   await expect(page.locator('#dailyActivityGrid [data-activity-card="daily_topic"]'))
-    .toContainText("No new content available");
+    .toContainText("0 / 1 completions remaining");
 });
 
 test("signed-in Daily Application submits only aggregate first-try results", async ({ page }) => {
