@@ -297,3 +297,13 @@ The catalogue stores identifiers and metadata only. It does not store question t
 **Test-fixture warning:** Synthetic catalogue rows are seeded after the production-catalogue count assertions and only in test environments. Never run the fixture SQL against hosted Supabase.
 
 **Current CI note:** Initial catalogue CI attempts exposed test-fixture metadata/order assumptions and a checker-parser issue. These were test harness failures, not production changes. The fixtures, parser and assertions were corrected. GitHub Actions run [#346](https://github.com/WhiteWingCat/wordbook/actions/runs/43382607103) then passed all three jobs. The legal/privacy review document was added afterward without changing application code or migrations.
+
+
+## Additional least-privilege finding from production review
+
+The connected production database grants `anon` and `authenticated` more privileges on `public.saved_words` and its identity sequence than the browser uses. The UI only performs authenticated SELECT, INSERT/upsert with ignore-duplicates, and DELETE. A draft-only hardening migration now removes PUBLIC/anon grants, narrows authenticated table privileges to SELECT/INSERT/DELETE, and grants authenticated sequence USAGE only. Existing owner-scoped RLS policies are preserved.
+
+- Migration draft: `docs/UPDATE-2.3.0-SAVED-WORDS-PRIVILEGE-HARDENING-DRAFT.sql`
+- Assertions: `tests/update-2-3-0/saved-words-privilege-assertions.sql`
+- The PostgreSQL and disposable Supabase workflow baselines now model the production grants/policies and validate the reduction.
+- This is a draft-only change. It has not been applied to production. The follow-up CI run is pending.
