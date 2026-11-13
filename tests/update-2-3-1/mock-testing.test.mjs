@@ -50,11 +50,11 @@ test("mock data is isolated by identity and scoped to session storage",async()=>
 
   env.window.__swiftDictionaryMock.setActiveUser("mock-user-b");
   result=await client.from("saved_words").select("word").eq("user_id","mock-user-b");
-  assert.deepEqual(result.data.map(row=>row.word).sort(),["thank","好"].sort());
+  assert.deepEqual(Array.from(result.data,row=>row.word).sort(),["thank","好"].sort());
   await client.from("saved_words").insert({user_id:"mock-user-b",course:"en",word:"world"});
   env.window.__swiftDictionaryMock.setActiveUser("mock-user-a");
   result=await client.from("saved_words").select("word").eq("user_id","mock-user-a");
-  assert.deepEqual(result.data.map(row=>row.word).sort(),["hello","你"].sort());
+  assert.deepEqual(Array.from(result.data,row=>row.word).sort(),["hello","你"].sort());
 
   env.localStorage.setItem("swiftdictionary-saved","real-account-data");
   assert.equal(env.localStorage.getItem("swiftdictionary-saved"),null);
