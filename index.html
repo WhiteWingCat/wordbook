@@ -18102,7 +18102,7 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
       try {
         await preferenceWriteQueue;
         await ensureProfileRows();
-        const [profileQ,prefsQ,activityQ,entitlementQ,limitsQ,lessonPracticeQ,dailyPracticeQ,savedWordsQ,allowanceUsageQ,personalTestQ] = await Promise.all([
+        const [profileQ,prefsInitialQ,activityInitialQ,entitlementQ,limitsQ,lessonPracticeQ,dailyPracticeInitialQ,savedWordsQ,allowanceUsageQ,personalTestQ] = await Promise.all([
           supabaseClient.from("profiles").select("display_name,avatar_icon").eq("user_id",currentUser.id).maybeSingle(),
           supabaseClient.from("user_preferences").select("learning_language,translation_language,timezone,allowance_timezone,allowance_timezone_until").eq("user_id",currentUser.id).maybeSingle(),
           supabaseClient.from("learning_activity_log").select("activity_type,event_type,language_code,created_at",{count:"exact"})
@@ -18116,8 +18116,26 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
           supabaseClient.rpc("get_my_learning_allowance_usage"),
           supabaseClient.rpc("is_personal_learning_test_access")
         ]);
-        for (const q of [profileQ,prefsQ,activityQ,entitlementQ,limitsQ,lessonPracticeQ,dailyPracticeQ,savedWordsQ,personalTestQ]) if (q.error) throw q.error;
+        let prefsQ = prefsInitialQ;
+        if (prefsQ.error && /allowance_timezone|PGRST204|42703/i.test(prefsQ.error.message || "")) {
+          prefsQ = await supabaseClient.from("user_preferences").select("learning_language,translation_language,timezone").eq("user_id",currentUser.id).maybeSingle();
+        }
+        let activityQ = activityInitialQ;
+        let legacyActivityLog = false;
+        if (activityQ.error && /event_type|PGRST204|42703/i.test(activityQ.error.message || "")) {
+          activityQ = await supabaseClient.from("learning_activity_log").select("activity_type,language_code,created_at",{count:"exact"})
+            .eq("user_id",currentUser.id).order("created_at",{ascending:false}).limit(1000);
+          legacyActivityLog = true;
+        }
+        let dailyPracticeQ = dailyPracticeInitialQ;
+        let dailyPracticeUnavailable = false;
+        if (dailyPracticeQ.error && /daily_activity_sessions|PGRST205|42P01/i.test(dailyPracticeQ.error.message || "")) {
+          dailyPracticeQ = {data:[],error:null};
+          dailyPracticeUnavailable = true;
+        }
+        for (const q of [profileQ,prefsQ,activityQ,entitlementQ,limitsQ,lessonPracticeQ,dailyPracticeQ,savedWordsQ]) if (q.error) throw q.error;
         const allowanceUsageRows = allowanceUsageQ.error ? null : (allowanceUsageQ.data || []);
+        const personalTestAccess = personalTestQ.error ? false : personalTestQ.data === true;
         const prefs = prefsQ.data || {learning_language:course,translation_language:translationLanguage,timezone:browserTimezone()};
         profilePreferences = prefs;
         const courseChanged = course !== prefs.learning_language;
@@ -18138,7 +18156,7 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
         document.getElementById("preferenceTimezone").value = prefs.timezone;
         document.getElementById("courseSelect").value = prefs.learning_language;
         document.getElementById("translationSelect").value = prefs.translation_language;
-        const completedActivity = activityQ.data || [];
+        const completedActivity = (activityQ.data || []).filter(row => legacyActivityLog || row.event_type === "completed");
         const tz = effectiveAllowanceTimezone(prefs);
         const displayTimezone = prefs.timezone || browserTimezone();
         const today = localDayStart(tz);
@@ -18166,7 +18184,7 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
         const counts = Object.fromEntries(types.map(type=>[type,completedActivity.filter(row=>row.activity_type===type).length]));
         document.getElementById("progressDetails").textContent = completedActivity.length ? types.map(type=>`${type.replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase())}: ${counts[type]} session(s)`).join(" · ") : "No completed learning activity recorded yet. Your completed lessons and daily activities will appear here.";
         const limitText = types.map(type=>{const row=limits.find(item=>item.plan_code===plan&&item.activity_type===type);const used=todayRows.filter(item=>item.activity_type===type).length;return `${type.replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase())}: ${row?.is_enabled ? Math.max(0,row.daily_limit-used)+" of "+row.daily_limit+" remaining" : "Unavailable"}`;});
-        renderDashboardAllowanceBars(plan,limits,allowanceUsageRows,tz,personalTestQ.data === true);
+        renderDashboardAllowanceBars(plan,limits,allowanceUsageRows,tz,personalTestAccess);
 
         // Practice insights use aggregate counts only. No individual answers or
         // response text are retrieved or retained.
