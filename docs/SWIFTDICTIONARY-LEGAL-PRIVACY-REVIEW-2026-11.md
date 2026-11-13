@@ -34,7 +34,7 @@ JPDP issued its Data Protection Impact Assessment, Data Protection by Design, an
 
 ### Registration of data controllers
 
-Malaysia's registration requirement is limited to prescribed classes, not every website or software project. The education class includes registered private higher education institutions and private schools/private educational institutions under the relevant education statutes. SwiftDictionary is not automatically a registered education institution merely because it provides learning content. Confirm the legal entity and actual activity against the current Class of Data Users Order and the Commissioner's Circular No. 1/2026 (in force from 1 June 2026) before operating through an entity or institution that could fall within a listed class.
+Malaysia's registration requirement is limited to prescribed classes, not every website or software project. SwiftDictionary is not automatically a registrable data controller merely because it provides learning content; the relevant question is whether the actual controller and activity fall within a prescribed class under the current Class of Data Users Order and the Commissioner's Circular No. 1/2026 (in force from 1 June 2026). Confirm the legal entity and actual activity against the current list before operating through an entity or institution that could fall within a listed class.
 
 ## 2. International users — EU GDPR
 
