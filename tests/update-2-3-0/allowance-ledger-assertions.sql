@@ -35,6 +35,13 @@ begin
     raise exception 'Scoped usage helper expected 2, got %',v_used;
   end if;
 
+  select usage.used_count into v_used
+  from public.get_my_learning_allowance_usage() usage
+  where usage.activity_type = 'lesson';
+  if v_used <> 2 then
+    raise exception 'Dashboard allowance RPC expected own lesson usage 2, got %',v_used;
+  end if;
+
   for i in 1..4 loop
     insert into public.lesson_progress(user_id,difficulty,lesson_id,status)
     values (auth.uid(),'beginner','ledger-test-'||i,'in_progress');
@@ -95,6 +102,13 @@ begin
   into v_used;
   if v_used <> 1 then
     raise exception 'Daily Topic ledger did not record exactly one completion';
+  end if;
+
+  select usage.used_count into v_used
+  from public.get_my_learning_allowance_usage() usage
+  where usage.activity_type = 'daily_topic';
+  if v_used <> 1 then
+    raise exception 'Dashboard allowance RPC did not report the Daily Topic ledger count';
   end if;
 end;
 $$;
