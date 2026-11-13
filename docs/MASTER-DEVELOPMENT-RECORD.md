@@ -208,7 +208,7 @@ Historical note: the PR state above describes the repository at the time of the 
 
 ### Current roadmap
 
-- **Update 2.3.1 — Bug Fix & Changes:** **In progress on the feature branch.** Scope and acceptance criteria are recorded above. Includes Lessons/Daily Learning integration, Dashboard and Preferences separation, allowance visualisation, saved-word panels and practice insights. Isolated mock testing mode (Option B) is an approved testing workstream within this branch; implementation is not yet complete. Do not merge or deploy without owner approval.
+- **Update 2.3.1 — Bug Fix & Changes:** **In progress on the feature branch.** Scope and acceptance criteria are recorded above. Includes Lessons/Daily Learning integration, Dashboard and Preferences separation, allowance visualisation, saved-word panels and practice insights. Isolated mock testing mode (Option B) is implemented on this branch and passed automated CI run #456; real preview-host manual verification remains pending. Do not merge or deploy without owner approval.
 - **Update 2.4.0 — Quiz:** **Planned.** Dedicated Quiz experience, progress tracking and allowance integration.
 - **Update 2.5.0 — Flashcards:** **Planned.** Flashcard learning experience, review progress and allowance integration.
 
@@ -549,7 +549,7 @@ Implementation requirements for the feature branch:
 
 ### Development progress log — isolated mock testing mode — 13 November 2026
 
-**Current status: implementation on the 2.3.1 feature branch; final CI rerun and real preview-host verification still pending.**
+**Current status: implemented on the 2.3.1 feature branch; automated CI passed; real Cloudflare preview-host manual verification is pending.**
 
 - Updated this record's maintenance protocol to make it mandatory to update the Master Development Record after every meaningful development step, roadmap change, bug/test result, branch/PR change and at the end of each development session. It now explicitly requires recording interruptions/errors and a recovery point. Commit: `877c2ed778db8f1b1510ef9f8059c60607a6332d`.
 - Added `mock-testing.js` as a separate, isolated mock adapter rather than placing the test framework inside the large `index.html`. It activates only when the explicit `?swiftMock=1` opt-in is present on the exact feature-branch preview hostname `feature-update-2-3-1-bug-fix-and-changes.swiftdictionary-testing.pages.dev`. Other hosts, including the Pages project root, GitHub Pages and unknown branch previews, fail closed.
