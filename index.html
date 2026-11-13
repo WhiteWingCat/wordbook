@@ -18182,8 +18182,11 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
           return '<div class="active-language-row"><strong>' + label + '</strong><span>Last active · ' + escapeHTML(date) + ' (' + escapeHTML(displayTimezone) + ')</span></div>';
         }).join("") : "No completed learning activity recorded yet.";
         const counts = Object.fromEntries(types.map(type=>[type,completedActivity.filter(row=>row.activity_type===type).length]));
-        document.getElementById("progressDetails").textContent = completedActivity.length ? types.map(type=>`${type.replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase())}: ${counts[type]} session(s)`).join(" · ") : "No completed learning activity recorded yet. Your completed lessons and daily activities will appear here.";
-        const limitText = types.map(type=>{const row=limits.find(item=>item.plan_code===plan&&item.activity_type===type);const used=todayRows.filter(item=>item.activity_type===type).length;return `${type.replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase())}: ${row?.is_enabled ? Math.max(0,row.daily_limit-used)+" of "+row.daily_limit+" remaining" : "Unavailable"}`;});
+        const progressSummary = types.map(type=>{
+          const label=type.replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase());
+          return dailyPracticeUnavailable && type.startsWith("daily_") ? label + ": Unavailable until the server update" : label + ": " + counts[type] + " session(s)";
+        }).join(" · ");
+        document.getElementById("progressDetails").textContent = completedActivity.length ? progressSummary : "No completed learning activity recorded yet. " + (dailyPracticeUnavailable ? "Daily activity history will appear after the server update." : "Your completed lessons and daily activities will appear here.");
         renderDashboardAllowanceBars(plan,limits,allowanceUsageRows,tz,personalTestAccess);
 
         // Practice insights use aggregate counts only. No individual answers or
@@ -18239,9 +18242,10 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
         reviewList.innerHTML = reviewTopics.length
           ? reviewTopics.slice(0,5).map(item=>'<li><strong>'+escapeHTML(formatTopicName(item.topicId))+'</strong><span>'+escapeHTML(item.reason)+'</span></li>').join("")
           : '<li class="muted-note">'+(practiceRows.length ? "No topics currently meet the review threshold. Keep practising to maintain your progress." : "Complete more scored practice to receive topic recommendations.")+'</li>';
-        document.getElementById("practiceInsightsDetails").textContent = recentPractice.length
-          ? `Based on your ${recentPractice.length} most recent practice summaries. Accuracy uses first-attempt aggregate results; topics are marked due only after at least two attempts and six questions.`
+        const practiceDetailText = recentPractice.length
+          ? "Based on your " + recentPractice.length + " most recent practice summaries. Accuracy uses first-attempt aggregate results; topics are marked due only after at least two attempts and six questions."
           : "No scored practice has been recorded yet. Complete a lesson or Daily Application/Revision to build your learning insights. Individual answers are never stored.";
+        document.getElementById("practiceInsightsDetails").textContent = practiceDetailText + (dailyPracticeUnavailable ? " Daily activity practice data will appear after the matching server update is applied." : "");
 
         document.getElementById("profileWelcome").textContent = `Welcome${profileQ.data?.display_name ? ", "+profileQ.data.display_name : ""}. Here is your learning overview.`;
       } catch (error) {
