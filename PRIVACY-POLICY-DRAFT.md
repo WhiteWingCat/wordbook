@@ -27,7 +27,7 @@ Depending on the features you use, SwiftDictionary may process:
 - **Daily Learning history:** activity category, content/topic identifiers, session status and timestamps.
 - **Aggregate practice results:** counts of correct answers and total questions, used to calculate learning insights and adaptive revision. The current design does not store individual selected answers, typed responses or keystrokes.
 - **Allowance enforcement state:** a minimal current-window usage count by learning activity category, used to enforce the daily limits shown in the application. It is not a record of the answers you gave.
-- **Technical and security information:** information processed by the hosting, authentication and database providers to operate and secure the service. The exact categories and retention periods must be confirmed from the deployed provider configuration before publication.
+- **Technical and security information:** standard request and security metadata processed by hosting, authentication, database and CDN providers, which may include IP address, browser/device information, request timestamps and asset requests. The exact categories and retention periods must be confirmed from each provider's deployed configuration and privacy documentation before publication.
 
 The timezone setting is an IANA timezone preference used to calculate daily learning resets. It is not GPS data and does not identify your precise physical location.
 
@@ -49,16 +49,20 @@ Dictionary word-grid search is intended to remain free and unlimited. It is not 
 
 SwiftDictionary uses:
 
-- **Google** for the sign-in method you choose; and
-- **Supabase** for authentication and database services.
+- **GitHub Pages / GitHub** for static website hosting and delivery;
+- **Google** for the sign-in method you choose;
+- **Supabase** for authentication and database services; and
+- **jsDelivr** for browser libraries (Supabase JavaScript client and Hanzi Writer) and Chinese stroke-order JSON data requested when a character's stroke animation is opened.
 
-At the time of the 10 November 2026 read-only review, the primary SwiftDictionary Supabase database was hosted in the Tokyo region (Japan, `ap-northeast-1`). This does not establish the locations used for Supabase Auth, backups, logs, support access or all subprocessors. [Before publication: verify and describe those processing locations, the relevant Google and Supabase entities, subprocessors, support/operations access, backup locations, and any other services used by the deployed site. Add links to the applicable provider privacy notices and contractual information.]
+A request to jsDelivr for stroke-order data includes the requested character in the asset path, along with ordinary network request metadata. The character itself is not an account identifier, but the request may reveal which character asset was opened to that CDN provider.
+
+At the time of the 13 November 2026 read-only review, the primary SwiftDictionary Supabase database was hosted in the Tokyo region (Japan, `ap-northeast-1`). This does not establish the locations used for Supabase Auth, backups, logs, support access, GitHub Pages/CDN delivery, jsDelivr edge nodes or all subprocessors. [Before publication: verify and describe those processing locations, the relevant Google, GitHub, Supabase and jsDelivr entities, subprocessors, support/operations access, backup locations, and any other services used by the deployed site. Add links to the applicable provider privacy notices and contractual information.]
 
 Information may be processed or stored outside Malaysia. Before publication, the operator must document the applicable cross-border transfer basis and safeguards, and update this section to describe the actual processing locations accurately. A database region alone may not describe every support, logging, backup or subprocessor transfer.
 
 ## 5. Sharing
 
-We do not sell personal data. We share information only as needed with the service providers that operate sign-in, hosting, database and security functions, or where disclosure is required by law or necessary to protect the service and its users.
+We do not sell personal data. We share information only as needed with Google, GitHub Pages/GitHub, Supabase and jsDelivr for sign-in, hosting, database, browser-library and stroke-data delivery, or where disclosure is required by law or necessary to protect the service and its users.
 
 [Verify this statement against all analytics, advertising, error-reporting, CDN, email and other integrations before publication. Add any additional recipients and purposes.]
 
