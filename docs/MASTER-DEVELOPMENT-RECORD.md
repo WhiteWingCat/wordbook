@@ -545,3 +545,33 @@ Implementation requirements for the feature branch:
 - Before coding, map all Supabase calls used by `index.html` and `daily-learning.js`; the current app uses tables `user_preferences`, `saved_words`, `profiles`, `lesson_progress`, `user_entitlements`, `learning_plan_limits`, `learning_activity_log`, `lesson_practice_results`, `daily_activity_sessions` and RPCs `record_completed_lesson_practice_result`, `complete_permanent_lesson`, `delete_my_learning_history`, `is_personal_learning_test_access`, `get_my_learning_allowance_usage`, `start_daily_activity_session`, `abandon_daily_activity_session`, `complete_daily_activity_session`. The adapter must support only the subset actually needed for the intended UI tests and return explicit unsupported-operation errors for anything else; do not silently fake unimplemented server guarantees.
 - Legal/privacy check: keep mock identities fictional, avoid real personal data, keep the mock store local to the browser session, and ensure test-mode controls cannot be enabled on production. This is a development tool, not a user-facing account feature.
 - This is an approved design direction, not yet an implementation or validation claim. Record implementation commit and test evidence after the work is completed.
+
+
+### Development progress log — isolated mock testing mode — 13 November 2026
+
+**Current status: implementation on the 2.3.1 feature branch; final CI rerun and real preview-host verification still pending.**
+
+- Updated this record's maintenance protocol to make it mandatory to update the Master Development Record after every meaningful development step, roadmap change, bug/test result, branch/PR change and at the end of each development session. It now explicitly requires recording interruptions/errors and a recovery point. Commit: `877c2ed778db8f1b1510ef9f8059c60607a6332d`.
+- Added `mock-testing.js` as a separate, isolated mock adapter rather than placing the test framework inside the large `index.html`. It activates only when the explicit `?swiftMock=1` opt-in is present on the exact feature-branch preview hostname `feature-update-2-3-1-bug-fix-and-changes.swiftdictionary-testing.pages.dev`. Other hosts, including the Pages project root, GitHub Pages and unknown branch previews, fail closed.
+- The adapter replaces the app's Supabase `createClient` only while this guarded mode is active. It provides fictional Test User A and B identities, a namespaced sessionStorage data store, separate saved words/preferences/progress per identity, simulated supported table operations and the required lesson/daily-learning RPC subset. Unsupported RPCs return an explicit mock error.
+- The separate panel is visibly labelled **MOCK TEST MODE — NO REAL ACCOUNT / NO CLOUD SYNC**. It provides mock identity switching, scoped reset and exit. Google OAuth is disabled while mock mode is active. The app's legacy saved-word localStorage key is intercepted while mock mode is active so mock favourites are not written into the real browser-local favourites store.
+- `index.html` loads `mock-testing.js` after `supabase-config.js` and before the main application script, so the mock client is selected before account initialisation.
+- Added `tests/update-2-3-1/mock-testing.test.mjs` covering exact-host opt-in, production/unknown-host fail-closed behaviour, two-user data isolation, session-only storage, mock OAuth blocking, daily session completion and allowance counting.
+- Added a browser smoke test proving that the explicit query parameter does not activate mock mode on the local test server.
+- Added the isolated mock unit tests and JavaScript syntax check to the existing branch-scoped GitHub Actions workflow. No new paid service, package or backend project was introduced.
+- CI run #446 (workflow run ID 43413175601) found a test assertion issue caused by cross-realm arrays; that assertion was corrected. CI run #450 (workflow run ID 43413358201) found the headless test document lacked a DOM lookup method; the adapter's panel renderer was guarded for headless contexts. Both failures were test-harness compatibility issues, not evidence of a production app failure. The corrected version is committed; obtain a passing rerun before calling the adapter validated.
+- `node --check mock-testing.js` passed in the observed CI runs. The full new unit-test step has not yet passed as of this record update. Real Cloudflare preview-host interaction has not yet been manually tested.
+- The mock adapter does not test Google OAuth, JWT/session security, RLS, real SQL/RPC behaviour, database triggers or cross-device sync. It does not remove the need for an isolated Supabase staging project or local Supabase integration tests.
+- No Supabase project, Auth user, production data, schema, migration, setting, GitHub Pages production deployment or PR merge was changed by this implementation. PR #5 remains open and unmerged.
+
+### Repository tidiness review — 13 November 2026
+
+The repository was reviewed at the root and within the main `docs`, `tests` and `.github/workflows` areas. **No existing files were deleted or moved.** The current non-Master-Record files have distinct purposes:
+
+- Keep application/runtime files such as `index.html`, `daily-learning.js`, `supabase-config.js`, `mock-testing.js`, `banner.svg` and `feedback.html`.
+- Keep `tests/`, `playwright.config.js` and `.github/workflows/`: they provide automated regression, browser checks and local database validation. The new mock test is intentionally separate from the production app code.
+- Keep `README.md`, `RELEASE-QA.md`, `THIRD_PARTY_NOTICES.md`, `ARPHICPL.TXT` and `PRIVACY-POLICY-DRAFT.md`: these serve setup/release, licensing, attribution and privacy-review purposes.
+- Keep the `docs/` design decisions, technical notes, legal/privacy review, manual staging checklist and SQL migration drafts. They document different decisions, environments and migration layers; a SQL draft is not equivalent to an applied migration.
+- Keep the older `UPDATE-2.1.0-TECHNICAL-PLAN.md`, `UPDATE-2.3.0-PLANNING.md` and 2.2.0 migration files as historical/release traceability until their references and relevance have been checked. Do not delete or relocate them merely because a newer Master Development Record exists.
+
+**Tidy-up conclusion:** the branch needs supporting source, tests, workflows and technical/legal records in addition to the Master Development Record. The Master Development Record should be the single current roadmap and handover authority; specialised files remain as supporting detail. Revisit consolidation only after checking all internal links, workflow references and historical migration evidence.
