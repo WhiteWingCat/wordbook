@@ -46,11 +46,6 @@ jobs:
         run: |
           eval "$(supabase status --output env)"
           psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/docs/UPDATE-2.3.0-CONTENT-CATALOG-MIGRATION-DRAFT.sql"
-      - name: Seed synthetic content IDs for isolated tests
-        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
-        run: |
-          eval "$(supabase status --output env)"
-          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/content-catalog-test-fixtures.sql"
       - name: Apply completion-based allowance migration on local Supabase
         working-directory: ${{ runner.temp }}/swiftdictionary-supabase
         run: |
@@ -66,6 +61,11 @@ jobs:
         run: |
           eval "$(supabase status --output env)"
           psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/content-catalog-assertions.sql"
+      - name: Seed synthetic content IDs for isolated tests
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/content-catalog-test-fixtures.sql"
       - name: Seed legacy completions for local ledger backfill
         working-directory: ${{ runner.temp }}/swiftdictionary-supabase
         run: |
@@ -125,14 +125,14 @@ jobs:
         run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/allowance-baseline.sql
       - name: Apply private approved content catalogue migration to disposable PostgreSQL
         run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f docs/UPDATE-2.3.0-CONTENT-CATALOG-MIGRATION-DRAFT.sql
-      - name: Seed synthetic content IDs for isolated tests
-        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/content-catalog-test-fixtures.sql
       - name: Apply allowance migration draft to disposable PostgreSQL
         run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f docs/UPDATE-2.3.0-ALLOWANCE-MIGRATION-DRAFT.sql
       - name: Apply daily activity migration draft to disposable PostgreSQL
         run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f docs/UPDATE-2.3.0-DAILY-ACTIVITY-MIGRATION-DRAFT.sql
       - name: Verify approved content catalogue and RPC validation
         run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/content-catalog-assertions.sql
+      - name: Seed synthetic content IDs for isolated tests
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/content-catalog-test-fixtures.sql
       - name: Seed legacy current-window completions for ledger backfill
         run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/allowance-ledger-seed.sql
       - name: Apply separate allowance-ledger migration draft
