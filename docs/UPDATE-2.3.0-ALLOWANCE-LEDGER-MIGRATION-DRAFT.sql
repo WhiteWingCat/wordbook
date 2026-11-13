@@ -145,14 +145,12 @@ grant execute on function private.current_learning_allowance_usage(uuid,text,tex
 create or replace function public.get_my_learning_allowance_usage()
 returns table(activity_type text, used_count integer)
 language plpgsql
-security definer
+security invoker
 set search_path = ''
 as $function$
 declare
   v_user uuid := auth.uid();
   v_timezone text;
-  v_window_start timestamptz;
-  v_window_end timestamptz;
 begin
   if v_user is null then
     raise exception 'Authentication required'
@@ -177,14 +175,11 @@ begin
       using errcode = '22023';
   end if;
 
-  v_window_start := (((pg_catalog.now() at time zone v_timezone)::date)::timestamp
-                       at time zone v_timezone);
-  v_window_end := ((((pg_catalog.now() at time zone v_timezone)::date + 1)::timestamp)
-                     at time zone v_timezone);
-
+  -- Delegate each count to the narrowly scoped private helper. The exposed
+  -- RPC runs as invoker and never reads the private ledger directly.
   return query
   select requested.activity_type,
-         coalesce(usage.used_count, 0)::integer
+         private.current_learning_allowance_usage(v_user,requested.activity_type,v_timezone)
   from (values
     ('lesson'),
     ('daily_topic'),
@@ -192,11 +187,6 @@ begin
     ('daily_discovery'),
     ('daily_revision')
   ) as requested(activity_type)
-  left join private.learning_allowance_usage usage
-    on usage.user_id = v_user
-   and usage.activity_type = requested.activity_type
-   and usage.window_start = v_window_start
-   and usage.window_end = v_window_end
   order by requested.activity_type;
 end;
 $function$;
