@@ -328,19 +328,33 @@ const mockData = {
 };
 const mockSupabase = {
   from(table) {
-    return {
-      select() { return this; },
-      eq() { return this; },
-      gte() { return this; },
-      lt() { return this; },
-      in() { return this; },
-      order() { return this; },
-      limit() { return this; },
-      maybeSingle() { return Promise.resolve({ data: mockData[table], error: null }); },
-      then(resolve, reject) {
-        return Promise.resolve({ data: mockData[table] || [], error: null }).then(resolve, reject);
+    const filters = [];
+    const rows = () => {
+      const value = mockData[table];
+      const source = Array.isArray(value) ? value : value ? [value] : [];
+      return source.filter(row => filters.every(filter => {
+        const field = row[filter.key];
+        if (filter.op === "eq") return field === filter.value;
+        if (filter.op === "in") return filter.value.includes(field);
+        if (filter.op === "gte") return field >= filter.value;
+        if (filter.op === "lt") return field < filter.value;
+        return true;
+      }));
+    };
+    const query = {
+      select() { return query; },
+      eq(key,value) { filters.push({ op:"eq",key,value }); return query; },
+      gte(key,value) { filters.push({ op:"gte",key,value }); return query; },
+      lt(key,value) { filters.push({ op:"lt",key,value }); return query; },
+      in(key,value) { filters.push({ op:"in",key,value }); return query; },
+      order() { return query; },
+      limit() { return query; },
+      maybeSingle() { return Promise.resolve({ data: rows()[0] || null, error: null }); },
+      then(resolve,reject) {
+        return Promise.resolve({ data: rows(), error: null }).then(resolve,reject);
       }
     };
+    return query;
   },
   rpc(name) {
     if (name === "get_my_learning_allowance_usage") {
