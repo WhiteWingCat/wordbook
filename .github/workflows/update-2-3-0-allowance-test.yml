@@ -127,6 +127,8 @@ jobs:
         run: bash tests/update-2-3-0/test-concurrency.sh
       - name: Verify completion and history deletion serialize
         run: bash tests/update-2-3-0/test-history-deletion-concurrency.sh
+      - name: Verify replay practice and history deletion serialize
+        run: bash tests/update-2-3-0/test-history-replay-deletion-concurrency.sh
 
   browser-smoke:
     name: Chromium browser regression smoke tests
