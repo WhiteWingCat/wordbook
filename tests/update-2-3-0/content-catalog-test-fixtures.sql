@@ -23,6 +23,6 @@ values
   ('permanent_lesson','concurrent-06','sentence-basics','beginner','en',true),
   ('permanent_lesson','history-delete-race','sentence-basics','beginner','en',true),
   ('permanent_lesson','replay-delete-race','sentence-basics','beginner','en',true),
-  ('daily_topic','daily-topic-concurrency-01',null,null,'en',true)
+  ('daily_topic','daily-topic-concurrency-01','sentence-basics','beginner','en',true)
 on conflict (activity_type,content_id,language_code) do update
 set topic_id=excluded.topic_id,difficulty=excluded.difficulty,is_active=excluded.is_active;
