@@ -283,6 +283,7 @@
   });
 
   function renderPanel() {
+    if (!document || typeof document.getElementById !== "function") return;
     let panel=document.getElementById("swiftMockPanel");
     if (!panel) return;
     const select=panel.querySelector("select");
