@@ -15,6 +15,18 @@ begin
     raise exception 'Authenticated role is missing a required saved_words privilege';
   end if;
 
+  if has_sequence_privilege('anon','public.saved_words_id_seq','USAGE')
+     or has_sequence_privilege('anon','public.saved_words_id_seq','SELECT')
+     or has_sequence_privilege('anon','public.saved_words_id_seq','UPDATE') then
+    raise exception 'Anonymous role retains privileges on the saved_words identity sequence';
+  end if;
+
+  if not has_sequence_privilege('authenticated','public.saved_words_id_seq','USAGE')
+     or has_sequence_privilege('authenticated','public.saved_words_id_seq','SELECT')
+     or has_sequence_privilege('authenticated','public.saved_words_id_seq','UPDATE') then
+    raise exception 'Authenticated saved_words identity sequence privileges are not minimal';
+  end if;
+
   if has_table_privilege('authenticated','public.saved_words','UPDATE')
      or has_table_privilege('authenticated','public.saved_words','TRUNCATE')
      or has_table_privilege('authenticated','public.saved_words','REFERENCES')
