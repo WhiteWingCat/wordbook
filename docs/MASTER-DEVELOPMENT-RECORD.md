@@ -320,3 +320,20 @@ See `docs/UPDATE-2.3.0-PRIVACY-FIRST-CATALOGUE-DECISION.md`.
 5. Complete Update 2.3.0 release-candidate review and owner manual testing.
 
 All production safeguards remain in force: no merge, deployment or production Supabase migration without explicit owner approval.
+
+
+## 11. Saved-word least-privilege review — 13 November 2026
+
+A further read-only production review found that `public.saved_words` and its identity sequence grant `anon` and `authenticated` more privileges than the browser uses. The table is protected by owner-scoped RLS, but anonymous table privileges (including TRUNCATE) and authenticated UPDATE/TRUNCATE/REFERENCES/TRIGGER plus excess sequence privileges are unnecessary.
+
+A draft-only hardening migration now:
+- Revokes all PUBLIC, anon and authenticated grants on the saved-word table and identity sequence.
+- Grants authenticated users only table SELECT, INSERT and DELETE.
+- Grants authenticated users sequence USAGE only.
+- Preserves existing owner-scoped RLS policies.
+
+The app was checked and uses only SELECT, INSERT/upsert with ignore-duplicates, and DELETE for saved words. No production grant was changed.
+
+Validation: GitHub Actions run [#354](https://github.com/WhiteWingCat/wordbook/actions/runs/43383331625) passed all 3 jobs, including the new saved-word table/sequence privilege assertions, catalogue-to-frontend consistency (95 entries), PostgreSQL 17 migration and concurrency tests, disposable local Supabase compatibility, and Chromium browser tests (8/8).
+
+The 13 November legal review was refined to clarify the PDPA personal/household exemption and breach-notification thresholds. Those changes were documentation-only. The implementation remains draft on PR #3; PR #3 and PR #4 remain unmerged. No production Supabase changes, merge or deployment have occurred.
