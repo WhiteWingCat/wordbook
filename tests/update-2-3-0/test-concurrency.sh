@@ -106,7 +106,7 @@ SQL
 daily_session_id="$(psql "$db" -qAtX -v ON_ERROR_STOP=1 <<SQL
 select set_config('request.jwt.claim.sub', '$daily_uid', false) \gset
 set role authenticated;
-select (public.start_daily_activity_session('daily_topic','daily-topic-concurrency-01',null,null,'daily')).id;
+select (public.start_daily_activity_session('daily_topic','daily-topic-concurrency-01','sentence-basics','beginner','daily')).id;
 SQL
 )"
 
