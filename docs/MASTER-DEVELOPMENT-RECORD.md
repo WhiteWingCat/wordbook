@@ -38,6 +38,7 @@ Prefer workflows that respect free-plan/service constraints and avoid unnecessar
 7. **No production deployment or destructive database action without explicit owner approval.** Review migrations and live schema first. Never expose Supabase service-role credentials or OAuth client secrets in browser code or repository files.
 8. **Verify before claiming completion.** Separate static checks, automated tests, mocked browser tests, real browser tests, live Supabase validation and production deployment. Passing one does not imply the others passed.
 9. **Release naming:** After existing v19, release ZIP names use “SwiftDictionary Update X.Y.Z”: X = major feature, Y = additions, Z = emergency quick patch. Existing v19 naming remains unchanged.
+10. **Development-session records are mandatory.** For every meaningful SwiftDictionary conversation or development session, update the Master Development Record and create a dated, structured Markdown archive in `docs/conversation-archive/`. Record owner decisions, scope, implementation/files, branch/commit/PR references, test evidence (including failures and corrections), outstanding risks and the exact recovery point. Update the archive index. Archive only SwiftDictionary-relevant user-visible material; never include hidden reasoning, credentials, secrets or unrelated personal information. Treat GitHub repository content as potentially public. Keep the documentation branch for durable project records; keep application implementation on feature branches and production code on `main`.
 
 ## 3. Product and interface baseline
 
@@ -455,3 +456,33 @@ The 13 November legal review was refined to clarify the PDPA personal/household 
 - Distinguish static checks, automated browser tests, mocked Supabase tests, real hosted OAuth tests and owner live-site tests.
 - No production Supabase writes/migrations, PR merge or GitHub Pages deployment without explicit owner approval.
 - After implementation, prepare one consolidated Update 2.3.1 candidate and update this record with exact commit, PR, CI and test evidence.
+
+
+## 14. Documentation continuity system — established 2026-11-13
+
+**Authoritative documentation branch:** `docs/master-development-record`.
+
+- The Master Development Record is the current concise handover and roadmap authority.
+- Each meaningful SwiftDictionary development conversation/session is archived as a dated Markdown file under `docs/conversation-archive/`.
+- `docs/conversation-archive/README.md` is the chronological archive index.
+- Archives preserve the purpose, exact owner decisions, implementation/files, branches/commits/PRs, tests (including failures and fixes), legal/privacy considerations, outstanding work and recovery instructions.
+- Archives are structured summaries of relevant user-visible project discussion, not unfiltered transcripts. Never store hidden reasoning, credentials, secrets or unrelated personal information. Assume repository contents may be public.
+- Keep this branch documentation-only. Implement application changes on feature branches; `main` remains the production-code branch. Do not duplicate application implementation onto the documentation branch.
+- At the end of each meaningful session, update both this record and the relevant dated archive/index entry. Record interruptions and the precise next recovery step.
+- A future conversation should read this record and relevant archive(s), then independently verify live GitHub branch/PR/CI and deployment state before acting.
+
+### Current handover — Update 2.3.1 mock testing (2026-11-13)
+
+- **Feature branch:** `feature/update-2-3-1-bug-fix-and-changes`.
+- **Pull request:** [#5](https://github.com/WhiteWingCat/wordbook/pull/5), base `main`, head feature branch, open and unmerged at the latest recorded check.
+- **Latest recorded feature commit:** `c55d05fe196811903f2c358f090eebed6893b3ff`.
+- **Owner-approved direction:** Option B — isolated browser-only mock testing with fictional Test User A and Test User B, explicitly entered only on the dedicated Cloudflare Pages preview.
+- **Implementation:** `mock-testing.js`, loaded by `index.html`; mock-specific tests under `tests/update-2-3-1/`; browser smoke coverage under `tests/browser/`; CI updates in the existing workflow.
+- **Isolation design:** namespaced session storage per fictional identity; mock adapter intercepts app Supabase client creation only when the preview-host guard and `?swiftMock=1` are both satisfied; Google OAuth is unavailable in mock mode; scoped reset/exit; visible mock-mode indicator; production/unknown hosts fail closed.
+- **CI evidence:** workflow run [#456](https://github.com/WhiteWingCat/wordbook/actions/runs/43413625418) passed mock adapter syntax/unit tests, PostgreSQL 17 migration/allowance checks, Chromium browser regression and disposable local Supabase Auth compatibility checks.
+- **Not yet verified:** actual Cloudflare preview-host manual test. Expected preview host is `feature-update-2-3-1-bug-fix-and-changes.swiftdictionary-testing.pages.dev`; append `/?swiftMock=1` to the actual preview URL. If the hostname differs, the exact-host guard will fail closed and must be reviewed before testing. Do not use a real account as a workaround.
+- **Backend limitation:** the Cloudflare preview frontend still points to the production Supabase project. Do not run real-account or data-changing tests from preview until backend isolation is independently confirmed. Mock mode does not validate real OAuth/JWT/RLS/database functions/triggers or cross-device sync.
+- **Production safety:** no production Supabase schema/data/settings/credentials were changed; no PR merge or production deployment was performed. Do not merge PR #5, apply migrations or deploy without explicit owner approval.
+- **Next technical step:** verify the actual Cloudflare Pages preview hostname, then manually confirm the mock indicator, A/B identity isolation, scoped reset and exit, and absence of Supabase Auth/database/network calls while mock mode is active. Before claiming full app coverage, inspect every direct Supabase table/RPC/auth call and compare its query shape with the mock adapter.
+- **Conversation archive:** see [2026-11-13 Update 2.3.1 mock testing and documentation continuity](conversation-archive/2026-11-13-update-2-3-1-mock-testing.md).
+
