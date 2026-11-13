@@ -319,3 +319,10 @@ GitHub Actions run [#354](https://github.com/WhiteWingCat/wordbook/actions/runs/
 - Chromium browser regression tests (8/8), including signed-in Daily Topic and Daily Application flows.
 
 The latest legal/privacy review document was refined after this run to clarify the PDPA personal/household exemption and DBN thresholds. Those subsequent changes were documentation-only; no application code or SQL migration changed after run #354.
+
+
+## Staging/manual validation gate
+
+Prepared `docs/UPDATE-2.3.0-STAGING-MANUAL-VALIDATION-CHECKLIST.md` covering real Google OAuth, account switching, cross-device saved-word sync, Daily Learning, aggregate-only persistence, timezone boundaries, learning-history deletion, account isolation and privacy/security checks.
+
+The connected Supabase workspace currently exposes only the production SwiftDictionary project; no separate staging project was available. Real OAuth and hosted-account tests therefore remain blocked until a separate staging project is identified or explicitly authorised. The production project will not be used for 2.3.0 migration testing.
