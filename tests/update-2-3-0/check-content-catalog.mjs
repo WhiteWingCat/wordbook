@@ -19,13 +19,13 @@ for (const [name, type] of [
   ["dailyApplications", "daily_application"]
 ]) {
   const block = arrayBlock(dailySource, name);
-  for (const match of block.matchAll(/\{\s*id\s*:\s*"([^"]+)"\s*,\s*topicId\s*:\s*"([^"]+)"\s*,\s*difficulty\s*:\s*"([^"]+)"/g)) {
+  for (const match of block.matchAll(/\{\s*["']?id["']?\s*:\s*"([^"]+)"\s*,\s*["']?topicId["']?\s*:\s*"([^"]+)"\s*,\s*["']?difficulty["']?\s*:\s*"([^"]+)"/g)) {
     frontendRows.push([type, match[1], match[2], match[3], "en"].join("|"));
   }
 }
 {
   const block = arrayBlock(dailySource, "dailyDiscoveries");
-  for (const match of block.matchAll(/\{\s*id\s*:\s*"([^"]+)"/g)) {
+  for (const match of block.matchAll(/\{\s*["']?id["']?\s*:\s*"([^"]+)"/g)) {
     frontendRows.push(["daily_discovery", match[1], null, null, "en"].join("|"));
   }
 }
