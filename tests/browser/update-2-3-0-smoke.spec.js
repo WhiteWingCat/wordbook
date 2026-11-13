@@ -90,7 +90,7 @@ test("signed-in Daily Topic completes through the server RPC without answer-leve
 test("signed-in Daily Application submits only aggregate first-try results", async ({ page }) => {
   await installDailyLearningMock(page, "daily-user-b");
   await page.goto("/");
-  await page.locator('[data-page="daily-learning"]').click();
+  await page.locator('[data-page="lessons"]').click();
   const start = page.locator('#dailyActivityGrid [data-start-daily="daily_application"]');
   await expect(start).toBeEnabled();
   await start.click();
@@ -369,7 +369,7 @@ test("Dashboard shows saved words, course recency, ledger allowances and practic
       { activity_type:"daily_revision", used_count:0 }
     ];
     state.tables.lesson_practice_results = [
-      { topic_id:"sentence-basics", correct_count:1, question_count:3, attempted_at:new Date(now-2*86400000).toISOString() },
+      { user_id:userId, topic_id:"sentence-basics", correct_count:1, question_count:3, attempted_at:new Date(now-2*86400000).toISOString() },
       { topic_id:"sentence-basics", correct_count:1, question_count:3, attempted_at:new Date(now-86400000).toISOString() }
     ];
     state.tables.daily_activity_sessions = [];
