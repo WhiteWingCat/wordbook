@@ -267,3 +267,56 @@ Every update must distinguish:
 - Deployed
 
 Do not collapse these into a single “completed” status. Keep dates, commit hashes, PR numbers and test-run links where available. Never include secrets, service-role keys, private account identifiers or personal allowlist values.
+
+
+## 10. Audit and privacy-first decision addendum — 13 November 2026
+
+### Owner decision
+
+The owner selected **privacy-first practice-result integrity** for Update 2.3.0:
+- Keep aggregate correct/question counts only; do not persist individual answers, answer selections or per-question event logs.
+- Validate content IDs, topics, difficulty, learning language and activity source against an approved server-side catalogue.
+- Treat accuracy as self-reported practice performance, not tamper-proof proof of mastery.
+- Use these signals for personal progress and adaptive revision only; not for certification, billing or other high-stakes decisions.
+
+See `docs/UPDATE-2.3.0-PRIVACY-FIRST-CATALOGUE-DECISION.md`.
+
+### Implementation and validation
+
+- Fixed a race between `record_completed_lesson_practice_result()` and learning-history deletion by taking the same per-user transaction advisory lock.
+- Added `tests/update-2-3-0/test-history-replay-deletion-concurrency.sh`.
+- Added `docs/UPDATE-2.3.0-CONTENT-CATALOG-MIGRATION-DRAFT.sql`, a private catalogue of 95 English IDs: 28 Daily Topics, 25 Daily Applications, 27 Daily Discoveries and 15 permanent lessons. It contains IDs and topic/difficulty/language metadata only, no question or answer content.
+- Daily session start and permanent lesson completion/replay RPCs validate catalogue mappings. Lesson progress insertion is guarded against unknown lesson IDs.
+- Added a frontend-to-SQL catalogue consistency checker, SQL security/mapping assertions and signed-in Daily Topic/Daily Application browser tests.
+- GitHub Actions run [#346](https://github.com/WhiteWingCat/wordbook/actions/runs/43382607103) passed all 3 jobs on the implementation branch: PostgreSQL 17 migrations/assertions/concurrency, disposable local Supabase Auth compatibility, and Chromium browser tests (8/8).
+- Browser tests use a mocked Supabase client. They do not prove real Google OAuth callbacks, hosted account switching or cross-device sync.
+- PR #3 remains **open and draft**, with base `feature/update-2-3-0-planning` and head `feature/update-2-3-0-allowance-foundation`. No merge, rebase, deployment or production migration was performed.
+
+### Read-only production Supabase review
+
+- Project is active and its primary database region is Tokyo, Japan.
+- The production schema does not yet contain the Update 2.3.0 Daily Learning session table or the new private content catalogue. The 2.3.0 migration drafts remain unapplied.
+- Existing application tables reviewed have RLS enabled and user-scoped policies. A full penetration test and independent Data API exposed-schema review remain outstanding.
+- Production `lesson_practice_results` currently allows authenticated users to insert their own rows under an owner-scoped policy. This permits self-reported aggregate results to be fabricated by that user; it does not expose another user's rows. The 2.3.0 draft narrows direct writes through an RPC and validates lesson/topic identity, but deliberately does not claim to verify each answer.
+- The security advisor flags `public.is_personal_learning_test_access()` as an authenticated-callable SECURITY DEFINER function. It returns only whether the caller's own UID has the personal test exemption; anonymous execution is denied. Review whether it should remain a public RPC or be moved to the private schema during a future hardening pass.
+- The private learning-limit exemption table has RLS enabled and no client policies; this is intentional.
+- The advisor also reports leaked-password protection disabled. The app's current sign-in flow uses Google OAuth; verify whether password-based sign-in is enabled or intended before changing this setting.
+- No production settings, schema or data were modified.
+
+### Legal and privacy planning
+
+- Added `docs/SWIFTDICTIONARY-LEGAL-PRIVACY-REVIEW-2026-11.md`.
+- The Malaysia PDPA scope is fact-specific: Act 709 regulates personal data in commercial transactions, and the statutory definition includes matters relating to the supply or exchange of goods/services. A free service is not automatically exempt. Obtain Malaysian legal advice on the project's actual status and activity.
+- Screen the DPO criterion for regular/systematic monitoring because adaptive revision uses accumulated learner performance. Also complete DPIA screening, bilingual privacy notice, retention, rights/export/deletion procedures, processor inventory and cross-border transfer assessment.
+- Because the intended audience is global, decide whether EU residents are intentionally included and complete GDPR applicability screening. The 16+ product threshold is not a blanket exemption from child-data obligations.
+- This review is planning guidance, not legal advice. No final privacy notice has been approved.
+
+### Remaining gates
+
+1. Complete authenticated real-provider testing, especially Google OAuth callback, account switching and cross-device saved-word sync.
+2. Complete the remaining read-only Supabase configuration/exposure review and decide how to address the exposed self-status SECURITY DEFINER RPC and unnecessary anonymous table grants.
+3. Obtain legal review of PDPA scope, DPO/systematic-monitoring status, GDPR targeting, cross-border transfer basis and any registration class.
+4. Finalise the bilingual privacy notice, retention schedule, deletion/export request handling and incident-response procedure.
+5. Complete Update 2.3.0 release-candidate review and owner manual testing.
+
+All production safeguards remain in force: no merge, deployment or production Supabase migration without explicit owner approval.
