@@ -307,3 +307,15 @@ The connected production database grants `anon` and `authenticated` more privile
 - Assertions: `tests/update-2-3-0/saved-words-privilege-assertions.sql`
 - The PostgreSQL and disposable Supabase workflow baselines now model the production grants/policies and validate the reduction.
 - This is a draft-only change. It has not been applied to production. The follow-up CI run is pending.
+
+
+## Follow-up security hardening validation
+
+The read-only production review also identified excessive privileges on `public.saved_words` and its identity sequence. The draft hardening migration now removes all PUBLIC/anon grants and limits authenticated access to table SELECT/INSERT/DELETE and sequence USAGE. RLS policies are retained. The browser code was checked and uses only those operations.
+
+GitHub Actions run [#354](https://github.com/WhiteWingCat/wordbook/actions/runs/43383331625) passed all three jobs after adding this migration and assertions:
+- PostgreSQL 17 migration, catalogue, privilege, allowance and concurrency checks.
+- Disposable local Supabase Auth and migration compatibility checks.
+- Chromium browser regression tests (8/8), including signed-in Daily Topic and Daily Application flows.
+
+The latest legal/privacy review document was refined after this run to clarify the PDPA personal/household exemption and DBN thresholds. Those subsequent changes were documentation-only; no application code or SQL migration changed after run #354.
