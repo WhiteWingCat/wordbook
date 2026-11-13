@@ -413,7 +413,7 @@
           <div class="profile-grid">
             <div class="stat-card"><strong id="practiceAccuracy">—</strong><span>Recent practice accuracy</span></div>
             <div class="stat-card"><strong id="practiceTopicsDue">0</strong><span>Topics needing review</span></div>
-            <div class="stat-card"><strong id="practiceSummaries">0</strong><span>Recorded practice summaries</span></div>
+            <div class="stat-card"><strong id="practiceSummaries">0</strong><span>Recent practice summaries</span></div>
           </div>
           <div class="practice-chart-wrap"><div id="practiceChart" class="practice-chart" role="img" aria-label="No practice data recorded yet"><span id="practiceCorrectSegment" class="practice-correct-segment"></span><span id="practiceIncorrectSegment" class="practice-incorrect-segment"></span></div><div class="practice-chart-legend"><span><i class="legend-dot correct"></i> Correct first attempts: <strong id="practiceCorrectCount">0</strong></span><span><i class="legend-dot incorrect"></i> Needs another attempt: <strong id="practiceIncorrectCount">0</strong></span></div></div><h4 class="review-topics-heading">Topics to review</h4><ul id="practiceReviewTopics" class="review-topic-list"><li class="muted-note">Complete more practice to receive topic recommendations.</li></ul>
           <p id="practiceInsightsDetails" class="muted-note">Complete lessons or daily practice to build your learning insights. Only aggregate correct/question counts are saved; individual answers are not stored.</p>
@@ -18139,6 +18139,7 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
         const activity = activityQ.data || [];
         const completedActivity = activity.filter(row => row.event_type === "completed");
         const tz = effectiveAllowanceTimezone(prefs);
+        const displayTimezone = prefs.timezone || browserTimezone();
         const today = localDayStart(tz);
         const todayRows = completedActivity.filter(row => new Intl.DateTimeFormat("en-CA",{timeZone:tz,year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(row.created_at)) === today);
         const types = ["lesson","quiz","flashcard","daily_topic","daily_application","daily_discovery","daily_revision"];
@@ -18158,8 +18159,8 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
         document.getElementById("activeLanguageCount").textContent = activeLanguageRows.length;
         document.getElementById("activeLanguagesList").innerHTML = activeLanguageRows.length ? activeLanguageRows.map(([code,stamp]) => {
           const label = code === "zh" ? "简体中文" : code === "en" ? "English" : escapeHTML(code);
-          const date = new Intl.DateTimeFormat(undefined,{dateStyle:"medium",timeStyle:"short",timeZone:tz}).format(new Date(stamp));
-          return '<div class="active-language-row"><strong>' + label + '</strong><span>Last active · ' + escapeHTML(date) + '</span></div>';
+          const date = new Intl.DateTimeFormat(undefined,{dateStyle:"medium",timeStyle:"short",timeZone:displayTimezone}).format(new Date(stamp));
+          return '<div class="active-language-row"><strong>' + label + '</strong><span>Last active · ' + escapeHTML(date) + ' (' + escapeHTML(displayTimezone) + ')</span></div>';
         }).join("") : "No completed learning activity recorded yet.";
         const counts = Object.fromEntries(types.map(type=>[type,completedActivity.filter(row=>row.activity_type===type).length]));
         document.getElementById("progressDetails").textContent = completedActivity.length ? types.map(type=>`${type.replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase())}: ${counts[type]} session(s)`).join(" · ") : "No completed learning activity recorded yet. Your completed lessons and daily activities will appear here.";
