@@ -399,6 +399,7 @@ $$;
 commit;
 
 -- Premium users can complete 15 permanent lessons, but not a 16th.
+select set_config('request.jwt.claim.sub', '44444444-4444-4444-8444-444444444444', false);
 insert into public.lesson_progress(user_id, difficulty, lesson_id, status)
 select '44444444-4444-4444-8444-444444444444',
        'beginner', 'premium-limit-' || lpad(n::text, 2, '0'), 'in_progress'
