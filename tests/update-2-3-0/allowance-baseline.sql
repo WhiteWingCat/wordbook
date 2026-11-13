@@ -180,12 +180,25 @@ create trigger guard_lesson_progress_update
 before update on public.lesson_progress
 for each row execute function public.guard_lesson_progress_update();
 
+alter table public.saved_words enable row level security;
 alter table public.lesson_progress enable row level security;
 alter table public.lesson_practice_results enable row level security;
 alter table public.learning_activity_log enable row level security;
 alter table public.user_preferences enable row level security;
 alter table public.user_entitlements enable row level security;
 alter table public.learning_plan_limits enable row level security;
+
+create policy "Users can read their own saved words"
+on public.saved_words for select to authenticated
+using ((select auth.uid()) = user_id);
+
+create policy "Users can add their own saved words"
+on public.saved_words for insert to authenticated
+with check ((select auth.uid()) = user_id);
+
+create policy "Users can delete their own saved words"
+on public.saved_words for delete to authenticated
+using ((select auth.uid()) = user_id);
 
 create policy "Users can read their own lessons"
 on public.lesson_progress for select to authenticated
@@ -233,6 +246,7 @@ create policy "Learning limits are readable"
 on public.learning_plan_limits for select to authenticated
 using (true);
 
+grant all on public.saved_words to anon, authenticated;
 grant select, insert, update on public.lesson_progress to authenticated;
 grant select, insert on public.learning_activity_log to authenticated;
 grant select, insert on public.lesson_practice_results to authenticated;
