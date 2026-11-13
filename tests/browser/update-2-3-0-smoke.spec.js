@@ -321,6 +321,8 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
               event_type: "completed",
               created_at: session.completed_at
             });
+            const allowance = state.allowanceUsage.find(row => row.activity_type === session.activity_type);
+            if (allowance) allowance.used_count += 1;
             return { data: session, error: null };
           }
           if (name === "abandon_daily_activity_session") {
