@@ -302,6 +302,7 @@ const mockElements = {
 };
 const mockData = {
   user_preferences: {
+    user_id: "test-user",
     timezone: "Asia/Kuala_Lumpur",
     learning_language: "en",
     translation_language: "zh",
@@ -310,7 +311,7 @@ const mockData = {
     daily_discovery_enabled: true,
     daily_revision_enabled: true
   },
-  user_entitlements: { plan_code: "free", status: "active", valid_from: null, valid_until: null },
+  user_entitlements: { user_id: "test-user", plan_code: "free", status: "active", valid_from: null, valid_until: null },
   learning_plan_limits: ["daily_topic","daily_application","daily_discovery","daily_revision"]
     .map(activity_type => ({ activity_type, daily_limit: 1, is_enabled: true })),
   learning_activity_log: [],
