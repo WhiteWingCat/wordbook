@@ -75,7 +75,7 @@ const normalize = rows => rows.slice().sort();
 assert.equal(new Set(frontendRows).size, frontendRows.length, "Frontend contains duplicate catalogue entries");
 assert.equal(new Set(sqlRows).size, sqlRows.length, "SQL catalogue contains duplicate entries");
 assert.equal(frontendRows.length, 95, `Expected 95 frontend content entries, found ${frontendRows.length}`);
-assert.equal(sqlRows.length, 95, `Expected 95 SQL catalogue entries, found ${sqlRows.length}");
+assert.equal(sqlRows.length, 95, `Expected 95 SQL catalogue entries, found ${sqlRows.length}`);
 assert.deepEqual(normalize(sqlRows), normalize(frontendRows), "SQL approved catalogue differs from frontend IDs/topic/difficulty metadata");
 
 console.log("Approved content catalogue matches frontend exactly (95 entries; no answer-level content).");
