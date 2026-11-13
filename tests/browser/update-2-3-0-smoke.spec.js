@@ -346,13 +346,21 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
 test("Daily Revision is adaptive, abandonment is free, and Daily Discovery is unscored", async ({ page }) => {
   await installDailyLearningMock(page, "daily-behaviour-user");
   await page.goto("/");
+  await page.evaluate(() => {
+    const state = window.__swiftDailyMock;
+    const now = Date.now();
+    state.tables.lesson_practice_results = [
+      { user_id:"daily-behaviour-user", topic_id:"verb-tenses", correct_count:1, question_count:3, attempted_at:new Date(now-2*86400000).toISOString() },
+      { user_id:"daily-behaviour-user", topic_id:"verb-tenses", correct_count:1, question_count:3, attempted_at:new Date(now-86400000).toISOString() }
+    ];
+  });
   await page.locator('[data-page="lessons"]').click();
 
   await page.locator('#dailyActivityGrid [data-start-daily="daily_revision"]').click();
   await expect(page.locator("#dailyActivityReader #dailyQuestions .daily-question").first()).toBeVisible();
   const revisionStart = await page.evaluate(() => window.__swiftDailyMock.rpcCalls.find(call => call.name === "start_daily_activity_session" && call.args.p_activity_type === "daily_revision"));
   expect(revisionStart.args.p_source).toBe("adaptive_revision");
-  expect(revisionStart.args.p_topic_id).toBeTruthy();
+  expect(revisionStart.args.p_topic_id).toBe("verb-tenses");
   await page.locator("#dailyActivityReader [data-abandon-daily]").click();
   await expect(page.locator("#dailyLearningStatus")).toContainText("Session abandoned. No daily allowance was used.");
   const revisionUsage = await page.evaluate(() => window.__swiftDailyMock.allowanceUsage.find(row => row.activity_type === "daily_revision").used_count);
