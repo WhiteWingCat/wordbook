@@ -98,6 +98,33 @@
     .stat-card strong { display:block; color:var(--accent); font-size:1.7rem; }
     .stat-card span { color:var(--muted); font-size:.88rem; }
     .profile-card h3 { margin-top:0; }
+    .dashboard-heading { display:flex; align-items:center; gap:18px; margin-bottom:22px; }
+    .dashboard-heading h1 { margin:0; }
+    .dashboard-avatar { flex:0 0 82px; width:82px; height:82px; display:grid; place-items:center; border:1px solid var(--border); border-radius:50%; background:var(--panel-hover); font-size:2.8rem; box-shadow:var(--shadow); }
+    .active-language-list { display:grid; gap:4px; margin-top:8px; }
+    .active-language-row { display:flex; justify-content:space-between; gap:8px; font-size:.8rem; }
+    .dashboard-allowance-bars { display:grid; gap:13px; margin:14px 0; }
+    .allowance-bar-heading { display:flex; justify-content:space-between; gap:12px; margin-bottom:6px; font-size:.88rem; }
+    .allowance-bar-heading span { color:var(--muted); text-align:right; }
+    .allowance-bar-track { height:9px; overflow:hidden; border-radius:999px; background:var(--panel-hover); border:1px solid var(--border); }
+    .allowance-bar-fill { height:100%; border-radius:999px; background:var(--accent); }
+    .allowance-bar-fill.exhausted { background:#c56b72; }
+    .favorite-word-grid { grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); margin:12px 0 18px; }
+    .favorite-word-grid .word-card { min-height:48px; }
+    .practice-chart-wrap { margin:18px 0; }
+    .practice-chart { display:flex; width:100%; height:22px; overflow:hidden; border:1px solid var(--border); border-radius:999px; background:var(--panel-hover); }
+    .practice-correct-segment { display:block; height:100%; background:#4b9b79; transition:width .25s ease; }
+    .practice-incorrect-segment { display:block; height:100%; background:#c56b72; transition:width .25s ease; }
+    .practice-chart-legend { display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:9px; color:var(--muted); font-size:.82rem; }
+    .legend-dot { display:inline-block; width:9px; height:9px; margin-right:5px; border-radius:50%; }
+    .legend-dot.correct { background:#4b9b79; } .legend-dot.incorrect { background:#c56b72; }
+    .review-topics-heading { margin:18px 0 8px; }
+    .review-topic-list { display:grid; gap:8px; padding:0; margin:0; list-style:none; }
+    .review-topic-list li { display:grid; gap:4px; padding:11px 13px; border:1px solid var(--border); border-radius:10px; background:var(--panel-hover); }
+    .review-topic-list li strong { color:var(--text); }
+    .review-topic-list li span { color:var(--muted); font-size:.86rem; }
+    .lesson-daily-section { margin:0 0 28px; padding:20px; border:1px solid var(--border); border-radius:18px; background:var(--panel-hover); }
+    .lesson-daily-section h2 { margin:4px 0 8px; }
     .daily-preferences { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; border:1px solid var(--border); border-radius:15px; padding:16px; margin:20px 0; background:var(--panel); }
     .daily-preferences legend { padding:0 8px; font-weight:700; }
     .daily-preference { display:flex; align-items:center; gap:9px; border:1px solid var(--border); border-radius:11px; padding:10px; color:var(--text); font-size:.9rem; }
@@ -124,7 +151,7 @@
     .preference-form input, .preference-form select { width:100%; border:1px solid var(--border); border-radius:9px; padding:10px 11px; background:#11151d; color:var(--text); }
     .profile-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px; }
     .muted-note { color:var(--muted); font-size:.88rem; }
-    @media(max-width:760px){ .topbar{align-items:flex-start;padding:13px 0;flex-direction:column}.top-actions{width:100%;justify-content:space-between;align-items:flex-start}.course-controls{flex-wrap:wrap}.course-controls label{display:grid;gap:3px}.profile-grid{grid-template-columns:1fr}.preference-form{grid-template-columns:1fr}.primary-nav{margin-top:0} }
+    @media(max-width:760px){ .topbar{align-items:flex-start;padding:13px 0;flex-direction:column}.top-actions{width:100%;justify-content:space-between;align-items:flex-start}.course-controls{flex-wrap:wrap}.course-controls label{display:grid;gap:3px}.profile-grid{grid-template-columns:1fr}.preference-form{grid-template-columns:1fr}.primary-nav{margin-top:0}.dashboard-avatar{width:66px;height:66px;flex-basis:66px;font-size:2.2rem}.lesson-daily-section{padding:14px}.allowance-bar-heading{align-items:flex-start;flex-direction:column;gap:2px} }
 
     @media(max-width:650px){.top-actions{align-items:flex-end;flex-direction:column;gap:6px}.visual-lesson{grid-template-columns:75px 1fr}.visual-glyph{min-height:75px;font-size:2.5rem}.tense-grid{grid-template-columns:1fr;} }
     .hero { padding: 28px 0 26px; }
@@ -286,7 +313,7 @@
             </div>
             <div class="menu-divider"></div>
             <button type="button" id="menuSignIn">↗ <span>Sign in</span></button>
-            <button type="button" id="menuProfile">◉ <span>Profile</span></button>
+            <button type="button" id="menuProfile">◉ <span>Dashboard</span></button>
             <button type="button" id="menuPreferences">⚙ <span>Preferences</span></button>
             <button type="button" id="menuSwitchAccount">⇄ <span>Switch account</span></button>
             <button type="button" id="menuSignOut">↪ <span>Sign out</span></button>
@@ -296,7 +323,6 @@
     <nav class="wrap primary-nav" aria-label="Main navigation">
       <button type="button" data-page="dictionary" aria-current="page">Dictionary</button>
       <button type="button" data-page="lessons">Lessons</button>
-      <button type="button" data-page="daily-learning">Daily Learning</button>
       <button type="button" data-page="quiz">Quiz</button>
       <button type="button" data-page="flashcards">Flashcards</button>
     </nav>
@@ -342,13 +368,9 @@
 
     <section id="lessonsPage" class="page-panel" hidden aria-labelledby="lessonsHeading">
       <p class="eyebrow">ENGLISH COURSE</p><h1 id="lessonsHeading">Lessons</h1><p class="page-intro">Build English skills through guided explanations, examples and short practice.</p>
-      <div class="difficulty-tabs" role="group" aria-label="Lesson difficulty"><button class="difficulty-tab active" data-difficulty="beginner">Beginner</button><button class="difficulty-tab" data-difficulty="intermediate">Intermediate</button><button class="difficulty-tab" data-difficulty="advanced">Advanced</button></div>
-      <div id="lessonLibrary"><div id="lessonAllowance" class="lesson-allowance" aria-live="polite"><div><strong>Daily lesson allowance</strong><small id="lessonAllowanceNote">Sign in to view your daily lesson completions.</small></div><span id="lessonAllowanceCount" class="lesson-allowance-count">—</span></div><p id="lessonDifficultySummary" class="lesson-muted"></p><label class="lesson-filter">Topic <select id="lessonTopicFilter"><option value="all">All topics</option></select></label><span id="lessonProgressSummary" class="lesson-muted"></span><div id="lessonCards" class="lesson-card-grid"></div></div>
-      <article id="lessonReader" hidden><button id="lessonBack" class="secondary-button">← Back to lessons</button><div id="lessonReaderContent"></div></article><p id="lessonStatus" role="status" aria-live="polite"></p>
-    </section>
-    <section id="dailyLearningPage" class="page-panel" hidden aria-labelledby="dailyLearningHeading">
+    <section id="dailyLearningPage" class="lesson-daily-section" aria-labelledby="dailyLearningHeading">
       <p class="eyebrow">DAILY PRACTICE</p>
-      <h1 id="dailyLearningHeading">Daily Learning</h1>
+      <h2 id="dailyLearningHeading">Daily Learning</h2>
       <p class="page-intro">Short activities to build consistency, apply what you know, discover something new, and revisit topics at the right time.</p>
       <p id="dailyLearningStatus" role="status" aria-live="polite" class="page-intro">Sign in to save daily activity progress across devices.</p>
       <fieldset class="daily-preferences">
@@ -361,6 +383,10 @@
       <div id="dailyActivityGrid" class="daily-activity-grid"></div>
       <article id="dailyActivityReader" class="daily-reader-card" hidden></article>
     </section>
+      <div class="difficulty-tabs" role="group" aria-label="Lesson difficulty"><button class="difficulty-tab active" data-difficulty="beginner">Beginner</button><button class="difficulty-tab" data-difficulty="intermediate">Intermediate</button><button class="difficulty-tab" data-difficulty="advanced">Advanced</button></div>
+      <div id="lessonLibrary"><div id="lessonAllowance" class="lesson-allowance" aria-live="polite"><div><strong>Daily lesson allowance</strong><small id="lessonAllowanceNote">Sign in to view your daily lesson completions.</small></div><span id="lessonAllowanceCount" class="lesson-allowance-count">—</span></div><p id="lessonDifficultySummary" class="lesson-muted"></p><label class="lesson-filter">Topic <select id="lessonTopicFilter"><option value="all">All topics</option></select></label><span id="lessonProgressSummary" class="lesson-muted"></span><div id="lessonCards" class="lesson-card-grid"></div></div>
+      <article id="lessonReader" hidden><button id="lessonBack" class="secondary-button">← Back to lessons</button><div id="lessonReaderContent"></div></article><p id="lessonStatus" role="status" aria-live="polite"></p>
+    </section>
     <section id="quizPage" class="page-panel" hidden aria-labelledby="quizHeading">
       <h1 id="quizHeading">Quiz</h1><p class="page-intro">Test your understanding and reinforce what you have learned.</p>
       <div class="coming-card"><span class="coming-label">Coming Soon</span><h2>Quiz is being prepared</h2><p class="page-intro" style="margin:0 auto">Quiz sessions will be introduced in a future SwiftDictionary update.</p></div>
@@ -370,17 +396,18 @@
       <div class="coming-card"><span class="coming-label">Coming Soon</span><h2>Flashcards are being prepared</h2><p class="page-intro" style="margin:0 auto">Flashcard practice will be introduced in a future SwiftDictionary update.</p></div>
     </section>
     <section id="profilePage" class="page-panel" hidden aria-labelledby="profileHeading">
-      <h1 id="profileHeading">Your Profile</h1><p id="profileWelcome" class="page-intro">Your learning progress and account preferences.</p>
-      <div id="profileSignedOut" class="coming-card" hidden><h2>Sign in to view your Profile</h2><p class="page-intro" style="margin:0 auto 16px">Your profile and learning progress are available after signing in.</p><button type="button" class="primary-button" id="profileSignIn">Sign in</button></div>
+      <div class="dashboard-heading"><span id="dashboardAvatar" class="dashboard-avatar" aria-hidden="true">🐦</span><div><h1 id="profileHeading">Your Dashboard</h1><p id="profileWelcome" class="page-intro">Your learning progress and account overview.</p></div></div>
+      <div id="profileSignedOut" class="coming-card" hidden><h2>Sign in to view your Dashboard</h2><p class="page-intro" style="margin:0 auto 16px">Your dashboard and learning progress are available after signing in.</p><button type="button" class="primary-button" id="profileSignIn">Sign in</button></div>
       <div id="profileContent" hidden>
         <div class="profile-grid">
           <div class="stat-card"><strong id="totalActivity">0</strong><span>Completed learning activities</span></div>
           <div class="stat-card"><strong id="todayActivity">0</strong><span>Completions today</span></div>
-          <div class="stat-card"><strong id="activeLanguages">0</strong><span>Learning languages</span></div>
+          <div class="stat-card"><strong id="activeLanguageCount">0</strong><span>Active learning courses</span><div id="activeLanguagesList" class="active-language-list muted-note">No learning activity recorded yet.</div></div>
         </div>
+        <section class="profile-card"><h3>Favorite words</h3><p class="muted-note">Words you have saved from the Dictionary, organised by learning course.</p><details><summary>English</summary><div id="favoriteEnglishGrid" class="word-grid favorite-word-grid"></div></details><details><summary>简体中文</summary><div id="favoriteChineseGrid" class="word-grid character-grid favorite-word-grid"></div></details></section>
         <section class="profile-card"><h3>Learning progress</h3><p class="muted-note">Your progress is based on successful lesson and daily activity completions. Dictionary searches and saved words are not restricted or counted as lesson activity.</p>
           <details open><summary>Activity overview</summary><div id="progressDetails" class="muted-note">No learning activity recorded yet.</div></details>
-          <details><summary>Daily allowance</summary><div id="allowanceDetails" class="muted-note">Daily allowances will appear here.</div></details>
+          <details open><summary>Daily allowance</summary><div id="dashboardAllowanceBars" class="dashboard-allowance-bars"></div><p id="allowanceDetails" class="muted-note">Daily allowances will appear here.</p></details>
         </section>
         <section class="profile-card"><h3>Practice insights</h3>
           <div class="profile-grid">
@@ -388,9 +415,15 @@
             <div class="stat-card"><strong id="practiceTopicsDue">0</strong><span>Topics needing review</span></div>
             <div class="stat-card"><strong id="practiceSummaries">0</strong><span>Recorded practice summaries</span></div>
           </div>
+          <div class="practice-chart-wrap"><div id="practiceChart" class="practice-chart" role="img" aria-label="No practice data recorded yet"><span id="practiceCorrectSegment" class="practice-correct-segment"></span><span id="practiceIncorrectSegment" class="practice-incorrect-segment"></span></div><div class="practice-chart-legend"><span><i class="legend-dot correct"></i> Correct first attempts: <strong id="practiceCorrectCount">0</strong></span><span><i class="legend-dot incorrect"></i> Needs another attempt: <strong id="practiceIncorrectCount">0</strong></span></div></div><h4 class="review-topics-heading">Topics to review</h4><ul id="practiceReviewTopics" class="review-topic-list"><li class="muted-note">Complete more practice to receive topic recommendations.</li></ul>
           <p id="practiceInsightsDetails" class="muted-note">Complete lessons or daily practice to build your learning insights. Only aggregate correct/question counts are saved; individual answers are not stored.</p>
         </section>
-        <section class="profile-card"><h3>Account preferences</h3>
+        <section class="profile-card"><h3>Account</h3><p id="profileEmail" class="muted-note"></p><button type="button" id="profileSignOut" class="secondary-button">Sign out</button></section>
+      </div>
+    </section>
+    <section id="preferencesPage" class="page-panel" hidden aria-labelledby="preferencesHeading">
+      <p class="eyebrow">ACCOUNT SETTINGS</p><h1 id="preferencesHeading">Preferences</h1><p class="page-intro">Manage your account details, learning preferences, privacy and data.</p>
+      <div id="preferencesSignedIn">        <section class="profile-card"><h3>Account preferences</h3>
           <form id="preferencesForm" class="preference-form">
             <label>Display name <input id="displayNameInput" type="text" maxlength="80" autocomplete="name" placeholder="Optional display name"></label>
             <label>Learning language <select id="preferenceLearning"><option value="en">English</option><option value="zh">简体中文</option></select></label>
@@ -406,7 +439,6 @@
           <button type="button" id="deleteLearningHistoryButton" class="secondary-button">Delete learning history</button>
           <p id="learningHistoryDeleteStatus" class="muted-note" aria-live="polite"></p>
         </section>
-        <section class="profile-card"><h3>Account</h3><p id="profileEmail" class="muted-note"></p><button type="button" id="profileSignOut" class="secondary-button">Sign out</button></section>
       </div>
     </section>
   </main>
@@ -17776,6 +17808,8 @@
     function openAccountMenu() { accountMenu.hidden = false; accountButton.setAttribute("aria-expanded","true"); }
     function updateAvatarDisplay() {
       document.getElementById("accountAvatar").textContent = selectedAvatar;
+      const dashboardAvatar = document.getElementById("dashboardAvatar");
+      if (dashboardAvatar) dashboardAvatar.textContent = selectedAvatar;
       document.querySelectorAll(".avatar-choice").forEach(button => button.setAttribute("aria-pressed",String(button.dataset.avatar===selectedAvatar)));
     }
     updateAvatarDisplay();
@@ -17793,7 +17827,7 @@
     });
     document.getElementById("menuSignIn").addEventListener("click",()=>{ closeAccountMenu(); document.getElementById("accountDialog").classList.add("open"); });
     document.getElementById("menuProfile").addEventListener("click",()=>{ closeAccountMenu(); showPage("profile"); });
-    document.getElementById("menuPreferences").addEventListener("click",()=>{ closeAccountMenu(); showPage("profile"); setTimeout(()=>document.querySelector("#profilePage .profile-card:nth-of-type(2)")?.scrollIntoView({behavior:"smooth",block:"start"}),80); });
+    document.getElementById("menuPreferences").addEventListener("click",()=>{ closeAccountMenu(); showPage("preferences"); });
     document.getElementById("menuSwitchAccount").addEventListener("click",async()=>{ closeAccountMenu(); if(supabaseClient){ const {error}=await supabaseClient.auth.signOut(); if(error){document.getElementById("accountStatus").textContent=`Sign-out failed: ${error.message}`;return;} } document.getElementById("accountDialog").classList.add("open"); });
     document.getElementById("menuSignOut").addEventListener("click",async()=>{ closeAccountMenu(); if(supabaseClient){ const {error}=await supabaseClient.auth.signOut(); if(error) document.getElementById("accountStatus").textContent=`Sign-out failed: ${error.message}`; } });
     document.getElementById("accountClose").addEventListener("click",()=>document.getElementById("accountDialog").classList.remove("open"));
@@ -17873,10 +17907,10 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
 
     // Update 2.1.0: shared page navigation and signed-in Profile foundation.
     const pageButtons = [...document.querySelectorAll("[data-page]")];
-    const pageIds = { dictionary:"dictionaryPage", lessons:"lessonsPage", "daily-learning":"dailyLearningPage", quiz:"quizPage", flashcards:"flashcardsPage", profile:"profilePage" };
+    const pageIds = { dictionary:"dictionaryPage", lessons:"lessonsPage", quiz:"quizPage", flashcards:"flashcardsPage", profile:"profilePage", preferences:"preferencesPage" };
     let profilePreferences = null;
     function showPage(page, updateHash = true) {
-      if (page === "profile" && !currentUser) page = "dictionary";
+      if ((page === "profile" || page === "preferences") && !currentUser) page = "dictionary";
       if (!pageIds[page]) page = "dictionary";
       if (updateHash && location.hash !== `#${page}`) history.pushState(null, "", `#${page}`);
       Object.entries(pageIds).forEach(([key,id]) => document.getElementById(id).hidden = key !== page);
@@ -17884,22 +17918,22 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
         if (button.dataset.page === page) button.setAttribute("aria-current","page");
         else button.removeAttribute("aria-current");
       });
-      if (page === "profile" && currentUser) loadProfileData();
-      if (page === "lessons") initialiseLessons();
-      if (page === "daily-learning" && typeof initialiseDailyLearning === "function") initialiseDailyLearning();
+      if ((page === "profile" || page === "preferences") && currentUser) loadProfileData();
+      if (page === "lessons") { initialiseLessons(); if (typeof initialiseDailyLearning === "function") initialiseDailyLearning(); }
       window.scrollTo({top:0,behavior:"instant"});
     }
     pageButtons.forEach(button => button.addEventListener("click", () => showPage(button.dataset.page)));
     function showHashPage() {
-      const requested = (location.hash || "#dictionary").slice(1).toLowerCase();
+      let requested = (location.hash || "#dictionary").slice(1).toLowerCase();
+      if (requested === "daily-learning") requested = "lessons";
       showPage(pageIds[requested] ? requested : "dictionary", false);
-      if (requested === "profile" && !currentUser) history.replaceState(null, "", "#dictionary");
+      if ((requested === "profile" || requested === "preferences") && !currentUser) history.replaceState(null, "", "#dictionary");
     }
     window.addEventListener("hashchange", showHashPage);
     window.addEventListener("popstate", showHashPage);
     document.getElementById("profileSignIn").addEventListener("click", () => document.getElementById("accountDialog").classList.add("open"));
     document.getElementById("profileSignOut").addEventListener("click", async () => {
-      if (supabaseClient) { const {error} = await supabaseClient.auth.signOut(); if (error) document.getElementById("preferenceStatus").textContent = error.message; }
+      if (supabaseClient) { const {error} = await supabaseClient.auth.signOut(); if (error) accountStatus.textContent = error.message; }
     });
     document.getElementById("deleteLearningHistoryButton").addEventListener("click", async () => {
       if (!supabaseClient || !currentUser) return;
@@ -17959,6 +17993,100 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
       if (profileResult.error) throw profileResult.error;
       if (prefResult.error) throw prefResult.error;
     }
+
+    function renderFavoriteWords(rows) {
+      const grouped = { en:[], zh:[] };
+      (rows || []).forEach(row => {
+        if (row && (row.course === "en" || row.course === "zh") && typeof row.word === "string") grouped[row.course].push(row.word);
+      });
+      const renderGroup = (code,containerId) => {
+        const host = document.getElementById(containerId);
+        if (!host) return;
+        host.classList.toggle("character-grid",code === "zh");
+        const catalog = code === "zh" ? chineseWords : englishWords;
+        const list = [...new Set(grouped[code])].sort((a,b)=>a.localeCompare(b,code === "zh" ? "zh-CN" : "en"));
+        host.innerHTML = "";
+        if (!list.length) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = code === "zh" ? "No saved Chinese words yet." : "No saved English words yet.";
+          host.appendChild(empty);
+          return;
+        }
+        list.forEach(word => {
+          const item = catalog.find(entry => entry.word === word);
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "word-card";
+          button.setAttribute("aria-label","Open saved word " + word);
+          button.innerHTML = '<span class="word-name">' + escapeHTML(word) + '</span><span class="saved-mark" aria-hidden="true">★</span>';
+          button.addEventListener("click",() => {
+            if (item) openFavoriteWord(item,code);
+            else {
+              showPage("dictionary");
+              course = code; words = catalog;
+              document.getElementById("courseSelect").value = code;
+              document.getElementById("categoryRow").hidden = code === "zh";
+              grid.classList.toggle("character-grid",code === "zh");
+              search.value = word;
+              makeAlphabet(); updateLetterButtons(); render();
+              accountStatus.textContent = "This saved entry is not in the current dictionary catalogue.";
+            }
+          });
+          host.appendChild(button);
+        });
+      };
+      renderGroup("en","favoriteEnglishGrid");
+      renderGroup("zh","favoriteChineseGrid");
+    }
+
+    async function openFavoriteWord(item,targetCourse) {
+      showPage("dictionary");
+      if (course !== targetCourse) {
+        course = targetCourse;
+        words = course === "zh" ? chineseWords : englishWords;
+        document.getElementById("courseSelect").value = course;
+        document.getElementById("categoryRow").hidden = course === "zh";
+        grid.classList.toggle("character-grid",course === "zh");
+        search.value = "";
+        search.placeholder = course === "zh" ? "搜索汉字或拼音（可不标声调）…" : "Search a word...";
+        activeLetter = ""; activeCategory = "all"; onlySaved = false; currentPage = 1;
+        savedFilter.setAttribute("aria-pressed","false");
+        savedFilter.textContent = "☆ Saved words";
+        makeAlphabet(); updateLetterButtons(); render();
+        await syncCurrentCourseFromCloud({mergeLocal:false});
+      }
+      const trigger = [...grid.querySelectorAll(".word-card")].find(button => button.getAttribute("aria-label") === "Learn " + item.word);
+      openWord(item,trigger || document.getElementById("search"));
+    }
+
+    function renderDashboardAllowanceBars(plan,limits,todayRows,timezone,personalLessonExemption) {
+      const host = document.getElementById("dashboardAllowanceBars");
+      if (!host) return;
+      const types = ["lesson","daily_topic","daily_application","daily_discovery","daily_revision"];
+      const labels = { lesson:"Permanent lessons",daily_topic:"Daily Topic",daily_application:"Daily Application",daily_discovery:"Daily Discovery",daily_revision:"Daily Revision" };
+      host.innerHTML = types.map(type => {
+        const row = limits.find(item => item.plan_code === plan && item.activity_type === type);
+        if (type === "lesson" && personalLessonExemption) {
+          return '<div class="allowance-bar-row"><div class="allowance-bar-heading"><strong>' + labels[type] + '</strong><span>Unlimited · personal testing access</span></div><div class="allowance-bar-track"><div class="allowance-bar-fill" style="width:0%"></div></div></div>';
+        }
+        if (!row || !row.is_enabled || !Number.isFinite(Number(row.daily_limit))) {
+          return '<div class="allowance-bar-row"><div class="allowance-bar-heading"><strong>' + labels[type] + '</strong><span>Unavailable for this plan</span></div><div class="allowance-bar-track"><div class="allowance-bar-fill" style="width:0%"></div></div></div>';
+        }
+        const maximum = Math.max(0,Number(row.daily_limit));
+        const used = todayRows.filter(item => item.activity_type === type).length;
+        const remaining = Math.max(0,maximum-used);
+        const percent = maximum ? Math.min(100,used/maximum*100) : 0;
+        return '<div class="allowance-bar-row"><div class="allowance-bar-heading"><strong>' + labels[type] + '</strong><span>' + remaining + ' of ' + maximum + ' remaining · ' + used + ' used</span></div><div class="allowance-bar-track"><div class="allowance-bar-fill' + (remaining === 0 ? ' exhausted' : '') + '" style="width:' + percent + '%"></div></div></div>';
+      }).join("");
+      const note = document.getElementById("allowanceDetails");
+      if (note) note.textContent = (plan === "premium" ? "Premium" : "Free") + " plan · Resets at midnight (" + timezone + "). Only successful completions use an allowance.";
+    }
+
+    function formatTopicName(topicId) {
+      return String(topicId || "").replaceAll("-"," ").replace(/\b\w/g,character=>character.toUpperCase());
+    }
+
     async function loadProfileData() {
       if (!supabaseClient || !currentUser) return;
       const signedOut = document.getElementById("profileSignedOut");
@@ -17968,16 +18096,18 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
       try {
         await preferenceWriteQueue;
         await ensureProfileRows();
-        const [profileQ,prefsQ,activityQ,entitlementQ,limitsQ,lessonPracticeQ,dailyPracticeQ] = await Promise.all([
+        const [profileQ,prefsQ,activityQ,entitlementQ,limitsQ,lessonPracticeQ,dailyPracticeQ,savedWordsQ,personalTestQ] = await Promise.all([
           supabaseClient.from("profiles").select("display_name,avatar_icon").eq("user_id",currentUser.id).maybeSingle(),
           supabaseClient.from("user_preferences").select("learning_language,translation_language,timezone,allowance_timezone,allowance_timezone_until").eq("user_id",currentUser.id).maybeSingle(),
           supabaseClient.from("learning_activity_log").select("activity_type,event_type,language_code,created_at").eq("user_id",currentUser.id),
-          supabaseClient.from("user_entitlements").select("plan_code,status,valid_until").eq("user_id",currentUser.id).maybeSingle(),
+          supabaseClient.from("user_entitlements").select("plan_code,status,valid_from,valid_until").eq("user_id",currentUser.id).maybeSingle(),
           supabaseClient.from("learning_plan_limits").select("plan_code,activity_type,daily_limit,is_enabled"),
           supabaseClient.from("lesson_practice_results").select("topic_id,correct_count,question_count,attempted_at").eq("user_id",currentUser.id).order("attempted_at",{ascending:false}).limit(60),
-          supabaseClient.from("daily_activity_sessions").select("topic_id,correct_count,question_count,completed_at").eq("user_id",currentUser.id).eq("status","completed").order("completed_at",{ascending:false}).limit(60)
+          supabaseClient.from("daily_activity_sessions").select("topic_id,correct_count,question_count,completed_at").eq("user_id",currentUser.id).eq("status","completed").order("completed_at",{ascending:false}).limit(60),
+          supabaseClient.from("saved_words").select("course,word").eq("user_id",currentUser.id),
+          supabaseClient.rpc("is_personal_learning_test_access")
         ]);
-        for (const q of [profileQ,prefsQ,activityQ,entitlementQ,limitsQ,lessonPracticeQ,dailyPracticeQ]) if (q.error) throw q.error;
+        for (const q of [profileQ,prefsQ,activityQ,entitlementQ,limitsQ,lessonPracticeQ,dailyPracticeQ,savedWordsQ,personalTestQ]) if (q.error) throw q.error;
         const prefs = prefsQ.data || {learning_language:course,translation_language:translationLanguage,timezone:browserTimezone()};
         profilePreferences = prefs;
         const courseChanged = course !== prefs.learning_language;
@@ -17991,6 +18121,7 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
         if (courseChanged) { activeLetter=""; activeCategory="all"; onlySaved=false; savedFilter.setAttribute("aria-pressed","false"); savedFilter.textContent="☆ Saved words"; currentPage=1; makeAlphabet(); updateLetterButtons(); render(); }
         selectedAvatar = profileQ.data?.avatar_icon || selectedAvatar || "🐦";
         updateAvatarDisplay();
+        renderFavoriteWords(savedWordsQ.data || []);
         document.getElementById("displayNameInput").value = profileQ.data?.display_name || "";
         document.getElementById("preferenceLearning").value = prefs.learning_language;
         document.getElementById("preferenceTranslation").value = prefs.translation_language;
@@ -18003,15 +18134,29 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
         const today = localDayStart(tz);
         const todayRows = completedActivity.filter(row => new Intl.DateTimeFormat("en-CA",{timeZone:tz,year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(row.created_at)) === today);
         const types = ["lesson","quiz","flashcard","daily_topic","daily_application","daily_discovery","daily_revision"];
-        const plan = entitlementQ.data?.status === "active" ? entitlementQ.data.plan_code : "free";
+        const entitlementActive = entitlementQ.data?.status === "active" && (!entitlementQ.data.valid_from || Date.parse(entitlementQ.data.valid_from) <= Date.now()) && (!entitlementQ.data.valid_until || Date.parse(entitlementQ.data.valid_until) > Date.now());
+        const plan = entitlementActive ? entitlementQ.data.plan_code : "free";
         const limits = limitsQ.data || [];
         document.getElementById("totalActivity").textContent = completedActivity.length;
         document.getElementById("todayActivity").textContent = todayRows.length;
-        document.getElementById("activeLanguages").textContent = new Set(completedActivity.map(row=>row.language_code)).size;
+        const latestByLanguage = new Map();
+        completedActivity.forEach(row => {
+          const code = row.language_code;
+          const stamp = Date.parse(row.created_at || "");
+          if (!code || !Number.isFinite(stamp)) return;
+          if (!latestByLanguage.has(code) || stamp > latestByLanguage.get(code)) latestByLanguage.set(code,stamp);
+        });
+        const activeLanguageRows = [...latestByLanguage.entries()].sort((a,b)=>b[1]-a[1]);
+        document.getElementById("activeLanguageCount").textContent = activeLanguageRows.length;
+        document.getElementById("activeLanguagesList").innerHTML = activeLanguageRows.length ? activeLanguageRows.map(([code,stamp]) => {
+          const label = code === "zh" ? "简体中文" : code === "en" ? "English" : escapeHTML(code);
+          const date = new Intl.DateTimeFormat(undefined,{dateStyle:"medium",timeStyle:"short",timeZone:tz}).format(new Date(stamp));
+          return '<div class="active-language-row"><strong>' + label + '</strong><span>Last active · ' + escapeHTML(date) + '</span></div>';
+        }).join("") : "No completed learning activity recorded yet.";
         const counts = Object.fromEntries(types.map(type=>[type,completedActivity.filter(row=>row.activity_type===type).length]));
         document.getElementById("progressDetails").textContent = completedActivity.length ? types.map(type=>`${type.replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase())}: ${counts[type]} session(s)`).join(" · ") : "No completed learning activity recorded yet. Your completed lessons and daily activities will appear here.";
         const limitText = types.map(type=>{const row=limits.find(item=>item.plan_code===plan&&item.activity_type===type);const used=todayRows.filter(item=>item.activity_type===type).length;return `${type.replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase())}: ${row?.is_enabled ? Math.max(0,row.daily_limit-used)+" of "+row.daily_limit+" remaining" : "Unavailable"}`;});
-        document.getElementById("allowanceDetails").textContent = `${plan === "premium" ? "Premium" : "Free"} plan · ${limitText.join(" · ")} · Resets at midnight (${tz}).`;
+        renderDashboardAllowanceBars(plan,limits,todayRows,tz,personalTestQ.data === true);
 
         // Practice insights use aggregate counts only. No individual answers or
         // response text are retrieved or retained.
@@ -18026,8 +18171,14 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
         const recentPractice = practiceRows.slice(0,10);
         const recentCorrect = recentPractice.reduce((sum,row)=>sum+Number(row.correct_count),0);
         const recentQuestions = recentPractice.reduce((sum,row)=>sum+Number(row.question_count),0);
-        document.getElementById("practiceAccuracy").textContent = recentQuestions
-          ? Math.round(recentCorrect/recentQuestions*100)+"%" : "—";
+        const accuracyPercent = recentQuestions ? Math.round(recentCorrect/recentQuestions*100) : 0;
+        document.getElementById("practiceAccuracy").textContent = recentQuestions ? accuracyPercent+"%" : "—";
+        const incorrectCount = Math.max(0,recentQuestions-recentCorrect);
+        document.getElementById("practiceCorrectCount").textContent = recentCorrect;
+        document.getElementById("practiceIncorrectCount").textContent = incorrectCount;
+        document.getElementById("practiceCorrectSegment").style.width = recentQuestions ? (recentCorrect/recentQuestions*100)+"%" : "0%";
+        document.getElementById("practiceIncorrectSegment").style.width = recentQuestions ? (incorrectCount/recentQuestions*100)+"%" : "0%";
+        document.getElementById("practiceChart").setAttribute("aria-label",recentQuestions ? recentCorrect+" correct first attempts and "+incorrectCount+" incorrect first attempts out of "+recentQuestions+" questions." : "No practice data recorded yet.");
         document.getElementById("practiceSummaries").textContent = recentPractice.length;
         const byTopic = new Map();
         for (const row of practiceRows) {
@@ -18036,24 +18187,38 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
           byTopic.set(row.topic_id,entries);
         }
         const now = Date.now();
-        let topicsDue = 0;
-        for (const entries of byTopic.values()) {
+        const reviewTopics = [];
+        for (const [topicId,entries] of byTopic.entries()) {
           const questions = entries.reduce((sum,row)=>sum+Number(row.question_count),0);
           const correct = entries.reduce((sum,row)=>sum+Number(row.correct_count),0);
           if (entries.length < 2 || questions < 6) continue;
           const accuracy = correct/questions;
           const intervalDays = accuracy < 0.65 ? 1 : accuracy < 0.8 ? 3 : accuracy < 0.9 ? 7 : 14;
           const lastAt = Date.parse(entries[0].practice_at || "");
-          if (Number.isFinite(lastAt) && (now-lastAt)/86400000 >= intervalDays) topicsDue += 1;
+          if (!Number.isFinite(lastAt)) continue;
+          const daysSince = Math.max(0,(now-lastAt)/86400000);
+          const weak = accuracy < 0.7;
+          const due = daysSince >= intervalDays;
+          if (!weak && !due) continue;
+          const reason = weak
+            ? "Recent accuracy is " + Math.round(accuracy*100) + "% across " + entries.length + " attempts; this topic may benefit from another review."
+            : "Your spaced-review interval has passed (" + Math.floor(daysSince) + " days since your last practice).";
+          reviewTopics.push({topicId,accuracy,daysSince,weak,reason});
         }
-        document.getElementById("practiceTopicsDue").textContent = topicsDue;
+        reviewTopics.sort((a,b)=>(Number(b.weak)-Number(a.weak)) || b.daysSince-a.daysSince || a.accuracy-b.accuracy);
+        document.getElementById("practiceTopicsDue").textContent = reviewTopics.length;
+        const reviewList = document.getElementById("practiceReviewTopics");
+        reviewList.innerHTML = reviewTopics.length
+          ? reviewTopics.slice(0,5).map(item=>'<li><strong>'+escapeHTML(formatTopicName(item.topicId))+'</strong><span>'+escapeHTML(item.reason)+'</span></li>').join("")
+          : '<li class="muted-note">'+(practiceRows.length ? "No topics currently meet the review threshold. Keep practising to maintain your progress." : "Complete more scored practice to receive topic recommendations.")+'</li>';
         document.getElementById("practiceInsightsDetails").textContent = recentPractice.length
           ? `Based on your ${recentPractice.length} most recent practice summaries. Accuracy uses first-attempt aggregate results; topics are marked due only after at least two attempts and six questions.`
           : "No scored practice has been recorded yet. Complete a lesson or Daily Application/Revision to build your learning insights. Individual answers are never stored.";
 
         document.getElementById("profileWelcome").textContent = `Welcome${profileQ.data?.display_name ? ", "+profileQ.data.display_name : ""}. Here is your learning overview.`;
       } catch (error) {
-        document.getElementById("preferenceStatus").textContent = `Could not load profile data: ${error.message}`;
+        const preferenceStatus = document.getElementById("preferenceStatus");
+        if (preferenceStatus) preferenceStatus.textContent = `Could not load account data: ${error.message}`;
       }
     }
     document.getElementById("savePreferences").addEventListener("click", async () => {
