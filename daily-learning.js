@@ -1,4 +1,4 @@
-/* SwiftDictionary Update 2.3.0 — Daily Learning page.
+/* SwiftDictionary Update 2.3.1 — Daily Learning integrated into Lessons.
    Daily session writes use the server-side start/complete RPCs only.
    Answer selections remain in memory; only aggregate outcomes are submitted. */
 (() => {
@@ -120,7 +120,7 @@
   ];
 
   let preferences = Object.fromEntries(preferenceKeys.map(key => [key, true]));
-  let snapshot = { timezone:"UTC", day:"", plan:"free", limits:{}, completed:{}, content:{} };
+  let snapshot = { timezone:"UTC", day:"", plan:"free", limits:{}, completed:{}, openSessions:[], dailyResults:[], content:{} };
   let readerState = null;
   let loadSequence = 0;
   let preferenceListenersReady = false;
@@ -304,7 +304,7 @@
     const grid = byId("dailyActivityGrid");
     if (!supabaseClient || !currentUser) {
       preferences = Object.fromEntries(preferenceKeys.map(key => [key, true]));
-      snapshot = { timezone:"UTC", day:localDayStart("UTC"), learningLanguage:"en", plan:"free", limits:{}, completed:{}, content:{} };
+      snapshot = { timezone:"UTC", day:localDayStart("UTC"), learningLanguage:"en", plan:"free", limits:{}, completed:{}, openSessions:[], dailyResults:[], content:{} };
       applyPreferenceInputs(false);
       status.textContent = "Sign in to start activities and sync your preferences and progress across devices.";
       renderCards();
@@ -340,7 +340,7 @@
       && (!entitlement.valid_until || Date.parse(entitlement.valid_until) > now);
     const plan = active ? entitlement.plan_code : "free";
 
-    const [limitResult, logResult, lessonResult, dailyResult] = await Promise.all([
+    const [limitResult, logResult, lessonResult, dailyResult, openSessionResult] = await Promise.all([
       supabaseClient.from("learning_plan_limits")
         .select("activity_type,daily_limit,is_enabled")
         .eq("plan_code",plan)
@@ -353,12 +353,16 @@
         .select("topic_id,correct_count,question_count,attempted_at")
         .eq("user_id",userId).order("attempted_at",{ascending:false}).limit(200),
       supabaseClient.from("daily_activity_sessions")
-        .select("activity_type,content_id,topic_id,correct_count,question_count,completed_at,status")
+        .select("activity_type,content_id,topic_id,difficulty,source,correct_count,question_count,completed_at,status,started_at")
         .eq("user_id",userId).eq("status","completed")
-        .order("completed_at",{ascending:false}).limit(200)
+        .order("completed_at",{ascending:false}).limit(200),
+      supabaseClient.from("daily_activity_sessions")
+        .select("activity_type,content_id,topic_id,difficulty,source,status,started_at")
+        .eq("user_id",userId).eq("status","in_progress")
+        .order("started_at",{ascending:false}).limit(10)
     ]);
     if (sequence !== loadSequence) return;
-    for (const result of [limitResult,logResult,lessonResult,dailyResult]) if (result.error) throw result.error;
+    for (const result of [limitResult,logResult,lessonResult,dailyResult,openSessionResult]) if (result.error) throw result.error;
 
     const limits = {};
     for (const row of limitResult.data || []) limits[row.activity_type] = { limit:row.daily_limit, enabled:row.is_enabled };
@@ -370,6 +374,7 @@
       timezone, day, learningLanguage:language, plan, limits, completed, completedToday,
       lessonResults:lessonResult.data || [],
       dailyResults:dailyResult.data || [],
+      openSessions:openSessionResult.data || [],
       content:{}
     };
 
@@ -377,11 +382,9 @@
     for (const type of Object.keys(activityMeta)) slots[type] = completed[type] || 0;
     for (const type of Object.keys(activityMeta)) snapshot.content[type] = chooseContent(type,slots[type]);
     const timezoneChangePending = prefs.allowance_timezone && Date.parse(prefs.allowance_timezone_until || "") > Date.now();
-    status.textContent = "Your daily activities reset at midnight (" + timezone + "). Plan: " + (plan === "premium" ? "Premium" : "Free") + ". Daily content currently focuses on English learning.";
+    status.textContent = "Your daily activities reset at midnight (" + timezone + "). Plan: " + (plan === "premium" ? "Premium" : "Free") + ". Daily activity content currently teaches English; selected Chinese translation is shown where available.";
     if (timezoneChangePending) status.textContent += " Your preferred timezone (" + prefs.timezone + ") will take effect after this allowance day ends.";
-    if (language !== "en" || course !== "en") {
-      status.textContent += " Switch the learning course to English to start these activities.";
-    }
+    if (language !== "en" || course !== "en") status.textContent += " Select English as your Learning course to start these activities. Your saved Chinese course preference is not changed by this message."
     renderCards();
   }
 
@@ -402,23 +405,35 @@
     }
     grid.innerHTML = enabledTypes.map(type => {
       const meta = activityMeta[type];
-      const content = snapshot.content[type] || chooseContent(type,snapshot.completed?.[type] || 0);
+      const fallback = snapshot.content[type] || chooseContent(type,snapshot.completed?.[type] || 0);
+      const activeSession = (snapshot.openSessions || []).find(row => row.activity_type === type);
+      const content = activeSession ? resolveSessionContent(type,activeSession,fallback) : fallback;
       const limit = snapshot.limits[type]?.limit;
       const used = snapshot.completed[type] || 0;
       const remaining = Number.isFinite(limit) ? Math.max(0,limit-used) : null;
       const alreadyCompleted = (snapshot.dailyResults || []).some(row =>
         row.activity_type === type && row.content_id === content.id && row.status === "completed");
-      const remainingLabel = alreadyCompleted
-        ? "No new content available · replay is free"
-        : remaining === null ? "Allowance unavailable" : remaining + " / " + limit + " completions remaining";
-      const buttonLabel = alreadyCompleted ? "Review completed content" : "Start / Resume";
+      const exhausted = !activeSession && !alreadyCompleted && (remaining === null || remaining <= 0);
+      const remainingLabel = activeSession
+        ? "In progress · allowance is used only on completion"
+        : alreadyCompleted
+          ? "Completed · replay is free"
+          : remaining === null ? "Allowance unavailable" : remaining + " / " + limit + " completions remaining";
+      const buttonLabel = activeSession ? "Resume activity"
+        : alreadyCompleted ? "Review completed content"
+        : exhausted ? "Daily limit reached" : "Start activity";
       const reason = type === "daily_revision" ? '<p class="daily-activity-meta"><span class="daily-activity-tag">' + esc(content.body) + '</span></p>' : "";
-      const disabled = !currentUser || !supabaseClient || snapshot.learningLanguage !== "en" || (typeof course !== "undefined" && course !== "en");
+      let disabledReason = "";
+      if (!currentUser || !supabaseClient) disabledReason = "Sign in to start and sync this activity.";
+      else if (snapshot.learningLanguage !== "en" || (typeof course !== "undefined" && course !== "en")) disabledReason = "Daily activities currently teach English. Select English in Learning course to begin.";
+      else if (exhausted) disabledReason = "You have used today's completion allowance. It resets at midnight (" + snapshot.timezone + ").";
+      const disabled = !!disabledReason || (!activeSession && !alreadyCompleted && remaining === null);
       return '<article class="daily-activity-card" data-activity-card="' + type + '">'
         + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(meta.label) + '</span><span class="daily-activity-tag">' + esc(remainingLabel) + '</span></div>'
         + '<h2>' + esc(meta.title) + '</h2><p>' + esc(meta.description) + '</p>'
         + '<div class="daily-reader-example"><strong>' + esc(content.title) + '</strong></div>'
         + reason
+        + (disabledReason ? '<p class="daily-activity-status">' + esc(disabledReason) + '</p>' : "")
         + '<button type="button" class="primary-button" data-label="' + esc(buttonLabel) + '" data-start-daily="' + type + '"' + (disabled ? " disabled" : "") + '>' + esc(buttonLabel) + '</button>'
         + '</article>';
     }).join("");
@@ -458,7 +473,7 @@
     const isQuiz = activityType === "daily_application" || activityType === "daily_revision";
     reader.hidden = false;
     readerState = { activityType,content,session,firstTry:(content.questions || []).map(() => null),passed:(content.questions || []).map(() => false) };
-    let html = '<button type="button" class="secondary-button" data-daily-back>← Back to Daily Learning</button>'
+    let html = '<button type="button" class="secondary-button" data-daily-back>← Back to Lessons</button>'
       + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(activityMeta[activityType].title) + '</span>'
       + (completed ? '<span class="daily-activity-tag">Completed · replay is free</span>' : '<span class="daily-activity-tag">In progress · no allowance used yet</span>')
       + '</div><h2>' + esc(content.title) + '</h2>';
@@ -522,10 +537,11 @@
       const correct = Number(selected.value) === content.questions[i].answer;
       if (firstTry[i] === null) firstTry[i] = correct;
       passed[i] = correct;
-      if (correct) feedback.textContent = "Correct. " + content.questions[i].explanation;
+      const translatedExplanation = typeof translationLanguage !== "undefined" && translationLanguage === "zh" && content.questions[i].zh ? " 中文说明：" + content.questions[i].zh : "";
+      if (correct) feedback.textContent = "Correct. " + content.questions[i].explanation + translatedExplanation;
       else {
         allCorrect = false;
-        feedback.textContent = "Not quite. Try again. " + content.questions[i].explanation;
+        feedback.textContent = "Not quite. Try again. " + content.questions[i].explanation + translatedExplanation;
       }
     }
     const completeButton = byId("dailyActivityReader").querySelector("[data-complete-daily]");
@@ -639,7 +655,7 @@
   window.initialiseDailyLearning = initialiseDailyLearning;
   bindPreferenceControls();
   window.addEventListener("swift-auth-updated",() => {
-    if (location.hash === "#daily-learning") initialiseDailyLearning();
+    if (location.hash === "#lessons") initialiseDailyLearning();
   });
-  if (location.hash === "#daily-learning") initialiseDailyLearning();
+  if (location.hash === "#lessons") initialiseDailyLearning();
 })();
