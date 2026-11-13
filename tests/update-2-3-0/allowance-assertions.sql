@@ -107,7 +107,7 @@ begin
     insert into public.lesson_progress(user_id,difficulty,lesson_id,status)
     values ('55555555-5555-4555-8555-555555555555','beginner','start-free-' || i,'in_progress');
     perform public.complete_permanent_lesson(
-      'beginner','start-free-' || i,'test-topic',1,1
+      'beginner','start-free-' || i,'sentence-basics',1,1
     );
   end loop;
 
@@ -748,14 +748,14 @@ begin
   for i in 1..3 loop
     select id into v_session
     from public.start_daily_activity_session(
-      'daily_revision','premium-revision-' || i,'verb-tenses','intermediate','adaptive_revision'
+      'daily_revision','revision:verb-tenses:application-verb-patterns-01:2026-11-13:' || i,'verb-tenses','intermediate','adaptive_revision'
     );
     perform public.complete_daily_activity_session(v_session, 2, 3);
   end loop;
 
   begin
     perform public.start_daily_activity_session(
-      'daily_revision','premium-revision-4','verb-tenses','intermediate','adaptive_revision'
+      'daily_revision','revision:verb-tenses:application-verb-patterns-01:2026-11-13:4','verb-tenses','intermediate','adaptive_revision'
     );
   exception when sqlstate 'P0001' then
     v_rejected := true;
