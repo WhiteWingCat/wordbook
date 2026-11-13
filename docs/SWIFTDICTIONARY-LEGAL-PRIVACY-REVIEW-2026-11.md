@@ -63,7 +63,7 @@ The privacy-policy draft still needs a real controller identity/contact, a compl
 1. Decide and document whether the project is within Malaysia PDPA's commercial-transaction scope; obtain Malaysian legal advice.
 2. Decide whether the global audience includes active targeting of EU residents and complete a GDPR applicability screen.
 3. Identify the data controller (individual or legal entity) and a privacy contact. Confirm any prescribed registration-class obligations.
-4. Create a data-flow inventory covering GitHub Pages/CDN, Supabase Auth/database/backups/logs/support, Google OAuth and any future payment provider.
+4. Create a data-flow inventory covering GitHub Pages/GitHub CDN, Supabase Auth/database/backups/logs/support, Google OAuth, jsDelivr (Supabase JS, Hanzi Writer and per-character stroke-order JSON requests) and any future payment provider. The requested Hanzi character appears in the jsDelivr asset path; although it is not an account identifier, the CDN may receive standard request metadata. Evaluate self-hosting these assets if feasible to reduce direct third-party browser requests.
 5. Complete a cross-border transfer assessment for every recipient/location, not just the primary database region; update the bilingual notice.
 6. Complete DPO-threshold screening, specifically the regular/systematic-monitoring criterion for adaptive revision; document the result.
 7. Complete DPIA screening for learning progress, adaptive revision and users aged 16–17.
