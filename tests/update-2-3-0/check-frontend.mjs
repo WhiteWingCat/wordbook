@@ -284,7 +284,7 @@ if (/Account preferences|Privacy and data/i.test(dashboardShell)
     || !/Privacy and data/i.test(preferencesShell)) {
   throw new Error("Account preferences and Privacy and Data must live in the dedicated Preferences page.");
 }
-for (const fragment of ["dailyTopics","dailyApplications","dailyDiscoveries","sourceUrl","learning_activity_log","lesson_practice_results"]) {
+for (const fragment of ["dailyTopics","dailyApplications","dailyDiscoveries","sourceUrl","get_my_learning_allowance_usage","lesson_practice_results"]) {
   if (!dailyScript.includes(fragment)) throw new Error(`Daily Learning content check failed: missing ${fragment}`);
 }
 if (dailyScript.includes('.from("daily_activity_sessions").insert(')
