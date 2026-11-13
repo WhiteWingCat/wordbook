@@ -509,3 +509,15 @@ Before adopting any service or workflow, record:
 - What is the migration/exit path if the free tier changes or is discontinued?
 
 Default decision: choose the safest adequate free option; keep production isolated; document limitations; ask before incurring any cost.
+
+
+### Read-only Supabase environment audit — 13 November 2026
+
+- Connected Supabase organization: `SwiftDictionary Indie`.
+- Connected project: `SwiftDictionary`, project reference `pzymiesazmpyvnfvsbsc`, region `ap-northeast-1` (Tokyo), status reported as healthy.
+- Read-only inspection of `supabase-config.js` on both `main` and `feature/update-2-3-1-bug-fix-and-changes` found the exact same file blob and the same Supabase project URL/reference. Therefore, the feature-branch frontend is configured for the **same production Supabase project**, not an isolated test backend. The public publishable key is also configured in this static file; no secret/service-role key was intentionally exposed or added.
+- The live project's migration history currently ends at `20261110041007` (`swiftdictionary_update_2_2_0_reconciliation_baseline`). The 2.3.0 Daily Learning and allowance migrations and 2.3.1 read RPC are not present in the recorded migration history.
+- The public schema currently lists saved words, languages, profiles, preferences, entitlements, plan limits, learning activity, lesson progress and practice results; RLS is enabled on the listed tables. Row counts were inspected only as a structural check and should not be treated as a full security audit.
+- This inspection was read-only. No Auth users, rows, schema, migrations, project settings or credentials were changed.
+- The connected Supabase tools did not expose the project's Auth URL-configuration settings or Cloudflare Pages environment-variable settings. These still require a manual dashboard inspection. The source configuration finding is already sufficient to treat the preview as production-backend-connected unless a verified Cloudflare runtime override is found.
+- **Immediate safety rule:** do not use the preview for real sign-in, account switching, saved-word writes, learning completions, allowance consumption or deletion testing until a separate backend is configured and verified. Use deterministic frontend mocks for UI-only testing in the meantime.
