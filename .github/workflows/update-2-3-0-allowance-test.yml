@@ -43,6 +43,16 @@ jobs:
         run: |
           eval "$(supabase status --output env)"
           psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/supabase-local-app-baseline.sql"
+      - name: Apply saved words least-privilege draft on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/docs/UPDATE-2.3.0-SAVED-WORDS-PRIVILEGE-HARDENING-DRAFT.sql"
+      - name: Verify saved words least-privilege grants on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/saved-words-privilege-assertions.sql"
       - name: Apply private approved content catalogue migration on local Supabase
         working-directory: ${{ runner.temp }}/swiftdictionary-supabase
         run: |
@@ -127,6 +137,10 @@ jobs:
         run: node tests/update-2-3-0/check-content-catalog.mjs
       - name: Create Supabase-compatible baseline fixture
         run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/allowance-baseline.sql
+      - name: Apply saved words least-privilege draft to disposable PostgreSQL
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f docs/UPDATE-2.3.0-SAVED-WORDS-PRIVILEGE-HARDENING-DRAFT.sql
+      - name: Verify saved words least-privilege grants
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/saved-words-privilege-assertions.sql
       - name: Apply private approved content catalogue migration to disposable PostgreSQL
         run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f docs/UPDATE-2.3.0-CONTENT-CATALOG-MIGRATION-DRAFT.sql
       - name: Apply allowance migration draft to disposable PostgreSQL
