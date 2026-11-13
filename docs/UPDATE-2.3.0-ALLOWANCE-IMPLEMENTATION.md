@@ -1,6 +1,6 @@
 # Update 2.3.0 — Allowance foundation implementation notes
 
-**Status:** Draft implementation review. The earlier allowance foundation passed its PostgreSQL 17 and browser baseline. Subsequent privacy-first catalogue validation and authenticated Daily Learning browser tests have been added and are undergoing fresh CI validation; do not treat the latest branch head as release-validated until that run passes. No production database or live website changes have been made.
+**Status:** Draft implementation review. The privacy-first catalogue, allowance/Daily Learning migrations, concurrency regressions and authenticated browser mock flows passed GitHub Actions run #346 (13 November 2026). All three jobs succeeded: PostgreSQL 17 migration/assertion suite, disposable local Supabase Auth compatibility suite, and Chromium browser suite (8/8). This validates disposable test environments only; it is not production migration approval or real Google OAuth verification. No production database or live website changes have been made.
 
 ## Scope of this step
 
@@ -296,4 +296,4 @@ The catalogue stores identifiers and metadata only. It does not store question t
 
 **Test-fixture warning:** Synthetic catalogue rows are seeded after the production-catalogue count assertions and only in test environments. Never run the fixture SQL against hosted Supabase.
 
-**Current CI note:** The first catalogue CI attempts correctly exposed missing test metadata and test-fixture ordering assumptions. Those were test harness failures, not production changes. The test fixtures and assertions have since been adjusted; the latest branch changes still require a complete green run before being considered validated.
+**Current CI note:** Initial catalogue CI attempts exposed test-fixture metadata/order assumptions and a checker-parser issue. These were test harness failures, not production changes. The fixtures, parser and assertions were corrected. GitHub Actions run [#346](https://github.com/WhiteWingCat/wordbook/actions/runs/43382607103) then passed all three jobs. The legal/privacy review document was added afterward without changing application code or migrations.
