@@ -270,18 +270,6 @@ begin
       using errcode = '22023';
   end if;
 
-  if not private.is_approved_learning_content(
-    p_activity_type,
-    p_content_id,
-    p_topic_id,
-    p_difficulty,
-    case when p_activity_type = 'daily_discovery' then 'en' else 'en' end,
-    p_source
-  ) then
-    raise exception 'Daily activity content is not part of the approved learning catalogue'
-      using errcode = '22023';
-  end if;
-
   perform pg_catalog.pg_advisory_xact_lock(
     pg_catalog.hashtextextended(v_user::text, 0)
   );
@@ -316,7 +304,24 @@ begin
   from public.user_preferences p
   where p.user_id = v_user;
 
-  if not found or v_timezone is null
+  if not found then
+    raise exception 'A valid saved IANA timezone is required'
+      using errcode = '22023';
+  end if;
+
+  if not private.is_approved_learning_content(
+    p_activity_type,
+    p_content_id,
+    p_topic_id,
+    p_difficulty,
+    v_language,
+    p_source
+  ) then
+    raise exception 'Daily activity content is not part of the approved learning catalogue'
+      using errcode = '22023';
+  end if;
+
+  if v_timezone is null
      or not exists (select 1 from pg_catalog.pg_timezone_names z where z.name = v_timezone) then
     raise exception 'A valid saved IANA timezone is required'
       using errcode = '22023';
