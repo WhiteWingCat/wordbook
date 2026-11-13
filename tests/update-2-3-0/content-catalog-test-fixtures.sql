@@ -23,6 +23,21 @@ values
   ('permanent_lesson','concurrent-06','sentence-basics','beginner','en',true),
   ('permanent_lesson','history-delete-race','sentence-basics','beginner','en',true),
   ('permanent_lesson','replay-delete-race','sentence-basics','beginner','en',true),
-  ('daily_topic','daily-topic-concurrency-01','sentence-basics','beginner','en',true)
+  ('daily_topic','daily-topic-concurrency-01','sentence-basics','beginner','en',true),
+  ('permanent_lesson','exempt-01','sentence-basics','beginner','en',true),
+  ('permanent_lesson','exempt-02','sentence-basics','beginner','en',true),
+  ('permanent_lesson','exempt-03','sentence-basics','beginner','en',true),
+  ('permanent_lesson','exempt-04','sentence-basics','beginner','en',true),
+  ('permanent_lesson','exempt-05','sentence-basics','beginner','en',true),
+  ('permanent_lesson','exempt-06','sentence-basics','beginner','en',true),
+  ('daily_topic','topic-day-1','sentence-basics','beginner','en',true),
+  ('daily_topic','another-content-id','sentence-basics','beginner','en',true),
+  ('daily_topic','topic-day-2','sentence-basics','beginner','en',true),
+  ('daily_topic','timezone-window-check','sentence-basics','beginner','en',true),
+  ('daily_topic','timezone-window-blocked','sentence-basics','beginner','en',true),
+  ('daily_application','application-day-1','sentence-basics','beginner','en',true),
+  ('daily_application','private-account-session','sentence-basics','beginner','en',true),
+  ('daily_application','timezone-window-after-boundary','sentence-basics','beginner','en',true),
+  ('daily_discovery','discovery-day-1',null,null,'en',true)
 on conflict (activity_type,content_id,language_code) do update
 set topic_id=excluded.topic_id,difficulty=excluded.difficulty,is_active=excluded.is_active;
