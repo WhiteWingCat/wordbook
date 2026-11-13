@@ -1,4 +1,5 @@
 name: Update 2.3.0 allowance migration checks
+# Keep the disposable regression suite branch-scoped; never connect it to production Supabase.
 
 on:
   push:
