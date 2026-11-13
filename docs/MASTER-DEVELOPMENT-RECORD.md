@@ -206,12 +206,13 @@ Historical note: the PR state above describes the repository at the time of the 
 9. Complete real Google OAuth callback and cross-device/account saved-word sync manual tests.
 10. Consolidate, review and explicitly approve the release candidate before production migration or Pages deployment.
 
-### Future roadmap
+### Current roadmap
 
-- **Update 2.4.0 — Quiz:** dedicated Quiz experience, progress tracking and allowance integration.
-- **Update 2.5.0 — Flashcards:** Flashcard learning experience, review progress and allowance integration.
+- **Update 2.3.1 — Bug Fix & Changes:** **In progress on the feature branch.** Scope and acceptance criteria are recorded above. Includes Lessons/Daily Learning integration, Dashboard and Preferences separation, allowance visualisation, saved-word panels and practice insights. Isolated mock testing mode (Option B) is an approved testing workstream within this branch; implementation is not yet complete. Do not merge or deploy without owner approval.
+- **Update 2.4.0 — Quiz:** **Planned.** Dedicated Quiz experience, progress tracking and allowance integration.
+- **Update 2.5.0 — Flashcards:** **Planned.** Flashcard learning experience, review progress and allowance integration.
 
-These are roadmap targets, not implemented or released features. Preserve Coming Soon behaviour until each feature is ready.
+These roadmap statuses must be refreshed whenever work changes. Planned features are not implemented or released; preserve Coming Soon behaviour until each feature is ready.
 
 ## 6. Privacy, legal and content licensing checklist
 
@@ -247,26 +248,27 @@ For detailed historical reasoning, refer to the original ChatGPT conversations b
 
 A conversation title is a useful locator, but does not guarantee access to every historical message. If a decision is not present in this record or retrievable from the referenced conversation, verify it from repository history or ask the owner rather than guessing.
 
-## 9. Record maintenance protocol
+## 9. Mandatory Master Development Record maintenance protocol
 
-Update this file at meaningful milestones:
-- When a feature's design is confirmed.
-- When implementation is completed and tested.
-- When a PR is opened, retargeted, merged or closed.
-- When migrations are applied to a specific environment.
-- When a release is approved and deployed.
-- When a bug is found, fixed and regression-tested.
+**This is a standing, mandatory development rule: every meaningful SwiftDictionary development action must be reflected in this file. The Master Development Record is the project's living source of truth and must be kept current throughout development, not only at release or handover time.**
 
-Every update must distinguish:
-- Planned
-- Implemented on a branch
-- Automated tests passed
-- Manual browser tests passed
-- Production database migrated
-- Merged
-- Deployed
+Update this record:
+- **Before or at the start of a new milestone/task:** record the approved scope, roadmap impact, branch and relevant safety constraints when they are known.
+- **After every meaningful implementation step:** record what changed, which files/modules were affected, and the branch/commit containing the work. Do not wait until an entire feature is finished.
+- **Whenever the roadmap changes:** update the relevant milestone status, dependencies, scope, priority, blockers and next steps immediately.
+- When a design or owner decision is confirmed, changed or superseded.
+- When a bug is discovered, diagnosed, fixed, deferred or regression-tested.
+- When automated, local, mocked, manual-browser, staging or production tests are run; record exact results and limitations.
+- When a branch or pull request is created, updated, retargeted, reviewed, merged or closed.
+- When a migration or configuration change is prepared, applied, rolled back or verified, identifying the environment precisely.
+- When deployment is started, succeeds, fails or is rolled back.
+- At the end of each development session, record the last known good state, unfinished work, blockers and the exact next action. If an error interrupts work, record the error and recovery point as soon as possible.
 
-Do not collapse these into a single “completed” status. Keep dates, commit hashes, PR numbers and test-run links where available. Never include secrets, service-role keys, private account identifiers or personal allowlist values.
+For every roadmap milestone, keep a clear status such as **Planned**, **Design approved**, **In progress**, **Implemented on branch**, **Automated tests passed**, **Manual tests passed**, **Blocked**, **Merged**, or **Deployed**. These are distinct states: never imply that one proves another. Record dates, commit hashes, PR numbers, test-run links and deployment environment/URL where available.
+
+Keep a concise chronological progress log under the active milestone so a future conversation can resume without reconstructing the entire Git history. Update the top-level current-work summary and roadmap whenever the active milestone or its status changes. If repository access or a tool error prevents an update, explicitly report that the record could not be updated and make it the first recovery task; do not silently continue as though the record is current.
+
+Never include secrets, service-role keys, OAuth secrets, private account identifiers, personal allowlist values or real user data. Record only the minimum technical detail needed for continuity.
 
 
 ## 10. Audit and privacy-first decision addendum — 13 November 2026
