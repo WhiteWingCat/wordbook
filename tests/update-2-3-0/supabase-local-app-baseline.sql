@@ -4,7 +4,10 @@
 
 -- Supabase CLI provides auth schema, roles, users, sessions and Auth helpers.
 create schema if not exists private;
-create table public.languages (code text primary key);
+create table public.languages (
+  code text primary key,
+  is_active boolean not null default true
+);
 insert into public.languages(code) values ('en'), ('zh');
 
 create table public.saved_words (
@@ -17,6 +20,30 @@ create table public.profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   display_name text
 );
+
+-- Match the live project's RLS posture for the synthetic language/profile tables.
+alter table public.languages enable row level security;
+alter table public.profiles enable row level security;
+
+create policy "Users can read active languages"
+on public.languages for select to anon, authenticated
+using (is_active = true);
+
+create policy "Users can create their own profile"
+on public.profiles for insert to authenticated
+with check ((select auth.uid()) = user_id);
+
+create policy "Users can read their own profile"
+on public.profiles for select to authenticated
+using ((select auth.uid()) = user_id);
+
+create policy "Users can update their own profile"
+on public.profiles for update to authenticated
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
+
+grant select on public.languages to anon, authenticated;
+grant select, insert, update on public.profiles to authenticated;
 
 grant usage on schema auth, public to anon, authenticated;
 grant execute on function auth.uid() to anon, authenticated;
@@ -121,7 +148,8 @@ for each row execute function public.enforce_learning_daily_limit();
 create or replace function public.record_lesson_start_allowance()
 returns trigger
 language plpgsql
-as $$
+set search_path = ''
+as $
 begin
   insert into public.learning_activity_log(user_id, activity_type, language_code)
   values (new.user_id, 'lesson', 'en');
