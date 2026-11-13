@@ -213,6 +213,7 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
     body: `(() => {
       const state = {
         user: null,
+        legacySchema: false,
         listeners: [],
         rpcCalls: [],
         sessions: [],
@@ -261,8 +262,19 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
       }
       function query(table) {
         const filters = {};
+        let selectError = null;
         const q = {
-          select() { return q; },
+          select(columns) {
+            const selected = String(columns || "");
+            if (state.legacySchema && table === "user_preferences" && selected.includes("allowance_timezone")) {
+              selectError = { code:"PGRST204", message:"Could not find the allowance_timezone column in the user_preferences schema cache" };
+            } else if (state.legacySchema && table === "learning_activity_log" && selected.includes("event_type")) {
+              selectError = { code:"42703", message:"column learning_activity_log.event_type does not exist" };
+            } else if (state.legacySchema && table === "daily_activity_sessions") {
+              selectError = { code:"PGRST205", message:"Could not find the daily_activity_sessions table in the schema cache" };
+            }
+            return q;
+          },
           eq(key, value) { filters[key] = { op: "eq", value }; return q; },
           in(key, value) { filters[key] = { op: "in", value }; return q; },
           gte(key, value) { filters[key] = { op: "gte", value }; return q; },
@@ -270,9 +282,9 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
           order() { return q; },
           limit() { return q; },
           upsert() { return Promise.resolve({ data: null, error: null }); },
-          maybeSingle() { return Promise.resolve({ data: rowsFor(table, filters)[0] || null, error: null }); },
-          single() { return Promise.resolve({ data: rowsFor(table, filters)[0] || null, error: null }); },
-          then(resolve, reject) { return Promise.resolve({ data: rowsFor(table, filters), error: null }).then(resolve, reject); }
+          maybeSingle() { return Promise.resolve({ data: selectError ? null : (rowsFor(table, filters)[0] || null), error: selectError }); },
+          single() { return Promise.resolve({ data: selectError ? null : (rowsFor(table, filters)[0] || null), error: selectError }); },
+          then(resolve, reject) { return Promise.resolve({ data: selectError ? null : rowsFor(table, filters), error: selectError }).then(resolve, reject); }
         };
         return q;
       }
@@ -286,7 +298,9 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
         from(table) { return query(table); },
         async rpc(name, args) {
           state.rpcCalls.push({ name, args: structuredClone(args) });
-          if (name === "get_my_learning_allowance_usage") return { data: state.allowanceUsage, error: null };
+          if (name === "get_my_learning_allowance_usage") return state.legacySchema
+            ? { data:null, error:{ code:"PGRST202", message:"Could not find the get_my_learning_allowance_usage function in the schema cache" } }
+            : { data: state.allowanceUsage, error: null };
           if (name === "is_personal_learning_test_access") return { data: false, error: null };
           if (name === "start_daily_activity_session") {
             const existing = state.sessions.find(row => row.activity_type === args.p_activity_type && row.status === "in_progress");
@@ -439,6 +453,38 @@ test("Dashboard shows saved words, course recency, ledger allowances and practic
   await expect(page.locator("#preferencesPage")).toContainText("Account preferences");
   await expect(page.locator("#preferencesPage")).toContainText("Privacy and data");
   await expect(page.locator("#profilePage")).toBeHidden();
+});
+
+test("Dashboard remains readable on the legacy 2.2 database while Daily Learning waits for migrations", async ({ page }) => {
+  const userId = "legacy-dashboard-user";
+  await installDailyLearningMock(page, userId);
+  await page.goto("/");
+  await page.evaluate(userId => {
+    const state = window.__swiftDailyMock;
+    state.legacySchema = true;
+    state.tables.profiles = [{ user_id:userId, display_name:"Legacy Learner", avatar_icon:"🐼" }];
+    state.tables.user_preferences = [{ user_id:userId, learning_language:"en", translation_language:"zh", timezone:"Asia/Kuala_Lumpur" }];
+    state.tables.user_entitlements = [{ user_id:userId, plan_code:"free", status:"active", valid_from:null, valid_until:null }];
+    state.tables.learning_plan_limits = [{ plan_code:"free", activity_type:"lesson", daily_limit:5, is_enabled:true }];
+    state.tables.learning_activity_log = [{ user_id:userId, activity_type:"lesson", language_code:"en", created_at:new Date().toISOString() }];
+    state.tables.saved_words = [{ user_id:userId, course:"en", word:"hello" }];
+    state.tables.lesson_practice_results = [];
+    state.tables.daily_activity_sessions = [];
+  }, userId);
+
+  await page.locator("#accountButton").click();
+  await page.locator("#menuProfile").click();
+  await expect(page.locator("#profilePage")).toBeVisible();
+  await expect(page.locator("#profileHeading")).toHaveText("Your Dashboard");
+  await expect(page.locator("#favoriteEnglishGrid")).toContainText("hello");
+  await expect(page.locator("#activeLanguagesList")).toContainText("English");
+  await expect(page.locator("#dashboardAllowanceBars")).toContainText("Usage unavailable");
+  await expect(page.locator("#allowanceDetails")).toContainText("Counts are not estimated from learning history.");
+  await expect(page.locator("#practiceInsightsDetails")).toContainText("Daily activity practice data will appear after the matching server update");
+
+  await page.locator('[data-page="lessons"]').click();
+  await expect(page.locator("#dailyLearningStatus")).toContainText("matching server database update has not been applied yet");
+  await expect(page.locator("#dailyActivityGrid")).toContainText("waiting for a server update");
 });
 
 test("Google sign-in requests account selection and a stable callback URL", async ({ page }) => {
