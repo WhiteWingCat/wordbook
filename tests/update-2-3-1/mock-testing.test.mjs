@@ -46,7 +46,7 @@ test("mock data is isolated by identity and scoped to session storage",async()=>
   const env=makeContext("feature-update-2-3-1-bug-fix-and-changes.swiftdictionary-testing.pages.dev");
   const client=env.window.supabase.createClient();
   let result=await client.from("saved_words").select("word").eq("user_id","mock-user-a");
-  assert.deepEqual(result.data.map(row=>row.word).sort(),["hello","你"].sort());
+  assert.deepEqual(Array.from(result.data,row=>row.word).sort(),["hello","你"].sort());
 
   env.window.__swiftDictionaryMock.setActiveUser("mock-user-b");
   result=await client.from("saved_words").select("word").eq("user_id","mock-user-b");
