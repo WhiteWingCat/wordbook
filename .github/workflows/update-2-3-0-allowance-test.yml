@@ -41,6 +41,16 @@ jobs:
         run: |
           eval "$(supabase status --output env)"
           psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/supabase-local-app-baseline.sql"
+      - name: Apply private approved content catalogue migration on local Supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/docs/UPDATE-2.3.0-CONTENT-CATALOG-MIGRATION-DRAFT.sql"
+      - name: Seed synthetic content IDs for isolated tests
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/content-catalog-test-fixtures.sql"
       - name: Apply completion-based allowance migration on local Supabase
         working-directory: ${{ runner.temp }}/swiftdictionary-supabase
         run: |
@@ -51,6 +61,11 @@ jobs:
         run: |
           eval "$(supabase status --output env)"
           psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/docs/UPDATE-2.3.0-DAILY-ACTIVITY-MIGRATION-DRAFT.sql"
+      - name: Verify approved content catalogue and RPC validation
+        working-directory: ${{ runner.temp }}/swiftdictionary-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/content-catalog-assertions.sql"
       - name: Seed legacy completions for local ledger backfill
         working-directory: ${{ runner.temp }}/swiftdictionary-supabase
         run: |
