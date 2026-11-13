@@ -123,10 +123,16 @@ jobs:
         run: node tests/update-2-3-0/check-frontend.mjs
       - name: Create Supabase-compatible baseline fixture
         run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/allowance-baseline.sql
+      - name: Apply private approved content catalogue migration to disposable PostgreSQL
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f docs/UPDATE-2.3.0-CONTENT-CATALOG-MIGRATION-DRAFT.sql
+      - name: Seed synthetic content IDs for isolated tests
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/content-catalog-test-fixtures.sql
       - name: Apply allowance migration draft to disposable PostgreSQL
         run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f docs/UPDATE-2.3.0-ALLOWANCE-MIGRATION-DRAFT.sql
       - name: Apply daily activity migration draft to disposable PostgreSQL
         run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f docs/UPDATE-2.3.0-DAILY-ACTIVITY-MIGRATION-DRAFT.sql
+      - name: Verify approved content catalogue and RPC validation
+        run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/content-catalog-assertions.sql
       - name: Seed legacy current-window completions for ledger backfill
         run: psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f tests/update-2-3-0/allowance-ledger-seed.sql
       - name: Apply separate allowance-ledger migration draft
