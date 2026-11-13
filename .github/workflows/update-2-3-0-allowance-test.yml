@@ -1,10 +1,11 @@
-name: Update 2.3.0 allowance migration checks
+name: SwiftDictionary 2.3.x allowance and dashboard regression checks
 # Keep the disposable regression suite branch-scoped; never connect it to production Supabase.
 
 on:
   push:
     branches:
       - feature/update-2-3-0-allowance-foundation
+      - feature/update-2-3-1-bug-fix-and-changes
   pull_request:
     types: [opened, synchronize, reopened]
 
