@@ -343,6 +343,37 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
   }));
 }
 
+test("Daily Revision is adaptive, abandonment is free, and Daily Discovery is unscored", async ({ page }) => {
+  await installDailyLearningMock(page, "daily-behaviour-user");
+  await page.goto("/");
+  await page.locator('[data-page="lessons"]').click();
+
+  await page.locator('#dailyActivityGrid [data-start-daily="daily_revision"]').click();
+  await expect(page.locator("#dailyActivityReader #dailyQuestions .daily-question").first()).toBeVisible();
+  const revisionStart = await page.evaluate(() => window.__swiftDailyMock.rpcCalls.find(call => call.name === "start_daily_activity_session" && call.args.p_activity_type === "daily_revision"));
+  expect(revisionStart.args.p_source).toBe("adaptive_revision");
+  expect(revisionStart.args.p_topic_id).toBeTruthy();
+  await page.locator("#dailyActivityReader [data-abandon-daily]").click();
+  await expect(page.locator("#dailyLearningStatus")).toContainText("Session abandoned. No daily allowance was used.");
+  const revisionUsage = await page.evaluate(() => window.__swiftDailyMock.allowanceUsage.find(row => row.activity_type === "daily_revision").used_count);
+  expect(revisionUsage).toBe(0);
+
+  await page.locator('#dailyActivityGrid [data-start-daily="daily_discovery"]').click();
+  await expect(page.locator("#dailyActivityReader")).toBeVisible();
+  await expect(page.locator("#dailyActivityReader #dailyQuestions")).toHaveCount(0);
+  await page.locator("#dailyActivityReader [data-complete-daily]").click();
+  await expect(page.locator("#dailyLearningStatus")).toContainText("Activity completed successfully.");
+  const discovery = await page.evaluate(() => ({
+    call: window.__swiftDailyMock.rpcCalls.find(call => call.name === "complete_daily_activity_session"),
+    session: window.__swiftDailyMock.sessions.find(row => row.activity_type === "daily_discovery"),
+    used: window.__swiftDailyMock.allowanceUsage.find(row => row.activity_type === "daily_discovery").used_count
+  }));
+  expect(discovery.call.args.p_correct_count).toBeNull();
+  expect(discovery.call.args.p_question_count).toBeNull();
+  expect(discovery.session.status).toBe("completed");
+  expect(discovery.used).toBe(1);
+});
+
 test("Dashboard shows saved words, course recency, ledger allowances and practice insights; Preferences stays separate", async ({ page }) => {
   const userId = "dashboard-user";
   await installDailyLearningMock(page, userId);
