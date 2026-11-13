@@ -135,7 +135,7 @@ create or replace function public.enforce_learning_daily_limit()
 returns trigger
 language plpgsql
 set search_path = ''
-as $
+as $$
 begin
   new.created_at := now();
   return new;
@@ -150,7 +150,7 @@ create or replace function public.record_lesson_start_allowance()
 returns trigger
 language plpgsql
 set search_path = ''
-as $
+as $$
 begin
   insert into public.learning_activity_log(user_id, activity_type, language_code)
   values (new.user_id, 'lesson', 'en');
@@ -166,7 +166,7 @@ create or replace function public.guard_lesson_progress_update()
 returns trigger
 language plpgsql
 set search_path = ''
-as $
+as $$
 begin
   if new.status = 'in_progress' then
     new.completed_at := null;
