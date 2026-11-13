@@ -340,15 +340,12 @@
       && (!entitlement.valid_until || Date.parse(entitlement.valid_until) > now);
     const plan = active ? entitlement.plan_code : "free";
 
-    const [limitResult, logResult, lessonResult, dailyResult, openSessionResult] = await Promise.all([
+    const [limitResult, usageResult, lessonResult, dailyResult, openSessionResult] = await Promise.all([
       supabaseClient.from("learning_plan_limits")
         .select("activity_type,daily_limit,is_enabled")
         .eq("plan_code",plan)
         .in("activity_type",["daily_topic","daily_application","daily_discovery","daily_revision"]),
-      supabaseClient.from("learning_activity_log")
-        .select("activity_type,created_at")
-        .eq("user_id",userId).eq("event_type","completed")
-        .gte("created_at",start).lt("created_at",finish),
+      supabaseClient.rpc("get_my_learning_allowance_usage"),
       supabaseClient.from("lesson_practice_results")
         .select("topic_id,correct_count,question_count,attempted_at")
         .eq("user_id",userId).order("attempted_at",{ascending:false}).limit(200),
@@ -362,12 +359,15 @@
         .order("started_at",{ascending:false}).limit(10)
     ]);
     if (sequence !== loadSequence) return;
-    for (const result of [limitResult,logResult,lessonResult,dailyResult,openSessionResult]) if (result.error) throw result.error;
+    for (const result of [limitResult,usageResult,lessonResult,dailyResult,openSessionResult]) if (result.error) throw result.error;
 
     const limits = {};
     for (const row of limitResult.data || []) limits[row.activity_type] = { limit:row.daily_limit, enabled:row.is_enabled };
     const completed = {};
-    for (const row of logResult.data || []) completed[row.activity_type] = (completed[row.activity_type] || 0) + 1;
+    for (const row of usageResult.data || []) {
+      const used = Number(row.used_count);
+      if (typeof row.activity_type === "string" && Number.isInteger(used) && used >= 0) completed[row.activity_type] = used;
+    }
     const completedToday = (dailyResult.data || []).filter(row => row.completed_at && row.completed_at >= start && row.completed_at < finish);
     const language = prefs.learning_language || "en";
     snapshot = {
@@ -408,26 +408,35 @@
       const fallback = snapshot.content[type] || chooseContent(type,snapshot.completed?.[type] || 0);
       const activeSession = (snapshot.openSessions || []).find(row => row.activity_type === type);
       const content = activeSession ? resolveSessionContent(type,activeSession,fallback) : fallback;
-      const limit = snapshot.limits[type]?.limit;
+      const limitConfig = snapshot.limits[type];
+      const limit = limitConfig?.limit;
       const used = snapshot.completed[type] || 0;
       const remaining = Number.isFinite(limit) ? Math.max(0,limit-used) : null;
       const alreadyCompleted = (snapshot.dailyResults || []).some(row =>
         row.activity_type === type && row.content_id === content.id && row.status === "completed");
-      const exhausted = !activeSession && !alreadyCompleted && (remaining === null || remaining <= 0);
+      const allowanceUnavailable = !activeSession && !alreadyCompleted
+        && (!limitConfig || limitConfig.enabled === false || remaining === null);
+      const exhausted = !activeSession && !alreadyCompleted && !allowanceUnavailable && remaining <= 0;
       const remainingLabel = activeSession
         ? "In progress · allowance is used only on completion"
         : alreadyCompleted
           ? "Completed · replay is free"
-          : remaining === null ? "Allowance unavailable" : remaining + " / " + limit + " completions remaining";
+          : allowanceUnavailable
+            ? (limitConfig?.enabled === false ? "Unavailable for this plan" : "Allowance unavailable")
+            : remaining + " / " + limit + " completions remaining";
       const buttonLabel = activeSession ? "Resume activity"
         : alreadyCompleted ? "Review completed content"
+        : allowanceUnavailable ? "Unavailable"
         : exhausted ? "Daily limit reached" : "Start activity";
       const reason = type === "daily_revision" ? '<p class="daily-activity-meta"><span class="daily-activity-tag">' + esc(content.body) + '</span></p>' : "";
       let disabledReason = "";
       if (!currentUser || !supabaseClient) disabledReason = "Sign in to start and sync this activity.";
       else if (snapshot.learningLanguage !== "en" || (typeof course !== "undefined" && course !== "en")) disabledReason = "Daily activities currently teach English. Select English in Learning course to begin.";
+      else if (allowanceUnavailable) disabledReason = limitConfig?.enabled === false
+        ? "This activity is not available for your current plan."
+        : "Your allowance could not be checked. Please refresh before starting this activity.";
       else if (exhausted) disabledReason = "You have used today's completion allowance. It resets at midnight (" + snapshot.timezone + ").";
-      const disabled = !!disabledReason || (!activeSession && !alreadyCompleted && remaining === null);
+      const disabled = !!disabledReason;
       return '<article class="daily-activity-card" data-activity-card="' + type + '">'
         + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(meta.label) + '</span><span class="daily-activity-tag">' + esc(remainingLabel) + '</span></div>'
         + '<h2>' + esc(meta.title) + '</h2><p>' + esc(meta.description) + '</p>'
