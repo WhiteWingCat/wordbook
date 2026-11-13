@@ -147,7 +147,7 @@
       } else if (this.operation==="upsert") {
         const values=Array.isArray(this.values)?this.values:[this.values];
         for (const value of values) {
-          const keys=(this.conflict || Object.keys(value).filter(k=>["user_id","course","word","difficulty","lesson_id","activity_type"].includes(k))).split(",");
+          const keys=this.conflict ? this.conflict.split(",") : Object.keys(value).filter(k=>["user_id","course","word","difficulty","lesson_id","activity_type"].includes(k));
           const existing=rows.find(row=>keys.every(k=>row[k]===value[k]));
           if (existing) { if (!this.ignoreDuplicates) Object.assign(existing,clone(value)); changed.push(existing); }
           else { const added=clone(value); rows.push(added); changed.push(added); }
@@ -175,21 +175,23 @@
     }
   }
 
-  function today(timezone) {
-    try { return new Intl.DateTimeFormat("en-CA",{timeZone:timezone||"UTC",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date()); }
-    catch (_) { return new Date().toISOString().slice(0,10); }
+  function dateInZone(value,timezone) {
+    try { return new Intl.DateTimeFormat("en-CA",{timeZone:timezone||"UTC",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(value)); }
+    catch (_) { return new Date(value).toISOString().slice(0,10); }
   }
+  function today(timezone) { return dateInZone(Date.now(),timezone); }
   function dailyRows(db,type) {
     const pref=db.tables.user_preferences?.[0] || {};
-    const day=today(pref.allowance_timezone || pref.timezone);
-    return (db.tables.daily_activity_sessions || []).filter(row=>row.activity_type===type && row.status==="completed" && String(row.completed_at||"").slice(0,10)===day);
+    const timezone=pref.allowance_timezone || pref.timezone || "UTC";
+    const day=today(timezone);
+    return (db.tables.daily_activity_sessions || []).filter(row=>row.activity_type===type && row.status==="completed" && row.completed_at && dateInZone(row.completed_at,timezone)===day);
   }
   function usageRows(db) {
     const types=["lesson","daily_topic","daily_application","daily_discovery","daily_revision","quiz","flashcard"];
     return types.map(activity_type=>({
       activity_type,
       used_count:activity_type==="lesson"
-        ? (db.tables.learning_activity_log||[]).filter(row=>row.activity_type==="lesson" && row.event_type==="completed" && String(row.created_at||"").slice(0,10)===today(db.tables.user_preferences?.[0]?.timezone)).length
+        ? (db.tables.learning_activity_log||[]).filter(row=>row.activity_type==="lesson" && row.event_type==="completed" && row.created_at && dateInZone(row.created_at,db.tables.user_preferences?.[0]?.timezone)===today(db.tables.user_preferences?.[0]?.timezone)).length
         : dailyRows(db,activity_type).length
     }));
   }
