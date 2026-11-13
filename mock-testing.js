@@ -4,7 +4,7 @@
  */
 (function () {
   "use strict";
-  const PREVIEW_HOST = "feature-update-2-3-1-bug-fix-and-changes.swiftdictionary-testing.pages.dev";
+  const PREVIEW_HOST = "feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev";
   const ACTIVATION_PARAM = "swiftMock";
   const STORAGE_PREFIX = "swiftDictionaryMock:v1:";
   const host = String(location.hostname || "").toLowerCase();
