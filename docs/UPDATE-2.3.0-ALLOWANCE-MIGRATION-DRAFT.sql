@@ -579,6 +579,13 @@ begin
       using errcode = '22023';
   end if;
 
+  -- Serialize replay summaries with learning-history deletion and all
+  -- other completion writers. Otherwise a replay summary could be inserted
+  -- after a concurrent deletion has already removed the learner's history.
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(v_user::text, 0)
+  );
+
   select id into v_progress_id
   from public.lesson_progress
   where user_id = v_user
