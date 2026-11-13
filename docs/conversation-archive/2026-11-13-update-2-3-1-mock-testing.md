@@ -117,3 +117,20 @@ Important backend finding: both main and feature-branch `supabase-config.js` ref
 ## Source conversation
 
 ChatGPT conversation dated 2026-11-13 covering Update 2.3.1 mock-mode design/implementation, CI corrections, preview-host testing safeguards, repository documentation organisation, and the owner's approval of a permanent conversation archive system.
+
+
+## Follow-up: actual preview hostname identified and guard corrected
+
+The owner provided the actual preview URL: `https://feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev/#dictionary`. The hostname did not match the earlier hardcoded allowlist, which expected `feature-update-2-3-1-bug-fix-and-changes.swiftdictionary-testing.pages.dev`. The query parameter format was not the cause.
+
+On the Update 2.3.1 feature branch:
+- `mock-testing.js` now allowlists only `feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev` and still requires `?swiftMock=1`.
+- `tests/update-2-3-1/mock-testing.test.mjs` now uses the actual host for positive activation cases and checks that the former hostname fails closed.
+- Adapter commit: `ca30d3394dcde2057d11b698f2e66bb15b1e55b4`.
+- Test commit: `54c11c221fb3199a655d849444182077e4b53e95`.
+- CI for these commits is not yet confirmed; the previous passing run #456 predates this correction.
+
+Owner test URL after the updated preview is deployed:
+`https://feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev/?swiftMock=1`
+
+If the URL already has a query string, append `&swiftMock=1`. Confirm the visible mock-mode warning before interacting. Never use a real account as a workaround. The preview frontend still points to the production Supabase project, so ensure mock mode is active and verify it makes no Supabase requests before any interaction that could modify data.
