@@ -46,7 +46,7 @@ test("Daily Learning is integrated into Lessons and does not expose account prog
   await page.locator('[data-page="lessons"]').click();
   await expect(page.locator("#dailyLearningPage")).toBeVisible();
   const order = await page.evaluate(() => document.getElementById("dailyLearningPage").compareDocumentPosition(document.querySelector(".difficulty-tabs")));
-  expect(order & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(order & 4).toBeTruthy();
   await expect(page.locator("#dailyLearningStatus")).toContainText("Sign in");
   await expect(page.locator("#dailyActivityGrid [data-activity-card]")).toHaveCount(4);
   await expect(page.locator("#dailyActivityGrid [data-start-daily]:disabled")).toHaveCount(4);
