@@ -217,6 +217,7 @@ on public.learning_plan_limits for select to authenticated
 using (true);
 
 grant all on public.saved_words to anon, authenticated;
+grant all on sequence public.saved_words_id_seq to anon, authenticated;
 grant select, insert, update on public.lesson_progress to authenticated;
 grant select, insert on public.learning_activity_log to authenticated;
 grant select, insert on public.lesson_practice_results to authenticated;
