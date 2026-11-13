@@ -140,6 +140,72 @@ revoke all on function private.current_learning_allowance_usage(uuid,text,text)
 grant execute on function private.current_learning_allowance_usage(uuid,text,text)
   to authenticated;
 
+-- Read-only dashboard endpoint. It exposes only the caller's own current-window
+-- counters; the private ledger itself remains inaccessible to browser roles.
+create or replace function public.get_my_learning_allowance_usage()
+returns table(activity_type text, used_count integer)
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_user uuid := auth.uid();
+  v_timezone text;
+  v_window_start timestamptz;
+  v_window_end timestamptz;
+begin
+  if v_user is null then
+    raise exception 'Authentication required'
+      using errcode = '42501';
+  end if;
+
+  select coalesce(
+           case when p.allowance_timezone is not null
+                     and p.allowance_timezone_until > pg_catalog.now()
+                then p.allowance_timezone else p.timezone end,
+           'UTC'
+         )
+  into v_timezone
+  from public.user_preferences p
+  where p.user_id = v_user;
+
+  if v_timezone is null
+     or not exists (
+       select 1 from pg_catalog.pg_timezone_names z where z.name = v_timezone
+     ) then
+    raise exception 'A valid saved IANA timezone is required'
+      using errcode = '22023';
+  end if;
+
+  v_window_start := (((pg_catalog.now() at time zone v_timezone)::date)::timestamp
+                       at time zone v_timezone);
+  v_window_end := ((((pg_catalog.now() at time zone v_timezone)::date + 1)::timestamp)
+                     at time zone v_timezone);
+
+  return query
+  select requested.activity_type,
+         coalesce(usage.used_count, 0)::integer
+  from (values
+    ('lesson'),
+    ('daily_topic'),
+    ('daily_application'),
+    ('daily_discovery'),
+    ('daily_revision')
+  ) as requested(activity_type)
+  left join private.learning_allowance_usage usage
+    on usage.user_id = v_user
+   and usage.activity_type = requested.activity_type
+   and usage.window_start = v_window_start
+   and usage.window_end = v_window_end
+  order by requested.activity_type;
+end;
+$function$;
+
+revoke all on function public.get_my_learning_allowance_usage()
+  from public, anon;
+grant execute on function public.get_my_learning_allowance_usage()
+  to authenticated;
+
 -- Replace the completion-event trigger function. It still records history,
 -- but the private ledger—not the history table—now enforces quota.
 create or replace function public.enforce_learning_daily_limit()
