@@ -263,6 +263,22 @@
   window.supabase.createClient=function(){ client=adapter; return client; };
   window.SWIFT_DICTIONARY_MOCK_MODE=true;
   window.SWIFT_DICTIONARY_MOCK_CAPABILITIES={auth:false,rls:false,database:false,crossDeviceSync:false,frontendSimulation:true};
+  function resetMockStore() {
+    try {
+      for(let i=sessionStorage.length-1;i>=0;i--){
+        const k=sessionStorage.key(i);
+        if(k && k.startsWith(STORAGE_PREFIX)) nativeRemove.call(sessionStorage,k);
+      }
+    } catch(error) { console.error("[SwiftDictionary mock] Reset failed.",error); }
+  }
+  // Deliberately exposed only while the preview-only mock adapter is active.
+  // This small surface also lets local unit tests verify identity isolation.
+  window.__swiftDictionaryMock = Object.freeze({
+    setActiveUser,
+    activeUser:()=>activeUser?.id || null,
+    reset:resetMockStore,
+    getClient:()=>client
+  });
 
   function renderPanel() {
     let panel=document.getElementById("swiftMockPanel");
@@ -281,8 +297,7 @@
     document.body.appendChild(panel);
     panel.querySelector("select").addEventListener("change",event=>setActiveUser(event.target.value));
     panel.querySelector("[data-mock-reset]").addEventListener("click",()=>{
-      try { for(let i=sessionStorage.length-1;i>=0;i--){const k=sessionStorage.key(i);if(k && k.startsWith(STORAGE_PREFIX))nativeRemove.call(sessionStorage,k);} }
-      catch(error){console.error("[SwiftDictionary mock] Reset failed.",error);}
+      resetMockStore();
       location.reload();
     });
     panel.querySelector("[data-mock-exit]").addEventListener("click",()=>{
