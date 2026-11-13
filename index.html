@@ -18074,14 +18074,19 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
           return '<div class="allowance-bar-row"><div class="allowance-bar-heading"><strong>' + labels[type] + '</strong><span>Unavailable for this plan</span></div><div class="allowance-bar-track"><div class="allowance-bar-fill" style="width:0%"></div></div></div>';
         }
         const maximum = Math.max(0,Number(row.daily_limit));
-        const usage = (usageRows || []).find(item => item.activity_type === type);
-        const used = Number.isInteger(Number(usage?.used_count)) ? Math.max(0,Number(usage.used_count)) : 0;
+        const usage = Array.isArray(usageRows) ? usageRows.find(item => item.activity_type === type) : null;
+        if (!usage || !Number.isInteger(Number(usage.used_count)) || Number(usage.used_count) < 0) {
+          return '<div class="allowance-bar-row"><div class="allowance-bar-heading"><strong>' + labels[type] + '</strong><span>Usage unavailable · server allowance data not loaded</span></div><div class="allowance-bar-track"><div class="allowance-bar-fill" style="width:0%"></div></div></div>';
+        }
+        const used = Math.max(0,Number(usage.used_count));
         const remaining = Math.max(0,maximum-used);
         const percent = maximum ? Math.min(100,used/maximum*100) : 0;
         return '<div class="allowance-bar-row"><div class="allowance-bar-heading"><strong>' + labels[type] + '</strong><span>' + remaining + ' of ' + maximum + ' remaining · ' + used + ' used</span></div><div class="allowance-bar-track"><div class="allowance-bar-fill' + (remaining === 0 ? ' exhausted' : '') + '" style="width:' + percent + '%"></div></div></div>';
       }).join("");
       const note = document.getElementById("allowanceDetails");
-      if (note) note.textContent = (plan === "premium" ? "Premium" : "Free") + " plan · Resets at midnight (" + timezone + "). Only successful completions use an allowance.";
+      if (note) note.textContent = Array.isArray(usageRows)
+        ? (plan === "premium" ? "Premium" : "Free") + " plan · Resets at midnight (" + timezone + "). Only successful completions use an allowance."
+        : "Allowance usage could not be loaded from the server. Counts are not estimated from learning history.";
     }
 
     function formatTopicName(topicId) {
@@ -18109,7 +18114,8 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
           supabaseClient.rpc("get_my_learning_allowance_usage"),
           supabaseClient.rpc("is_personal_learning_test_access")
         ]);
-        for (const q of [profileQ,prefsQ,activityQ,entitlementQ,limitsQ,lessonPracticeQ,dailyPracticeQ,savedWordsQ,allowanceUsageQ,personalTestQ]) if (q.error) throw q.error;
+        for (const q of [profileQ,prefsQ,activityQ,entitlementQ,limitsQ,lessonPracticeQ,dailyPracticeQ,savedWordsQ,personalTestQ]) if (q.error) throw q.error;
+        const allowanceUsageRows = allowanceUsageQ.error ? null : (allowanceUsageQ.data || []);
         const prefs = prefsQ.data || {learning_language:course,translation_language:translationLanguage,timezone:browserTimezone()};
         profilePreferences = prefs;
         const courseChanged = course !== prefs.learning_language;
@@ -18158,7 +18164,7 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
         const counts = Object.fromEntries(types.map(type=>[type,completedActivity.filter(row=>row.activity_type===type).length]));
         document.getElementById("progressDetails").textContent = completedActivity.length ? types.map(type=>`${type.replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase())}: ${counts[type]} session(s)`).join(" · ") : "No completed learning activity recorded yet. Your completed lessons and daily activities will appear here.";
         const limitText = types.map(type=>{const row=limits.find(item=>item.plan_code===plan&&item.activity_type===type);const used=todayRows.filter(item=>item.activity_type===type).length;return `${type.replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase())}: ${row?.is_enabled ? Math.max(0,row.daily_limit-used)+" of "+row.daily_limit+" remaining" : "Unavailable"}`;});
-        renderDashboardAllowanceBars(plan,limits,allowanceUsageQ.data || [],tz,personalTestQ.data === true);
+        renderDashboardAllowanceBars(plan,limits,allowanceUsageRows,tz,personalTestQ.data === true);
 
         // Practice insights use aggregate counts only. No individual answers or
         // response text are retrieved or retained.
