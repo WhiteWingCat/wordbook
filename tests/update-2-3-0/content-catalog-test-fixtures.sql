@@ -23,6 +23,7 @@ values
   ('permanent_lesson','concurrent-06','sentence-basics','beginner','en',true),
   ('permanent_lesson','history-delete-race','sentence-basics','beginner','en',true),
   ('permanent_lesson','replay-delete-race','sentence-basics','beginner','en',true),
+  ('permanent_lesson','premium-limit-16','verb-tenses','beginner','en',true),
   ('daily_topic','daily-topic-concurrency-01','sentence-basics','beginner','en',true),
   ('permanent_lesson','exempt-01','sentence-basics','beginner','en',true),
   ('permanent_lesson','exempt-02','sentence-basics','beginner','en',true),
