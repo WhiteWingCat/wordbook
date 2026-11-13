@@ -386,16 +386,19 @@ for (const activity of ["daily_topic","daily_application","daily_discovery","dai
     throw new Error(`Daily Learning runtime did not render ${activity}.`);
   }
 }
-if (mockElements.dailyActivityGrid.innerHTML.includes("Past simple or present perfect?")) {
-  throw new Error("Daily Learning selected a previously completed topic as a new daily assignment.");
+const firstTopicCard = mockElements.dailyActivityGrid.innerHTML
+  .split('data-activity-card="daily_topic"')[1]?.split('data-activity-card="daily_application"')[0] || "";
+if (firstTopicCard.includes("Past simple or present perfect?")) {
+  throw new Error("Daily Topic selected a previously completed assignment instead of unused content.");
 }
 mockData.daily_activity_sessions = curated.topics.map(item => item.id).map(content_id => ({
   activity_type:"daily_topic",content_id,topic_id:"test-topic",
   correct_count:null,question_count:null,completed_at:"2026-11-09T08:00:00.000Z",status:"completed"
 }));
 await runtimeWindow.initialiseDailyLearning();
-const topicCard = mockElements.dailyActivityGrid.innerHTML.split('data-activity-card="daily_topic"')[1] || "";
-if (!topicCard.includes("No new content available") || !topicCard.includes("Review completed content")) {
+const topicCard = mockElements.dailyActivityGrid.innerHTML
+  .split('data-activity-card="daily_topic"')[1]?.split('data-activity-card="daily_application"')[0] || "";
+if (!topicCard.includes("Completed · replay is free") || !topicCard.includes("Review completed content")) {
   throw new Error("Daily Learning did not clearly label an exhausted content pool as a free replay.");
 }
 
