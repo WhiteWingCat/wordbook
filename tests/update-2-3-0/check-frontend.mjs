@@ -246,7 +246,7 @@ const required = [
 for (const fragment of required) {
   if (!html.includes(fragment)) throw new Error(`Frontend integration check failed: missing ${fragment}`);
 }
-for (const fragment of ["start_daily_activity_session","complete_daily_activity_session","abandon_daily_activity_session","daily_topic_enabled","daily_revision","revisionCandidates","learningLanguage","firstTry"]) {
+for (const fragment of ["start_daily_activity_session","complete_daily_activity_session","abandon_daily_activity_session","get_my_learning_allowance_usage","daily_topic_enabled","daily_revision","revisionCandidates","learningLanguage","firstTry"]) {
   if (!dailyScript.includes(fragment)) throw new Error(`Daily Learning integration check failed: missing ${fragment}`);
 }
 const languageDeclaration = dailyScript.indexOf('const language = prefs.learning_language || "en";');
@@ -263,8 +263,26 @@ for (const fragment of [
 ]) {
   if (!html.includes(fragment)) throw new Error(`Profile practice insights check failed: missing ${fragment}`);
 }
-for (const fragment of ['data-page="daily-learning"','id="dailyLearningPage"','data-daily-pref=']) {
-  if (!html.includes(fragment)) throw new Error(`Daily Learning page shell check failed: missing ${fragment}`);
+if (html.includes('data-page="daily-learning"')) {
+  throw new Error("Daily Learning must not be a separate top-level navigation destination.");
+}
+const lessonsShellStart = html.indexOf('<section id="lessonsPage"');
+const dailySectionStart = html.indexOf('<section id="dailyLearningPage"');
+const difficultyNavStart = html.indexOf('<div class="difficulty-tabs"');
+if (lessonsShellStart < 0 || dailySectionStart < lessonsShellStart || difficultyNavStart < dailySectionStart) {
+  throw new Error("Daily Learning must appear inside Lessons above the difficulty navigation.");
+}
+for (const fragment of ['id="dailyLearningPage"','data-daily-pref=','Your Dashboard','id="dashboardAvatar"','Favorite words','id="favoriteEnglishGrid"','id="favoriteChineseGrid"','id="preferencesPage"','Privacy and data','id="dashboardAllowanceBars"','id="practiceChart"','id="practiceReviewTopics"','id="activeLanguagesList"']) {
+  if (!html.includes(fragment)) throw new Error(`Update 2.3.1 dashboard/navigation check failed: missing ${fragment}`);
+}
+const dashboardStart = html.indexOf('<section id="profilePage"');
+const preferencesStart = html.indexOf('<section id="preferencesPage"');
+const dashboardShell = html.slice(dashboardStart,preferencesStart);
+const preferencesShell = html.slice(preferencesStart);
+if (/Account preferences|Privacy and data/i.test(dashboardShell)
+    || !/Account preferences/i.test(preferencesShell)
+    || !/Privacy and data/i.test(preferencesShell)) {
+  throw new Error("Account preferences and Privacy and Data must live in the dedicated Preferences page.");
 }
 for (const fragment of ["dailyTopics","dailyApplications","dailyDiscoveries","sourceUrl","learning_activity_log","lesson_practice_results"]) {
   if (!dailyScript.includes(fragment)) throw new Error(`Daily Learning content check failed: missing ${fragment}`);
@@ -323,7 +341,18 @@ const mockSupabase = {
       }
     };
   },
-  rpc() { throw new Error("RPC should not run during page initialisation"); }
+  rpc(name) {
+    if (name === "get_my_learning_allowance_usage") {
+      return Promise.resolve({ data: [
+        { activity_type:"lesson", used_count:0 },
+        { activity_type:"daily_topic", used_count:0 },
+        { activity_type:"daily_application", used_count:0 },
+        { activity_type:"daily_discovery", used_count:0 },
+        { activity_type:"daily_revision", used_count:0 }
+      ], error:null });
+    }
+    throw new Error("Unexpected RPC during Daily Learning initialisation: " + name);
+  }
 };
 const runtimeWindow = { addEventListener() {} };
 const runtimeContext = {
