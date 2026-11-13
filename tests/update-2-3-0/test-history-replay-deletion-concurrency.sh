@@ -2,8 +2,8 @@
 set -euo pipefail
 
 db="${DATABASE_URL:?DATABASE_URL is required}"
-uid="66666666-6666-4666-8666-666666666666"
-session_id="66666666-6666-4666-8666-666666666667"
+uid="f6e8b56d-cc13-4d91-9c4f-2d95c0a7e6b1"
+session_id="f6e8b56d-cc13-4d91-9c4f-2d95c0a7e6b2"
 marker="/tmp/swiftdictionary-replay-insert-sleeping"
 rm -f "$marker"
 
