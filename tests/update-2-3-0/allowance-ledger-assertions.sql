@@ -81,6 +81,13 @@ begin
     raise exception 'Deleting history changed the current allowance count to %',v_used;
   end if;
 
+  select usage.used_count into v_used
+  from public.get_my_learning_allowance_usage() usage
+  where usage.activity_type = 'lesson';
+  if v_used <> 5 then
+    raise exception 'Dashboard allowance RPC lost usage after history deletion (got %)',v_used;
+  end if;
+
   begin
     perform public.complete_permanent_lesson(
       'beginner','ledger-test-4','sentence-basics',2,3
