@@ -572,8 +572,12 @@
       byId("dailyActivityReader").hidden = true;
       byId("dailyActivityReader").innerHTML = "";
       readerState = null;
-      byId("dailyLearningStatus").textContent = "Session abandoned. No daily allowance was used.";
-      await loadDailyData();
+      try {
+        await loadDailyData();
+        byId("dailyLearningStatus").textContent = "Session abandoned. No daily allowance was used. " + byId("dailyLearningStatus").textContent;
+      } catch (refreshError) {
+        byId("dailyLearningStatus").textContent = "Session abandoned. No daily allowance was used, but the activity list could not refresh: " + (refreshError.message || "Please reload the page.");
+      }
     } catch (error) {
       byId("dailyLearningStatus").textContent = error.message || "The session could not be abandoned.";
       if (button) { button.disabled = false; button.textContent = "Abandon session"; }
@@ -614,6 +618,7 @@
     }
     try {
       await loadDailyData();
+      byId("dailyLearningStatus").textContent = "Activity completed successfully. " + byId("dailyLearningStatus").textContent;
     } catch (error) {
       byId("dailyLearningStatus").textContent = "Activity completed successfully. The remaining allowance display could not be refreshed: " + (error.message || "Please reload the page.");
     }
