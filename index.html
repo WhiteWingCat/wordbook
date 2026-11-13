@@ -18060,7 +18060,7 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
       openWord(item,trigger || document.getElementById("search"));
     }
 
-    function renderDashboardAllowanceBars(plan,limits,todayRows,timezone,personalLessonExemption) {
+    function renderDashboardAllowanceBars(plan,limits,usageRows,timezone,personalLessonExemption) {
       const host = document.getElementById("dashboardAllowanceBars");
       if (!host) return;
       const types = ["lesson","daily_topic","daily_application","daily_discovery","daily_revision"];
@@ -18074,7 +18074,8 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
           return '<div class="allowance-bar-row"><div class="allowance-bar-heading"><strong>' + labels[type] + '</strong><span>Unavailable for this plan</span></div><div class="allowance-bar-track"><div class="allowance-bar-fill" style="width:0%"></div></div></div>';
         }
         const maximum = Math.max(0,Number(row.daily_limit));
-        const used = todayRows.filter(item => item.activity_type === type).length;
+        const usage = (usageRows || []).find(item => item.activity_type === type);
+        const used = Number.isInteger(Number(usage?.used_count)) ? Math.max(0,Number(usage.used_count)) : 0;
         const remaining = Math.max(0,maximum-used);
         const percent = maximum ? Math.min(100,used/maximum*100) : 0;
         return '<div class="allowance-bar-row"><div class="allowance-bar-heading"><strong>' + labels[type] + '</strong><span>' + remaining + ' of ' + maximum + ' remaining · ' + used + ' used</span></div><div class="allowance-bar-track"><div class="allowance-bar-fill' + (remaining === 0 ? ' exhausted' : '') + '" style="width:' + percent + '%"></div></div></div>';
@@ -18096,7 +18097,7 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
       try {
         await preferenceWriteQueue;
         await ensureProfileRows();
-        const [profileQ,prefsQ,activityQ,entitlementQ,limitsQ,lessonPracticeQ,dailyPracticeQ,savedWordsQ,personalTestQ] = await Promise.all([
+        const [profileQ,prefsQ,activityQ,entitlementQ,limitsQ,lessonPracticeQ,dailyPracticeQ,savedWordsQ,allowanceUsageQ,personalTestQ] = await Promise.all([
           supabaseClient.from("profiles").select("display_name,avatar_icon").eq("user_id",currentUser.id).maybeSingle(),
           supabaseClient.from("user_preferences").select("learning_language,translation_language,timezone,allowance_timezone,allowance_timezone_until").eq("user_id",currentUser.id).maybeSingle(),
           supabaseClient.from("learning_activity_log").select("activity_type,event_type,language_code,created_at").eq("user_id",currentUser.id),
@@ -18105,9 +18106,10 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
           supabaseClient.from("lesson_practice_results").select("topic_id,correct_count,question_count,attempted_at").eq("user_id",currentUser.id).order("attempted_at",{ascending:false}).limit(60),
           supabaseClient.from("daily_activity_sessions").select("topic_id,correct_count,question_count,completed_at").eq("user_id",currentUser.id).eq("status","completed").order("completed_at",{ascending:false}).limit(60),
           supabaseClient.from("saved_words").select("course,word").eq("user_id",currentUser.id),
+          supabaseClient.rpc("get_my_learning_allowance_usage"),
           supabaseClient.rpc("is_personal_learning_test_access")
         ]);
-        for (const q of [profileQ,prefsQ,activityQ,entitlementQ,limitsQ,lessonPracticeQ,dailyPracticeQ,savedWordsQ,personalTestQ]) if (q.error) throw q.error;
+        for (const q of [profileQ,prefsQ,activityQ,entitlementQ,limitsQ,lessonPracticeQ,dailyPracticeQ,savedWordsQ,allowanceUsageQ,personalTestQ]) if (q.error) throw q.error;
         const prefs = prefsQ.data || {learning_language:course,translation_language:translationLanguage,timezone:browserTimezone()};
         profilePreferences = prefs;
         const courseChanged = course !== prefs.learning_language;
@@ -18156,7 +18158,7 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
         const counts = Object.fromEntries(types.map(type=>[type,completedActivity.filter(row=>row.activity_type===type).length]));
         document.getElementById("progressDetails").textContent = completedActivity.length ? types.map(type=>`${type.replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase())}: ${counts[type]} session(s)`).join(" · ") : "No completed learning activity recorded yet. Your completed lessons and daily activities will appear here.";
         const limitText = types.map(type=>{const row=limits.find(item=>item.plan_code===plan&&item.activity_type===type);const used=todayRows.filter(item=>item.activity_type===type).length;return `${type.replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase())}: ${row?.is_enabled ? Math.max(0,row.daily_limit-used)+" of "+row.daily_limit+" remaining" : "Unavailable"}`;});
-        renderDashboardAllowanceBars(plan,limits,todayRows,tz,personalTestQ.data === true);
+        renderDashboardAllowanceBars(plan,limits,allowanceUsageQ.data || [],tz,personalTestQ.data === true);
 
         // Practice insights use aggregate counts only. No individual answers or
         // response text are retrieved or retained.
