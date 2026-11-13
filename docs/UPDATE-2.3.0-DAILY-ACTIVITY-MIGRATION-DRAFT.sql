@@ -270,6 +270,18 @@ begin
       using errcode = '22023';
   end if;
 
+  if not private.is_approved_learning_content(
+    p_activity_type,
+    p_content_id,
+    p_topic_id,
+    p_difficulty,
+    case when p_activity_type = 'daily_discovery' then 'en' else 'en' end,
+    p_source
+  ) then
+    raise exception 'Daily activity content is not part of the approved learning catalogue'
+      using errcode = '22023';
+  end if;
+
   perform pg_catalog.pg_advisory_xact_lock(
     pg_catalog.hashtextextended(v_user::text, 0)
   );
