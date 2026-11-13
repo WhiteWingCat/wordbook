@@ -222,7 +222,7 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
             daily_revision_enabled: true
           }],
           user_entitlements: [{ user_id: ${JSON.stringify(userId)}, plan_code: "free", status: "active", valid_from: null, valid_until: null }],
-          learning_plan_limits: ["daily_topic","daily_application","daily_discovery","daily_revision"].map(activity_type => ({ activity_type, daily_limit: 1, is_enabled: true })),
+          learning_plan_limits: ["daily_topic","daily_application","daily_discovery","daily_revision"].map(activity_type => ({ plan_code: "free", activity_type, daily_limit: 1, is_enabled: true })),
           learning_activity_log: [],
           lesson_practice_results: [],
           daily_activity_sessions: []
