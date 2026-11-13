@@ -482,6 +482,13 @@ begin
       using errcode = '22023';
   end if;
 
+  if not private.is_approved_learning_content(
+    'permanent_lesson', p_lesson_id, p_topic_id, p_difficulty, 'en', 'daily'
+  ) then
+    raise exception 'Lesson identity or topic is not part of the approved learning catalogue'
+      using errcode = '22023';
+  end if;
+
   perform pg_catalog.pg_advisory_xact_lock(
     pg_catalog.hashtextextended(v_user::text, 0)
   );
@@ -576,6 +583,13 @@ begin
      or p_question_count <= 0 or p_correct_count < 0
      or p_correct_count > p_question_count then
     raise exception 'Invalid lesson identity or aggregate practice result'
+      using errcode = '22023';
+  end if;
+
+  if not private.is_approved_learning_content(
+    'permanent_lesson', p_lesson_id, p_topic_id, p_difficulty, 'en', 'daily'
+  ) then
+    raise exception 'Lesson identity or topic is not part of the approved learning catalogue'
       using errcode = '22023';
   end if;
 
