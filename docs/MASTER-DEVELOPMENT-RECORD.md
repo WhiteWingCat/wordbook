@@ -521,3 +521,25 @@ Default decision: choose the safest adequate free option; keep production isolat
 - This inspection was read-only. No Auth users, rows, schema, migrations, project settings or credentials were changed.
 - The connected Supabase tools did not expose the project's Auth URL-configuration settings or Cloudflare Pages environment-variable settings. These still require a manual dashboard inspection. The source configuration finding is already sufficient to treat the preview as production-backend-connected unless a verified Cloudflare runtime override is found.
 - **Immediate safety rule:** do not use the preview for real sign-in, account switching, saved-word writes, learning completions, allowance consumption or deletion testing until a separate backend is configured and verified. Use deterministic frontend mocks for UI-only testing in the meantime.
+
+
+### Owner decision: isolated mock testing mode (13 November 2026)
+
+The owner selected **Option B: a separate testing mode that simulates multiple users without changing the normal sign-in interface**.
+
+Implementation requirements for the feature branch:
+
+- Activate only through an explicit testing-mode entry mechanism (for example a dedicated preview-only query parameter or local test launcher); never show a mock-mode switch in the normal sign-in/account interface.
+- Only enable on the Cloudflare Pages preview host and the feature branch. Fail closed on GitHub Pages, the production hostname, and unknown hosts. Do not rely on a query parameter alone as a security boundary.
+- Use clearly fictional identities (for example Test User A and Test User B), with switch-user controls in a separate test panel.
+- Simulated user data must be isolated per mock identity and stored only in a clearly namespaced browser test store (prefer session-scoped storage for the initial version). Switching identities must not leak saved words, preferences, progress, or activity between them.
+- In mock mode, route all supported account/data operations to the mock adapter and prevent Supabase Auth, database, RPC, and storage network requests. Do not merely replace the displayed email while leaving production writes enabled.
+- Show a persistent, unmistakable “MOCK TEST MODE — no real account / no cloud sync” indicator while active. Mock mode must never claim that data is synced to Supabase.
+- Provide reset/clear test data controls, scoped only to the mock store. Do not clear browser-wide storage or real Supabase sessions.
+- Keep the real Google sign-in flow unchanged and inaccessible as an action while mock mode is active; provide a safe exit back to normal mode.
+- Mock mode is for frontend and client-side workflow validation only. It does not validate real Google OAuth, Supabase JWT/session behaviour, RLS, SQL functions, database triggers, or cross-device sync. Those require a separately isolated backend or local Supabase stack.
+- Add automated checks proving (a) mock mode is disabled on production hosts, (b) the mock adapter makes no Supabase network/auth calls, (c) switching between at least two mock users isolates state, and (d) exit/reset does not modify production session/storage.
+- Do not modify production Supabase settings, data or migrations. Do not add test-mode code to `main` until the owner approves the eventual PR merge.
+- Before coding, map all Supabase calls used by `index.html` and `daily-learning.js`; the current app uses tables `user_preferences`, `saved_words`, `profiles`, `lesson_progress`, `user_entitlements`, `learning_plan_limits`, `learning_activity_log`, `lesson_practice_results`, `daily_activity_sessions` and RPCs `record_completed_lesson_practice_result`, `complete_permanent_lesson`, `delete_my_learning_history`, `is_personal_learning_test_access`, `get_my_learning_allowance_usage`, `start_daily_activity_session`, `abandon_daily_activity_session`, `complete_daily_activity_session`. The adapter must support only the subset actually needed for the intended UI tests and return explicit unsupported-operation errors for anything else; do not silently fake unimplemented server guarantees.
+- Legal/privacy check: keep mock identities fictional, avoid real personal data, keep the mock store local to the browser session, and ensure test-mode controls cannot be enabled on production. This is a development tool, not a user-facing account feature.
+- This is an approved design direction, not yet an implementation or validation claim. Record implementation commit and test evidence after the work is completed.
