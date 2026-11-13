@@ -134,7 +134,8 @@ $$;
 create or replace function public.enforce_learning_daily_limit()
 returns trigger
 language plpgsql
-as $$
+set search_path = ''
+as $
 begin
   new.created_at := now();
   return new;
@@ -164,7 +165,8 @@ for each row execute function public.record_lesson_start_allowance();
 create or replace function public.guard_lesson_progress_update()
 returns trigger
 language plpgsql
-as $$
+set search_path = ''
+as $
 begin
   if new.status = 'in_progress' then
     new.completed_at := null;
