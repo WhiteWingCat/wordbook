@@ -1,6 +1,6 @@
 # Update 2.3.0 — Allowance foundation implementation notes
 
-**Status:** Draft implementation review. The current branch head has passed the free PostgreSQL 17 compatibility test suite in GitHub Actions, including a Daily Learning runtime smoke test. No production database or live website changes have been made.
+**Status:** Draft implementation review. The earlier allowance foundation passed its PostgreSQL 17 and browser baseline. Subsequent privacy-first catalogue validation and authenticated Daily Learning browser tests have been added and are undergoing fresh CI validation; do not treat the latest branch head as release-validated until that run passes. No production database or live website changes have been made.
 
 ## Scope of this step
 
@@ -277,3 +277,23 @@ The authenticated RPC derives the target account exclusively from `auth.uid()`; 
 The Profile UI explains what is deleted and retained, warns that today's allowance is not restored, and only reports success after the RPC confirms it. If the authentication timestamp is too old, the user is instructed to sign out and sign in again before retrying.
 
 The disposable PostgreSQL workflow now applies the deletion migration after the allowance ledger and checks recent-authentication enforcement, idempotency, complete removal of learning history, unchanged allowance counts, and retention of account/preferences/saved words. The session_id/auth.sessions revision passed in GitHub Actions run [#42800408769](https://github.com/WhiteWingCat/wordbook/actions/runs/42800408769). The tests cover a recent session, stale session, missing/signed-out session, expired session, data preservation, allowance retention and completion/deletion serialization. Isolated Supabase integration and browser validation are still outstanding. This is still a draft and has not been applied to production Supabase.
+
+
+## Privacy-first content validation added after the first audit
+
+The owner selected the privacy-first approach on 13 November 2026. The branch now contains:
+
+- `docs/UPDATE-2.3.0-CONTENT-CATALOG-MIGRATION-DRAFT.sql`: private catalogue containing 95 stable English content IDs and approved topic/difficulty mappings (28 Daily Topics, 25 Daily Applications, 27 Daily Discoveries and 15 permanent lessons).
+- `private.is_approved_learning_content(...)`: server-side allowlist validator. It checks activity type, ID, topic, difficulty, learning language and source; adaptive Revision IDs must resolve to an approved Daily Application source.
+- A lesson-progress INSERT guard validates permanent lesson IDs at start. Permanent lesson completion and historical replay-summary RPCs also validate the exact topic mapping.
+- `docs/UPDATE-2.3.0-PRIVACY-FIRST-CATALOGUE-DECISION.md`: owner decision, data minimisation boundary and release interpretation.
+- `tests/update-2-3-0/content-catalog-test-fixtures.sql`: synthetic IDs used only by disposable tests.
+- `tests/update-2-3-0/content-catalog-assertions.sql`: validates catalogue counts, direct client access restrictions, invalid mappings and the Daily Learning RPC.
+- The GitHub Actions workflow now applies the catalogue before the allowance/Daily Learning drafts and validates it in both PostgreSQL 17 and disposable local Supabase jobs.
+- Two signed-in browser tests now exercise Daily Topic completion and Daily Application first-try aggregate submission. They use a mocked Supabase client; they do not replace real Google OAuth or hosted-account testing.
+
+The catalogue stores identifiers and metadata only. It does not store question text, answer options, correct answers or user responses. Practice results remain aggregate-only and self-reported; they are suitable for personal progress/adaptive revision, not tamper-proof proof of mastery. See the decision document for the full boundary.
+
+**Test-fixture warning:** Synthetic catalogue rows are seeded after the production-catalogue count assertions and only in test environments. Never run the fixture SQL against hosted Supabase.
+
+**Current CI note:** The first catalogue CI attempts correctly exposed missing test metadata and test-fixture ordering assumptions. Those were test harness failures, not production changes. The test fixtures and assertions have since been adjusted; the latest branch changes still require a complete green run before being considered validated.
