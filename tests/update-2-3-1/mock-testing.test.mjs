@@ -30,7 +30,7 @@ function makeContext(hostname,search="?swiftMock=1") {
 }
 
 test("mock adapter activates only on the exact feature preview with explicit opt-in", async()=>{
-  const env=makeContext("feature-update-2-3-1-bug-fix-and-changes.swiftdictionary-testing.pages.dev");
+  const env=makeContext("feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev");
   assert.equal(env.window.SWIFT_DICTIONARY_MOCK_MODE,true);
   assert.equal(env.window.SWIFT_DICTIONARY_MOCK_CAPABILITIES.rls,false);
   assert.equal(env.window.SWIFT_DICTIONARY_MOCK_CAPABILITIES.crossDeviceSync,false);
@@ -43,7 +43,7 @@ test("mock adapter activates only on the exact feature preview with explicit opt
 });
 
 test("mock data is isolated by identity and scoped to session storage",async()=>{
-  const env=makeContext("feature-update-2-3-1-bug-fix-and-changes.swiftdictionary-testing.pages.dev");
+  const env=makeContext("feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev");
   const client=env.window.supabase.createClient();
   let result=await client.from("saved_words").select("word").eq("user_id","mock-user-a");
   assert.deepEqual(Array.from(result.data,row=>row.word).sort(),["hello","你"].sort());
@@ -67,7 +67,7 @@ test("mock data is isolated by identity and scoped to session storage",async()=>
 });
 
 test("daily activity RPCs simulate completion and allowance use without cloud access",async()=>{
-  const env=makeContext("feature-update-2-3-1-bug-fix-and-changes.swiftdictionary-testing.pages.dev");
+  const env=makeContext("feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev");
   const client=env.window.supabase.createClient();
   const started=await client.rpc("start_daily_activity_session",{
     p_activity_type:"daily_topic",p_content_id:"topic-1",p_topic_id:"greetings",p_difficulty:null,p_source:"daily"
@@ -92,7 +92,8 @@ test("production, root Pages and unknown hosts fail closed even with opt-in quer
     "swiftdictionary-testing.pages.dev",
     "whitewingcat.github.io",
     "example.com",
-    "another-branch.swiftdictionary-testing.pages.dev"
+    "another-branch.swiftdictionary-testing.pages.dev",
+    "feature-update-2-3-1-bug-fix-and-changes.swiftdictionary-testing.pages.dev"
   ]){
     const env=makeContext(host);
     assert.equal(env.window.SWIFT_DICTIONARY_MOCK_MODE,undefined,host);
@@ -102,7 +103,7 @@ test("production, root Pages and unknown hosts fail closed even with opt-in quer
 });
 
 test("preview host without explicit opt-in does not activate mock mode",()=>{
-  const env=makeContext("feature-update-2-3-1-bug-fix-and-changes.swiftdictionary-testing.pages.dev","");
+  const env=makeContext("feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev","");
   assert.equal(env.window.SWIFT_DICTIONARY_MOCK_MODE,undefined);
   assert.equal(env.window.__swiftDictionaryMock,undefined);
 });
