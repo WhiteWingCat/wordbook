@@ -4,9 +4,9 @@
 >
 > **Repository:** https://github.com/WhiteWingCat/wordbook  
 > **Last consolidated:** 2026-11-13  
-> **Current baseline:** Update 2.2.0 on main  
-> **Current work:** Update 2.3.0 planning and draft implementation; not merged or deployed  
-> **Record status:** Initial consolidated edition. Re-check repository, Supabase and deployment state before making changes.
+> **Current baseline:** Update 2.3.0 merged to main on 2026-11-13  
+> **Current work:** Update 2.3.1 bug fixes and dashboard/navigation improvements on feature/update-2-3-1-bug-fix-and-changes  
+> **Record status:** Updated after the 2.3.0 merge and live-site owner testing; re-check repository, Supabase and deployment state before further changes.
 
 This record combines confirmed owner decisions, repository evidence and the latest development handover. It is not proof that the live application or production database matches a draft branch.
 
@@ -133,7 +133,7 @@ Confirmed decisions and implementation:
 
 ### Update 2.3.0 — Daily Learning Expansion
 
-**Status as of 2026-11-13: planning and implementation are in draft branches / open draft pull requests. Not merged to main, not deployed to GitHub Pages, and no production Supabase migration or production data write has been performed as part of the draft work.**
+**Status: COMPLETED as a development milestone and merged into main on 2026-11-13.** The owner subsequently tested the live website and reported follow-up issues now tracked under Update 2.3.1. See Section 13 for authoritative merge and follow-up details.
 
 Owner-confirmed product decisions:
 - Daily activities: **all four** categories are enabled for new accounts.
@@ -191,7 +191,7 @@ Open pull requests observed:
 - PR #2: **SwiftDictionary Update 2.3.0 — Daily Learning Expansion (Planning)**. It records the technical design, allowance rules, privacy-minimised practice tracking, schema findings, security and implementation order.
 - PR #3: **SwiftDictionary Update 2.3.0 — Completion-Based Allowance Foundation (Draft)**. It targets feature/update-2-3-0-planning, not main. Its description records the completion-based allowance foundation, Daily Learning frontend, privacy/deletion work and validation.
 
-**Do not change PR #3's target branch or merge either PR without the owner's explicit approval.** The PR #3 description states that no production Supabase migration, production data write, GitHub Pages deployment or merge has been performed.
+Historical note: the PR state above describes the repository at the time of the earlier record consolidation. PR #3 was later retargeted to main and merged with explicit owner approval on 2026-11-13. See Section 13.
 
 #### Remaining 2.3.0 release gates
 
@@ -230,7 +230,7 @@ For each new feature and before public launch or monetisation, revisit:
 - The default main README fetched during this record's preparation describes **SwiftDictionary Update 2.2.0 — English Lessons Foundation**.
 - README states that supabase-config.js and banner.svg are external project files and must be retained when preparing the Pages deployment.
 - README instructs that deployment must wait for owner review and explicit approval.
-- The current 2.3.0 implementation described in PR #3 is still draft work on branches / pull requests. It must not be represented as production functionality.
+- The 2.3.0 implementation was later merged into main; the owner has since reported live-site testing and identified follow-up improvements for Update 2.3.1.
 - The live website and live Supabase schema were not inspected as part of creating this record. Re-check them before release actions.
 
 ## 8. How to resume work in a new ChatGPT conversation
@@ -347,3 +347,111 @@ The 13 November legal review was refined to clarify the PDPA personal/household 
 - The privacy notice remains English-only draft with placeholders for controller identity, monitored contact, address, exact provider locations, subprocessors and retention. Prepare a Bahasa Malaysia version before publication if PDPA applies.
 - Current validation baseline remains GitHub Actions run #354 (3/3 jobs, browser 8/8); subsequent changes in this section are documentation only.
 - No staging project was created, no production data/settings were changed, and no merge or deployment was performed.
+
+## 13. Update 2.3.0 completion and Update 2.3.1 handover — 13 November 2026
+
+### Update 2.3.0 — completion record
+
+- **Status:** Completed as a development milestone; merged to main on 2026-11-13.
+- **Pull request:** [#3 — SwiftDictionary Update 2.3.0 — Completion-Based Allowance Foundation](https://github.com/WhiteWingCat/wordbook/pull/3).
+- **Merge commit:** 090f5f47ef7e596d987b8ab2f5a1eb996c8f22e6 (squash merge).
+- **Main branch head confirmed:** 090f5f47ef7e596d987b8ab2f5a1eb996c8f22e6.
+- **Automated validation before merge:** GitHub Actions runs [#398](https://github.com/WhiteWingCat/wordbook/actions/runs/43386713881) and [#399](https://github.com/WhiteWingCat/wordbook/actions/runs/43386720980) passed. They covered PostgreSQL 17 allowance/migration/concurrency checks, disposable local Supabase Auth/migration/deletion checks, Chromium browser regression tests and the local Supabase security advisor check.
+- **Owner live testing:** the owner reports testing the live website after merge and identified follow-up issues now tracked under Update 2.3.1. These are post-merge findings, not evidence that the 2.3.0 merge failed.
+- **Deployment:** a GitHub Pages workflow was observed starting after the merge. The owner subsequently confirmed live-site testing. Do not infer that every hosted integration check passed without checking current Actions status.
+- **Production database:** no production Supabase migration or production data modification was performed as part of the merge. A read-only audit on 2026-11-13 later confirmed that the live project migration history still ends at the 2.2.0 reconciliation baseline (20261110041007).
+- **Production schema finding:** the live project has no `public.daily_activity_sessions`, no `private.learning_allowance_usage`, no `event_type` column on `public.learning_activity_log`, no daily-activity preference fields, and none of the Daily Activity / allowance-ledger RPCs. Its `learning_plan_limits` table still contains only lesson, quiz and flashcard categories. A read-only function lookup returned no Daily Activity or allowance usage RPCs. This confirms that the merged 2.3.0 frontend and production database are currently out of sync.
+- **Separate release gates:** hosted Google OAuth callback and cross-device sync verification, privacy-notice/legal finalisation, and real-account staging checks remain separate from the completed source-control milestone.
+
+### Update 2.3.1 — Bug Fix & Changes
+
+**Status:** New development branch created; implementation and validation in progress. No merge or deployment is authorised by this record.
+
+- **Release label:** SwiftDictionary Update 2.3.1 — Bug Fix & Changes.
+- **Branch:** feature/update-2-3-1-bug-fix-and-changes.
+- **Base:** main at merge commit 090f5f47ef7e596d987b8ab2f5a1eb996c8f22e6.
+- The requested display name contains spaces and an ampersand, which Git branch refs do not permit; the branch uses a valid slug while retaining the requested release label.
+
+#### Owner-requested scope
+
+1. **Integrate Daily Learning into Lessons.** Remove the separate top-level Daily Learning navigation destination. Show the daily activity section within Lessons, above Beginner / Intermediate / Advanced difficulty navigation. Audit and correct activity flows, content rotation, allowance display, start/resume/replay, completion, abandonment, adaptive revision and language compatibility. Daily activities must behave as part of Lessons, not as a detached page.
+2. **Rename Profile to Dashboard.** Change user-facing labels and headings to Dashboard / Your Dashboard. Keep signed-in-only access and account isolation.
+3. **Separate Preferences.** Move Account Preferences and Privacy and Data controls into a dedicated Preferences destination. The account-menu Preferences action must open that destination directly. It must not route to Dashboard or depend on scrolling inside Dashboard. Preserve display name, avatar, learning language, translation language and timezone settings; preserve learning-history deletion semantics.
+4. **Visualise allowances on Dashboard.** Replace the plain text daily allowance summary with visual progress indicators consistent with the allowance presentation on Lessons. Show usage/remaining amounts per activity and plan, respecting local timezone and the server-side allowance source.
+5. **Favorite words on Dashboard.** Add a Favorite words panel with expandable English and Chinese rows. Each row expands to show the signed-in user's saved words in the same card/grid presentation and course-specific ordering/format as the Dictionary. Reuse existing saved-word records; do not duplicate or weaken the saved-word data model. Keep content scoped to the authenticated user and ensure account switching/sign-out clears the view.
+6. **Dashboard avatar and heading.** Place the selected large profile icon to the left of Your Dashboard, using the existing account profile avatar selection.
+7. **Practice insights visualisation.** Improve visual prominence with a chart (bar or pie where semantically appropriate) based only on existing aggregate correct/question counts. Clearly identify specific topic(s) needing review and explain why they are recommended. Avoid inventing data or treating self-reported aggregate scores as verified mastery.
+
+#### Technical and UX acceptance criteria
+
+- Daily activities appear inside Lessons above difficulty tabs, with a clear way to switch between daily activity cards and the permanent lesson library without navigating away from Lessons.
+- Daily activity preferences remain account-specific, persist through Supabase, and are editable in the integrated Lessons section.
+- All enabled activities remain visible; disabled activities remain hidden; no enabled activities produces an understandable empty state.
+- A successful completion consumes exactly one applicable allowance; starting, resuming or abandoning does not. Replays of completed content do not consume a second daily allowance. When today's allowance is exhausted, the UI must explain this and must not offer a misleading new-start action.
+- Daily Topic / Discovery completion and scored Application / Revision completion are correctly distinguished. Aggregate practice results remain the only stored performance detail; no raw answer selections are persisted.
+- Daily Revision uses actual available learning evidence and a defensible minimum-evidence threshold, avoids repeatedly serving the same topic on the same local day, and visibly explains the recommended topic/reason. New users with no practice history receive a clearly labelled introductory review, not a fabricated weak-topic diagnosis.
+- Language availability is explicit. If Daily Learning content is English-only, show that limitation clearly and do not silently disable activities because the course selector differs. If bilingual content is implemented, ensure course language and translation language are handled separately and consistently.
+- Dashboard allowance bars match the allowance totals used by the Lessons allowance UI and server-side completion ledger; no inconsistent client-only calculation.
+- Favorite words use the existing saved_words table and owner-scoped RLS. English and Chinese lists are independently expandable, empty states are clear, and selecting a saved word opens the matching dictionary detail or equivalent accessible detail.
+- The large avatar is read from the signed-in profile and updates when the avatar selection changes.
+- Active learning languages are derived from real learning activity records and sorted by most recent activity. Do not use the saved preference as a proxy for actual activity. Show last active date/time with course language and account timezone where possible.
+- Practice charts have accessible text equivalents, labels and denominators. Topic recommendations are derived from available practice data and explained. Empty/insufficient data is handled without misleading charts.
+- Existing dictionary search, word-grid layout, saved-word sync, Google authentication, account switching, lessons, translation switching, stroke-order functionality and unlimited free dictionary search must pass regression testing.
+- No raw answers, new tracking categories or unnecessary personal data are added.
+
+#### Investigation findings at branch creation
+
+- The current index.html has a separate top-level Daily Learning navigation button and a standalone dailyLearningPage; its route key is daily-learning.
+- The current Profile page contains Learning progress, Practice insights, Account preferences, Privacy and data, and Account sections. The Preferences menu currently routes to Profile and scrolls to a nested card.
+- daily-learning.js loads English daily content only and disables activity start when either the saved learning language or global course selector is not English. This is a likely source of confusing UX and must be resolved explicitly; do not claim Chinese daily activity support unless content is actually supplied.
+- Current daily content selection rotates based on completed activity log events and session records. Inspect content reuse, current-day completion handling, allowance exhaustion, interrupted sessions and replay semantics before changing.
+- The Dashboard currently derives Learning languages from distinct language_code values in completed activity rows, but does not show recency. Update it to show each actually active language ordered by latest activity.
+- Practice insights currently aggregate up to 10 recent practice summaries and calculate due topics using a simplified threshold. Improve explainability and presentation without storing raw answers.
+- The app's saved-word system already uses Supabase saved_words for signed-in accounts and has account-isolation protections. Reuse that source rather than copying saved words into a new table or shared local storage.
+
+#### Legal, privacy and content review for 2.3.1
+
+- Malaysia PDPA applicability remains fact-specific; a free public service is not automatically outside the Act. Obtain Malaysian legal advice on controller status, the commercial-transaction scope, notice/consent, retention, user rights and cross-border transfers.
+- The new Dashboard is a more visible presentation of existing account-linked learning history, preferences and saved words. Keep it private to the authenticated owner; do not expose it through public URLs, shared caches, analytics or another account's session.
+- Reuse existing aggregate practice data only. Do not introduce raw answer logging, new behavioural tracking, or a more intrusive profiling model. Explain adaptive-review recommendations in the interface.
+- Saved words and language activity remain personal data when linked to an account. Preserve RLS and least-privilege grants; verify account switching and sign-out clearing.
+- Charts and weak-topic displays must not be presented as certification, a formal assessment or proof of ability. They are learner-facing summaries based on self-reported aggregate practice outcomes.
+- The intended audience remains 16+ and global. Screen relevant child/teen and international privacy obligations, including GDPR applicability if EU users are deliberately targeted.
+- Review existing content and third-party source licences if Daily Learning content is expanded or reused. Do not copy protected exercises or source material without permission.
+- No new user-data table is planned. The implementation does add an authenticated, read-only public RPC for current allowance counts because the underlying ledger is intentionally private. Its migration must be documented, tested locally, reviewed for RLS/grants/rollback, and separately approved before production application.
+
+#### Implementation progress after initial branch review — 13 November 2026
+
+- The requested branch was already present when this work resumed, with three initial commits based on the merged 2.3.0 main commit. Work has continued on that branch; no duplicate branch was created.
+- Daily Learning is now embedded in the Lessons page above the permanent lesson difficulty navigation. The separate top-level Daily Learning navigation button has been removed. The existing route is retained as an alias to Lessons for backward compatibility.
+- The Daily Learning loader no longer derives allowance usage from `learning_activity_log`. It reads the current-window counters from `public.get_my_learning_allowance_usage()`, then uses the server count to rotate daily content and calculate remaining allowance. Card states distinguish unavailable allowance data from an exhausted allowance; active sessions and free replays remain resumable.
+- The Dashboard allowance bars use the same owner-scoped RPC and the existing `private.learning_allowance_usage` ledger. This is intentional: deleting learning history must not restore allowance. If the RPC is unavailable, the Dashboard reports usage as unavailable rather than displaying a false zero.
+- The new RPC is added to the existing allowance-ledger migration draft. It is `SECURITY INVOKER`, revokes execution from `PUBLIC` and `anon`, grants execution to `authenticated`, and delegates each count to the existing private helper, which verifies `auth.uid()`. It does not expose direct browser access to the private ledger.
+- Dashboard course recency is derived from completed activity records, ordered newest-first, and displayed in the user's preferred account timezone. The exact total activity count uses the database count result; the latest activity rows are used to determine each language's last-active timestamp.
+- The Dashboard and Preferences pages, expandable English / Simplified Chinese Favorite words, large avatar heading, visual allowance bars, practice chart and topic-review list are present in the current branch implementation.
+- The Dashboard now degrades gracefully against the live 2.2.0 schema: it retries the legacy `user_preferences` and `learning_activity_log` shapes, tolerates the not-yet-created `daily_activity_sessions` table, and shows allowance usage as unavailable rather than inventing zero usage. Daily Learning displays a clear “waiting for a server update” message when its required columns, tables or RPCs are missing. A browser regression test simulates this exact legacy database state.
+- Additional browser coverage verifies that adaptive Daily Revision selects a weak topic from aggregate practice history, abandoning an activity consumes no allowance, Daily Discovery completes without a score, and completion/abandonment feedback remains visible after refreshing the cards.
+- Regression coverage has been updated for the integrated Lessons navigation, signed-out access, Daily Topic / Application RPC flows, Dashboard favorite words, course recency, ledger-based allowances, practice insights and Preferences navigation. The frontend mock now applies the same row filters as Supabase so completed sessions are not incorrectly treated as active sessions.
+- The branch-specific CI workflow now runs on pushes to this feature branch as well as the original 2.3.0 foundation branch. Several early runs exposed stale test selectors and fixtures; those test issues have been corrected. Do not mark validation complete until the latest run for the current head passes all three jobs.
+- **Production database remains untouched.** The read-only audit confirms the live database is still at the 2.2.0 baseline and is missing the 2.3.0 Daily Learning / allowance schema and RPCs as well as the new 2.3.1 allowance-read RPC. The hosted Daily Learning and Dashboard allowance paths cannot be considered production-ready until the full, ordered 2.3.0 database migrations plus the 2.3.1 read RPC are reviewed, applied with explicit approval, and verified against the hosted site. Do not apply them without explicit approval.
+
+#### Malaysia and global privacy-risk review for Update 2.3.1
+
+- The Dashboard surfaces account-linked saved words, learning-language codes and last-completed timestamps, topic identifiers, and aggregate first-attempt correct/question counts. These records can identify a learner when linked to their account and should be treated as personal data. No raw answer choices, free-text answers, or third-party analytics are introduced by this update.
+- Malaysia's PDPA 2010 is framed around personal data processed in respect of commercial transactions. SwiftDictionary is currently intended as a free personal learning project, while a Premium plan remains undecided; the operator, actual service model and commercial context must be reviewed before monetisation or broader launch. Do not assume that the free label alone resolves applicability.
+- The 2024 PDPA amendments commenced in phases on 1 January, 1 April and 1 June 2025; the amended provisions are therefore in force as of this record date. The review must cover notice and choice, purpose limitation, data minimisation, security, retention, data integrity, access/correction, breach response and any applicable data-controller obligations.
+- The connected Supabase project is hosted in `ap-northeast-1` (Tokyo). Review the Malaysia PDPA cross-border-transfer requirements and the processor/vendor arrangements for this hosting location. The Privacy Notice should identify relevant data categories, purposes, processors/recipients, transfer locations, retention, user rights and the learning-history deletion behaviour.
+- The Act requires a written privacy notice in Bahasa Malaysia and English. A final notice should be prepared in both languages before public release; a Chinese course does not remove this statutory-language review.
+- JPDP's published FAQ identifies regular and systematic monitoring (including online user-behaviour tracking) as a possible DPO-appointment trigger. Because course recency and practice performance are now tracked, assess DPO applicability against the actual scale and processing pattern rather than assuming it is or is not required. Also document a breach-notification process.
+- The intended audience is 16+. Review treatment of 16–17-year-old users and any relevant guardian/representative requirements, plus child-privacy rules in other target jurisdictions. Global availability may trigger laws beyond Malaysia's PDPA.
+- Keep the privacy design minimal: use aggregate practice counts, do not persist individual answer choices, keep allowance records separate from deletable learning history, enforce account-scoped RLS, and explain the retention exception for allowance usage. This is a planning review, not a legal opinion or compliance certification; obtain Malaysian legal advice before launch or monetisation.
+- Official references: [Malaysia PDPA 2010 and 2026 reprint](https://pdp.gov.my/wp-content/uploads/2026/10/Akta-709-cetakan-semula-2026-BI.pdf), [PDPA Amendment Act 2024 commencement notice](https://www.pdp.gov.my/en/akta/personal-data-protection-amendment-act-2024-appointment-of-date-of-coming-into-operation/), [JPDP FAQ](https://www.pdp.gov.my/en/faq/).
+
+#### Validation and release discipline
+
+- Implement on this feature branch only. Do not edit main.
+- Use incremental analysis and consolidated validation; do not create intermediate ZIPs.
+- Add regression tests for the seven requested areas and retained functionality.
+- Distinguish static checks, automated browser tests, mocked Supabase tests, real hosted OAuth tests and owner live-site tests.
+- No production Supabase writes/migrations, PR merge or GitHub Pages deployment without explicit owner approval.
+- After implementation, prepare one consolidated Update 2.3.1 candidate and update this record with exact commit, PR, CI and test evidence.
