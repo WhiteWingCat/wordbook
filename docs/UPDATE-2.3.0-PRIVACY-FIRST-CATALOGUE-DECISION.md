@@ -57,3 +57,10 @@ The catalogue is an allowlist, not a content store. Whenever learning content is
 This design provides server-side validation of *which content/topic combination* a session or lesson may reference. It does not verify that a learner actually selected the correct answers. Adaptive Revision should therefore describe its signals as practice history / self-reported performance, not verified competence.
 
 The migration remains a review draft on the Update 2.3.0 development branch. It has not been applied to the production Supabase project. No merge or deployment is authorised by this decision.
+
+
+## Validation refinements
+
+The first end-to-end catalogue test run exposed an important test-order detail: the negative "lesson not started" RPC case must use an *approved* lesson ID with no progress row, otherwise the new catalogue guard correctly rejects it before the test reaches the intended missing-progress condition. The disposable fixture now includes that approved-but-unstarted ID.
+
+The test fixture also contains synthetic IDs for allowance-boundary, account-isolation, timezone-transition and concurrency tests. It is seeded only after the production catalogue count/security assertions and only in disposable test environments.
