@@ -65,7 +65,7 @@ test("mock data is isolated by identity and scoped to session storage",async()=>
   assert.equal(env.window.__swiftDictionaryMock.selectionGeneration(),1);
   assert.equal(env.localStorage.getItem("unrelated-real-setting"),"keep");
   assert.equal(env.sessionStorage.getItem("unrelated-session-setting"),"keep");
-  assert.deepEqual([...env.sessionStorage.data.keys()],["swiftDictionaryMock:v1:selection-generation"]);
+  assert.deepEqual([...env.sessionStorage.data.keys()].sort(),["unrelated-session-setting","swiftDictionaryMock:v1:selection-generation"].sort());
   // Reset restores each identity's own fixture while advancing the daily-selection generation.
   result=await client.from("saved_words").select("word").eq("user_id","mock-user-a");
   assert.deepEqual(Array.from(result.data,row=>row.word).sort(),["hello","你"].sort());
