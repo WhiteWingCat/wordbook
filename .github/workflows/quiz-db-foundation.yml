@@ -39,31 +39,22 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Prepare minimal Supabase-compatible test roles and schemas
+      - name: Prepare disposable Supabase-compatible Auth and learning schema
         run: |
-          psql -v ON_ERROR_STOP=1 <<'SQL'
-          create role anon nologin;
-          create role authenticated nologin;
-          create schema auth;
-          create table auth.users (
-            id uuid primary key
-          );
-          create schema if not exists private;
-          create table public.languages (
-            code text primary key,
-            name text not null,
-            native_name text not null,
-            is_active boolean not null default true,
-            created_at timestamptz not null default now()
-          );
-          insert into public.languages (code, name, native_name)
-          values ('en', 'English', 'English'), ('zh', 'Chinese', '中文');
-          SQL
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/quiz_rpc_bootstrap.sql
 
-      - name: Apply Quiz foundation migration
+      - name: Apply Quiz question-bank foundation
         run: |
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261114120000_swiftdictionary_update_2_4_0_quiz_question_bank_foundation.sql
 
-      - name: Validate schema, constraints, access controls and uniqueness
+      - name: Validate Quiz question-bank foundation
         run: |
           psql -v ON_ERROR_STOP=1 -f supabase/tests/quiz_question_bank_foundation.sql
+
+      - name: Apply authenticated Quiz RPC migration
+        run: |
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261114160000_swiftdictionary_update_2_4_0_quiz_authenticated_rpcs.sql
+
+      - name: Validate authenticated Quiz RPCs, session lifecycle and allowances
+        run: |
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/quiz_authenticated_rpcs.sql
