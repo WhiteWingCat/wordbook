@@ -54,3 +54,20 @@ The earlier planning decisions remain in force: multiple-choice only for 2.4.0; 
 ## Implementation and validation status
 
 No application code, question bank, database migration, production setting or live deployment was changed in this session. Quiz remains Coming Soon. The next step is to continue planning the open design questions; implementation requires separate explicit authorisation and the normal feature-branch, legal/privacy, source/schema review and validation process.
+
+
+## Additional owner decision — difficulty progression and question ratios
+
+The owner confirmed that higher-level quizzes may include material from lower difficulty levels to reinforce learning and improve variety:
+
+| Selected Quiz difficulty | Composition |
+|---|---|
+| Beginner | 100% Beginner |
+| Intermediate | Either 50% Intermediate / 50% Beginner or 80% Intermediate / 20% Beginner. These are the two approved mixes. |
+| Advanced | 60–80% Advanced, exactly 20% Intermediate, and 0–20% Beginner |
+
+All percentages total 100%; no higher-level material appears in a lower-level quiz. Existing session lengths are Beginner 10, Intermediate 15 and Advanced 20 questions. For a 15-question Intermediate quiz, 80/20 is exactly 12/3. A 50/50 split cannot be exact with an odd question count, so use 7/8 and alternate which level gets the extra question across quizzes. For 20-question Advanced quizzes, Intermediate is exactly 4 questions, Beginner is 0–4, and Advanced fills the remaining 16–12. Beginner quizzes contain 10 Beginner questions.
+
+Question selection remains curriculum-wide within the allowed difficulty composition, regardless of the learner's personal lesson-completion history. Do not silently substitute out-of-scope questions if the bank is insufficient.
+
+No code, question content, database migration, production data or live deployment was changed.
