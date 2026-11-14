@@ -233,10 +233,14 @@
       persist(db); return {data:clone(row),error:null};
     }
     if (name==="start_daily_activity_session") {
-      const existing=(tables.daily_activity_sessions||[]).find(row=>row.activity_type===args.p_activity_type && row.content_id===args.p_content_id && row.status==="in_progress");
-      if (existing) return {data:clone(existing),error:null};
       const completed=(tables.daily_activity_sessions||[]).find(row=>row.activity_type===args.p_activity_type && row.content_id===args.p_content_id && row.status==="completed");
       if (completed) return {data:clone(completed),error:null};
+      const existing=(tables.daily_activity_sessions||[]).find(row=>row.activity_type===args.p_activity_type && row.status==="in_progress");
+      if (existing) return {data:clone(existing),error:null};
+      const plan=(tables.user_entitlements||[]).find(item=>item.user_id===user.id)?.plan_code || "free";
+      const limit=(tables.learning_plan_limits||[]).find(item=>item.plan_code===plan && item.activity_type===args.p_activity_type);
+      const used=usageRows(db).find(item=>item.activity_type===args.p_activity_type)?.used_count || 0;
+      if (!limit?.is_enabled || used >= (limit?.daily_limit ?? 1)) return {data:null,error:error("Daily learning completion limit reached.","P0001")};
       const row={id:"mock-session-"+(++sequence),user_id:user.id,activity_type:args.p_activity_type,content_id:args.p_content_id,topic_id:args.p_topic_id,difficulty:args.p_difficulty,source:args.p_source,status:"in_progress",started_at:now(),completed_at:null};
       (tables.daily_activity_sessions ||= []).push(row); persist(db); return {data:clone(row),error:null};
     }
