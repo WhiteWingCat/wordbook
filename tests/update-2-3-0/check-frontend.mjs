@@ -440,6 +440,18 @@ if (lessonsShellStart < 0 || dailySectionStart < lessonsShellStart || difficulty
 for (const fragment of ['id="dailyLearningPage"','data-daily-pref=','Your Dashboard','id="dashboardAvatar"','Favorite words','id="favoriteEnglishGrid"','id="favoriteChineseGrid"','id="preferencesPage"','Privacy and data','id="dashboardAllowanceBars"','id="practiceChart"','id="practiceReviewTopics"','id="activeLanguagesList"']) {
   if (!html.includes(fragment)) throw new Error(`Update 2.3.1 dashboard/navigation check failed: missing ${fragment}`);
 }
+for (const fragment of [
+  "function savedKey(targetCourse,word)",
+  "saved.has(savedKey(course,item.word))",
+  "function inferSavedWordCourse(word,storedCourse)",
+  "async function normaliseSavedWordCourses(rows)",
+  "await normaliseSavedWordCourses(savedWordsQ.data || [])"
+]) {
+  if (!html.includes(fragment)) throw new Error(`Update 2.3.2 favorite-word isolation check failed: missing ${fragment}`);
+}
+if (html.includes("saved.has(item.word)") || html.includes("saved.has(activeWord.word)")) {
+  throw new Error("Favorite-word state must be keyed by both course and word.");
+}
 const dashboardStart = html.indexOf('<section id="profilePage"');
 const preferencesStart = html.indexOf('<section id="preferencesPage"');
 const dashboardShell = html.slice(dashboardStart,preferencesStart);
