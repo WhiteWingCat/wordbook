@@ -101,7 +101,7 @@ begin
   -- Daily category completions use the same independent ledger.
   perform public.complete_daily_activity_session(
     (select id from public.start_daily_activity_session(
-      'daily_topic','ledger-daily-one','sentence-basics','beginner','daily'
+      'daily_topic','topic-present-perfect-01','verb-tenses','intermediate','daily'
     )),null,null
   );
 
@@ -134,7 +134,7 @@ declare
 begin
   begin
     perform public.start_daily_activity_session(
-      'daily_topic','ledger-daily-two','sentence-basics','beginner','daily'
+      'daily_topic','topic-present-routines-01','verb-tenses','beginner','daily'
     );
   exception when sqlstate 'P0001' then v_rejected := true;
   end;
