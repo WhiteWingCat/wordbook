@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-14  
 **Repository:** [WhiteWingCat/wordbook](https://github.com/WhiteWingCat/wordbook)  
-**Status:** Six reviewed 2.3.0 migrations applied to production; Update 2.3.3 frontend change remains in open PR #7
+**Status:** Six reviewed 2.3.0 migrations applied to production; Update 2.3.3 merged to main and deployed successfully
 
 ## Owner request
 
@@ -57,7 +57,7 @@ No production synthetic account or test session was inserted. No personal saved-
 - GitHub Actions run #775 passed PostgreSQL 17 migration/allowance tests, Chromium browser regression (including the new favorite-detail test), and disposable local Supabase Auth compatibility.
 - GitHub Actions run #780 passed all three jobs on final branch head `b09f10aa1fa22ea3ba4209408758cb2325eba4ae`: PostgreSQL 17 migration/allowance tests, Chromium browser regression and disposable local Supabase Auth compatibility.
 - Cloudflare Pages reported a successful branch preview for final PR head `b09f10a`: https://feature-update-2-3-3-dashboa.swiftdictionary-testing.pages.dev.
-- PR #7 is open and mergeable. The frontend change is not merged to `main` or deployed. The database migrations are live, so the previous Daily Learning server-schema blocker is resolved.
+- PR #7 was squash-merged into `main` as commit `90dc73a9b65fc3af713fefab4955057026089b96` on 2026-11-14 at 08:38:54 UTC. Main GitHub Pages deployment run #79 (`43576812434`) completed successfully at 08:39:35 UTC. The frontend change and database migrations are live, so the previous Daily Learning server-schema blocker is resolved.
 - Owner should refresh the live website and test Daily Learning. The Dashboard detail UI requires PR #7 approval, merge and successful main deployment before it is live.
 
 ## Security, privacy and legal notes
@@ -72,6 +72,6 @@ Malaysia PDPA and international privacy obligations remain relevant to account-l
 
 1. Verify CI run #780 and latest Cloudflare branch preview.
 2. Owner tests live Daily Learning now that its server schema is installed.
-3. Obtain explicit approval to merge PR #7 and deploy the frontend change.
-4. Verify main deployment and test Dashboard English/Chinese favorite details on desktop and mobile.
+3. Owner tests English/Chinese Dashboard Favorite Word details on desktop and mobile.
+4. Record any production-only bugs as a small 2.3.3 follow-up patch if needed.
 5. Proceed to Update 2.4.0 Quiz after acceptance.
