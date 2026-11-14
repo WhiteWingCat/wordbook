@@ -89,7 +89,7 @@ test("Daily Learning is integrated into Lessons and does not expose account prog
   const order = await page.evaluate(() => document.getElementById("dailyLearningPage").compareDocumentPosition(document.querySelector(".difficulty-tabs")));
   expect(order & 4).toBeTruthy();
   await expect(page.locator("#dailyLearningStatus")).toContainText("Sign in");
-  await expect(page.locator("#dailyActivityGrid [role=" + '"' + "tab" + '"' + "]")).toHaveCount(4);
+  await expect(page.locator("#dailyActivityGrid [role=tab]")).toHaveCount(4);
   await expect(page.locator("#dailyActivityPanel [data-activity-card]")).toHaveCount(1);
   await expect(page.locator("#dailyActivityPanel [data-start-daily]:disabled")).toHaveCount(1);
   await expect(page.locator('[data-daily-pref="daily_topic_enabled"]')).toBeChecked();
@@ -468,6 +468,7 @@ test("Daily Revision presents real examples separately from its practice questio
   await page.goto("/");
   await page.locator('[data-page="lessons"]').click();
   await page.locator('[data-daily-tab="daily_revision"]').click();
+  await page.locator('[data-daily-tab="daily_revision"]').click();
   await page.locator('#dailyActivityGrid [data-start-daily="daily_revision"]').click();
   await expect(page.locator("#dailyActivityReader")).toBeVisible();
   const examples = page.locator("#dailyActivityReader .daily-examples-box li");
@@ -549,6 +550,7 @@ test("Daily Discovery shows one Free entry and three identical Premium entries g
   for (const page of [freePage,premiumPageA,premiumPageB]) {
     await page.goto("/");
     await page.locator('[data-page="lessons"]').click();
+    await page.locator('[data-daily-tab="daily_discovery"]').click();
     await expect(page.locator('#dailyActivityGrid [data-discovery-card]')).toHaveCount(page === freePage ? 1 : 3);
   }
   const freeWords = await freePage.locator('#dailyActivityGrid [data-discovery-card] h2').allTextContents();
@@ -568,6 +570,7 @@ test("Daily Discovery uses dictionary layout and the approved global catalogue m
   await installDailyLearningMock(page, "daily-discovery-layout-user");
   await page.goto("/");
   await page.locator('[data-page="lessons"]').click();
+  await page.locator('[data-daily-tab="daily_discovery"]').click();
   await page.locator('[data-daily-tab="daily_discovery"]').click();
   await page.locator('#dailyActivityGrid [data-start-daily="daily_discovery"]').click();
   const reader = page.locator("#dailyActivityReader");
