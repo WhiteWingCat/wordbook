@@ -285,7 +285,12 @@ begin
       return false;
     end if;
 
-    v_discovery_day := v_discovery_parts[2]::date;
+    begin
+      v_discovery_day := v_discovery_parts[2]::date;
+    exception
+      when invalid_datetime_format or datetime_field_overflow then
+        return false;
+    end;
     if v_discovery_day <> (pg_catalog.now() at time zone 'UTC')::date then
       return false;
     end if;
