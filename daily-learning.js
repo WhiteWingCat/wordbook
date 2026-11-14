@@ -745,7 +745,7 @@
         + '<div class="modal-content">'
         + '<section class="detail-section"><h3>' + esc(dailyUi("Definition","释义")) + '</h3><p class="definition">' + esc(translationLanguage === "zh" && content.definitionZh ? content.definitionZh : content.definition || "") + '</p></section>'
         + '<section class="detail-section"><h3>' + esc(dailyUi("Examples","例句")) + '</h3><ul class="example-list">' + examples.map(example=>'<li>' + esc(example) + '</li>').join("") + '</ul></section>'
-        + (content.tip ? '<section class="detail-section"><h3>' + esc(dailyUi("Usage note","用法提示")) + '</h3><p class="tip">' + esc(content.tip) + '</p></section>' : "")
+        + (content.tip ? '<section class="detail-section"><h3>' + esc(dailyUi("Usage note","用法提示")) + '</h3><p class="tip">' + esc(translationLanguage === "zh" && content.tipZh ? content.tipZh : content.tip) + '</p></section>' : "")
         + '<p class="daily-discovery-frequency-note">' + esc(dailyUi("A less-common word to recognise and understand. Frequency classification is curated, not a live conversational-corpus ranking.","认识并理解一个较少见的词汇。目前词频分类由编辑整理，并非实时口语语料库排名。")) + '</p>'
         + '<p class="muted-note">' + esc(completed ? dailyUi("Completed · replay is free","已完成 · 可免费重温") : dailyUi("In progress · no allowance used until completion","进行中 · 完成后才会扣除次数")) + '</p>';
     } else {
