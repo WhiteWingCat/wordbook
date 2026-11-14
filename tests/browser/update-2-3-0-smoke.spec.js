@@ -264,6 +264,11 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
         const filters = {};
         let selectError = null;
         const q = {
+          insert(values) {
+            const rows = state.tables[table] || (state.tables[table] = []);
+            rows.push(...(Array.isArray(values) ? values : [values]));
+            return q;
+          },
           select(columns) {
             const selected = String(columns || "");
             if (state.legacySchema && table === "user_preferences" && selected.includes("allowance_timezone")) {
@@ -356,6 +361,70 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
     })();`
   }));
 }
+
+test("Daily activity translation refreshes in place while preserving English learning context", async ({ page }) => {
+  await installDailyLearningMock(page, "daily-translation-user");
+  await page.goto("/");
+  await page.locator('[data-page="lessons"]').click();
+  await page.locator('#dailyActivityGrid [data-start-daily="daily_application"]').click();
+  await expect(page.locator("#dailyActivityReader")).toBeVisible();
+  await expect(page.locator("#dailyActivityReader [data-daily-back]")).toHaveText("← 返回课程");
+  await expect(page.locator("#dailyActivityReader #dailyQuestions .daily-question strong").first()).toContainText(/[A-Za-z]/);
+  await page.locator('#dailyActivityReader #dailyQuestions input[type="radio"]').first().check();
+  await page.locator("#dailyActivityReader [data-check-daily]").click();
+  await expect(page.locator("#dailyActivityReader .daily-question-feedback").first()).toContainText("中文说明");
+
+  await page.locator("#translationSelect").evaluate(el => { el.value="en"; el.dispatchEvent(new Event("change",{bubbles:true})); });
+  await expect(page.locator("#dailyActivityReader [data-daily-back]")).toHaveText("← Back to Lessons");
+  await expect(page.locator("#dailyActivityReader #dailyQuestions .daily-question strong").first()).toContainText(/[A-Za-z]/);
+  await expect(page.locator("#dailyActivityReader .daily-question-feedback").first()).not.toContainText("中文说明");
+
+  await page.locator("#translationSelect").evaluate(el => { el.value="zh"; el.dispatchEvent(new Event("change",{bubbles:true})); });
+  await expect(page.locator("#dailyActivityReader [data-daily-back]")).toHaveText("← 返回课程");
+  await expect(page.locator("#dailyActivityReader .daily-question-feedback").first()).toContainText("中文说明");
+});
+
+test("Daily Discovery uses dictionary layout and the approved global catalogue metadata", async ({ page }) => {
+  await installDailyLearningMock(page, "daily-discovery-layout-user");
+  await page.goto("/");
+  await page.locator('[data-page="lessons"]').click();
+  await page.locator('#dailyActivityGrid [data-start-daily="daily_discovery"]').click();
+  const reader = page.locator("#dailyActivityReader");
+  await expect(reader.locator(".daily-discovery-modal .modal-head")).toBeVisible();
+  await expect(reader.locator(".daily-discovery-modal .detail-section h3").first()).toContainText("Definition");
+  expect(await reader.locator(".daily-discovery-modal .example-list li").count()).toBeGreaterThan(1);
+  await expect(reader.locator("[data-daily-back]")).toHaveCount(0);
+  await expect(reader.locator("[data-previous],[data-next],#previousButton,#nextButton")).toHaveCount(0);
+  const style = await reader.evaluate(el => ({
+    backdrop: getComputedStyle(el).backgroundColor,
+    padding: getComputedStyle(el.querySelector(".daily-activity-modal")).padding
+  }));
+  expect(style.backdrop).toBe("rgba(0, 0, 0, 0)");
+  expect(style.padding).not.toBe("0px");
+
+  const start = await page.evaluate(() => window.__swiftDailyMock.rpcCalls.find(call => call.name === "start_daily_activity_session"));
+  expect(start.args.p_activity_type).toBe("daily_discovery");
+  expect(start.args.p_topic_id).toBeNull();
+  expect(start.args.p_difficulty).toBeNull();
+});
+
+test("Permanent lessons open on their own page and refresh language without losing lesson context", async ({ page }) => {
+  await installDailyLearningMock(page, "permanent-lesson-page-user");
+  await page.goto("/");
+  await page.locator('[data-page="lessons"]').click();
+  await page.locator("#lessonCards .lesson-card").first().click();
+  await expect(page.locator("#lessonDetailPage")).toBeVisible();
+  await expect(page.locator("#lessonsPage")).toBeHidden();
+  await expect(page.locator("#lessonReaderContent")).toContainText("本课目标");
+
+  await page.locator("#translationSelect").evaluate(el => { el.value="en"; el.dispatchEvent(new Event("change",{bubbles:true})); });
+  await expect(page.locator("#lessonReaderContent")).toContainText("What you will learn");
+  await expect(page.locator("#lessonDetailPage")).toBeVisible();
+
+  await page.locator("#lessonBack").click();
+  await expect(page.locator("#lessonsPage")).toBeVisible();
+  await expect(page.locator("#lessonDetailPage")).toBeHidden();
+});
 
 test("Daily Revision is adaptive, abandonment is free, and Daily Discovery is unscored", async ({ page }) => {
   await installDailyLearningMock(page, "daily-behaviour-user");
