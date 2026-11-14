@@ -1,0 +1,430 @@
+# SwiftDictionary Update 2.4.0 — Quiz Technical Specification
+
+**Date:** 2026-11-14  
+**Status:** Technical preparation draft; product decisions recorded, implementation not started  
+**Repository baseline:** \`main\`, Update 2.3.3  
+**Production baseline:** GitHub Pages Update 2.3.3; Supabase Postgres 17.11  
+**Owner approval required before implementation, migrations, allowance changes or deployment.**
+
+## 1. Purpose and scope
+
+Update 2.4.0 adds a dedicated multiple-choice Quiz experience that assesses approved English-learning curriculum knowledge. It must integrate with existing account isolation, learning progress, Daily Revision, Dashboard insights, translation preferences and completion-based allowances.
+
+The Quiz is an assessment feature, not a copy of Lesson practice. It must have its own approved question bank, wording, answer choices and distractors.
+
+### Included
+
+- Beginner, Intermediate and Advanced quiz sessions.
+- Fixed session lengths: 10, 15 and 20 questions respectively.
+- Mixed curriculum topics, with no user-facing category filter.
+- Multiple-choice questions only.
+- Question and answer randomisation fixed for the lifetime of a session.
+- Previous/next navigation and answer changes before submission.
+- Autosaved unfinished progress, resume and explicit abandonment.
+- One active Quiz session per account.
+- Server-side evaluation and completion-based allowance charging.
+- Score, percentage, per-question review and topic-level learning insights.
+- Dashboard and Daily Revision integration.
+- English learning with supported translation-language pairs only.
+- Responsive, accessible desktop and mobile interface.
+
+### Excluded from 2.4.0
+
+- Fill-in-the-blank or free-text answer evaluation.
+- Timers, countdowns, speed scoring or time pressure.
+- Pass/fail thresholds.
+- Retaking a completed session.
+- User-facing topic/category selection.
+- A Chinese-learning Quiz curriculum before a reviewed Chinese learning curriculum exists.
+- Payment, checkout or subscription purchase flows.
+- Changes to unlimited Dictionary search.
+
+## 2. Owner-confirmed product requirements
+
+### Difficulty, length and curriculum eligibility
+
+| Selected difficulty | Questions | Eligible source difficulty |
+|---|---:|---|
+| Beginner | 10 | Beginner only |
+| Intermediate | 15 | Intermediate and Beginner, using one of the two approved mixes below |
+| Advanced | 20 | Advanced, Intermediate and optionally Beginner |
+
+Questions may be drawn from every approved lesson in the eligible curriculum, whether or not the learner has personally completed that lesson. Unapproved or out-of-scope content is never eligible.
+
+### Approved difficulty composition
+
+| Quiz difficulty | Composition |
+|---|---|
+| Beginner | 100% Beginner |
+| Intermediate | Either 50% Intermediate / 50% Beginner, or 80% Intermediate / 20% Beginner |
+| Advanced | 60–80% Advanced, exactly 20% Intermediate, and 0–20% Beginner |
+
+All proportions must total 100%.
+
+Whole-question mapping:
+
+- Beginner: 10 Beginner questions.
+- Intermediate 80/20: 12 Intermediate and 3 Beginner.
+- Intermediate 50/50: 8/7 or 7/8. Alternate which source difficulty receives 8 across sessions to avoid systematic rounding bias.
+- Advanced: exactly 4 Intermediate; 0–4 Beginner; 16–12 Advanced, respectively.
+
+The question selector must not silently substitute an unapproved difficulty or violate these ratios. The exact Advanced distribution within the approved range should be rotated or sampled in a way that does not systematically exclude Beginner reinforcement.
+
+### Session and answer behaviour
+
+- No timer or countdown.
+- Answer choices are shuffled at session creation and remain in the same order after navigation, refresh, sign-out/sign-in or resume.
+- Learners may move between questions and change selections until submission.
+- Correctness feedback, correct answers and results remain hidden until submission.
+- Submission requires every question to have an answer. The interface should identify unanswered questions before final submission.
+- Submission locks all answers and produces an immutable result.
+- Completed review is read-only and shows every question, selected answer, correct answer and explanation.
+- A completed quiz cannot be retaken. A new distinct session may be started if allowance and session rules permit.
+- Unfinished progress persists until completion or explicit abandonment. Midnight does not expire an active session.
+- One active session per account, regardless of difficulty.
+- Explicit abandonment releases the active-session slot and consumes no allowance.
+- Start, resume, abandonment and completed review are free. Only successful submission consumes a Quiz allowance.
+
+### Results
+
+- Show raw score and percentage, for example 12/15 and 80%.
+- Do not display pass/fail or a passing threshold.
+- Include per-question review and explanations.
+- Use topic-level results to inform Dashboard and Daily Revision, but do not treat one incorrect answer or one quiz as definitive proof of mastery.
+- Completed results remain reviewable after question-bank updates by using versioned snapshots.
+
+## 3. Current repository and content inspection
+
+Read-only inspection of the current \`main\` branch found:
+
+- The app is a static GitHub Pages website. The main UI, dictionary data and much of the application logic are in \`index.html\` (approximately 932 KB and 18,530 lines at inspection).
+- Daily Learning logic is separated into \`daily-learning.js\`.
+- There is no root \`package.json\`; the repository includes a Playwright configuration, mock testing and browser/SQL regression tests.
+- The Quiz route and navigation already exist, but the Quiz page is still a Coming Soon placeholder.
+- The existing course selector offers English and Simplified Chinese. The current permanent Lessons curriculum is English learning with Simplified Chinese translations; a complete Chinese-learning curriculum is not present in the current Lessons foundation.
+- The existing 15 lessons are distributed evenly across difficulty, with 52 original Lesson practice questions:
+
+| Lesson difficulty | Lessons | Existing Lesson practice questions |
+|---|---:|---:|
+| Beginner | 5 | 18 |
+| Intermediate | 5 | 17 |
+| Advanced | 5 | 17 |
+| Total | 15 | 52 |
+
+The 52 Lesson practice questions are not a Quiz bank. Quiz content must be independently authored/adapted and reviewed; do not copy those practice questions one-to-one.
+
+**Question-bank finding:** No Quiz-specific question bank, Quiz session table or Quiz RPC exists in the inspected production schema. There are currently zero approved Quiz questions. All Quiz difficulties must therefore remain unavailable until the new bank is populated and passes the availability gate.
+
+## 4. Current Supabase architecture and findings
+
+The connected SwiftDictionary project is healthy and uses PostgreSQL 17.11 in the Tokyo region (\`ap-northeast-1\`). Read-only inspection confirmed 18 applied migrations, including the six Update 2.3.0 migrations.
+
+### Existing structures that can be reused
+
+- \`public.user_preferences\`: learning language, translation language, timezone and Daily Learning preferences.
+- \`public.user_entitlements\`: Free/Premium entitlement state.
+- \`public.learning_plan_limits\`: per-plan and per-activity daily limits.
+- \`public.learning_activity_log\`: activity category, language, timestamp and started/completed event type. Its activity constraint already includes \`quiz\`.
+- \`private.learning_allowance_usage\`: private current-window completion counts. Its activity constraint already includes \`quiz\`.
+- \`public.get_my_learning_allowance_usage()\`: owner-scoped allowance read.
+- \`public.complete_permanent_lesson()\` and the existing completion trigger: established completion-based pattern.
+- \`public.delete_my_learning_history()\` and its private implementation: existing history-deletion path that must be extended to include Quiz records.
+
+The current \`learning_activity_log\` insert trigger charges only \`completed\` events. It sets the event timestamp on the server, serialises completion checks per user, reads the effective server-owned IANA timezone and plan, and increments the private allowance ledger in the same transaction. The personal testing exemption is explicitly limited to \`lesson\` completions; Quiz must not inherit it.
+
+### Allowance mismatch — do not silently preserve
+
+The live \`learning_plan_limits\` table currently contains:
+
+| Plan | Live Quiz limit | Planned 2.4.0 target |
+|---|---:|---:|
+| Free | 5/day | 1/day |
+| Premium | 12/day | 3/day (proposed Premium tier) |
+
+The live values do not match the Quiz planning values recorded in the Master Development Record. No live setting was changed during this inspection. A reviewed migration must reconcile the values before Quiz is enabled. Premium remains a proposed entitlement tier; there is no checkout or payment flow.
+
+### Existing Daily Learning sessions are not a direct Quiz fit
+
+\`public.daily_activity_sessions\` has a partial unique index for one active session per user and activity category. Daily Learning has start, complete and abandon RPCs and has its own daily-session rollover behaviour.
+
+Quiz needs one active session per account across all difficulties, indefinite unfinished-session persistence, a versioned question/answer snapshot and delayed answer-key disclosure. Do not reuse the Daily Learning session table or its rollover/abandonment policy as-is.
+
+### Deletion integration
+
+The current learning-history deletion implementation removes Daily Learning sessions, Lesson practice summaries, Lesson progress and activity history, while retaining the separate allowance ledger. The Quiz migration must extend the deletion implementation to remove the user's Quiz session, answer and review history without resetting the current-day allowance ledger.
+
+### Security baseline
+
+- Existing exposed user-data tables have RLS enabled and owner-scoped policies.
+- Existing private catalogue and allowance tables are in a non-exposed schema with no client-facing read policy.
+- Keep Quiz question-bank answer keys and session snapshots in a non-exposed private schema. Do not make correct answers available through public tables, browser bundles or client-readable APIs.
+- Existing Supabase Advisor notices were observed during this read-only review. They are baseline findings, not Quiz changes; do not expand this feature into unrelated security-setting changes without a separate review.
+- The Quiz design must use explicit \`auth.uid()\` ownership checks, empty/fixed search paths, schema-qualified SQL, least-privilege grants and server-side validation. Avoid broad public \`SECURITY DEFINER\` endpoints.
+
+## 5. Proposed technical architecture
+
+This is the recommended architecture for implementation review. It is not yet an approved migration or deployed schema.
+
+### 5.1 Private, versioned question bank
+
+Create a server-only question bank in the existing private schema. Each approved question version should include:
+
+- Stable question ID and version.
+- Learning-course language and translation language.
+- Source difficulty, lesson ID and internal topic ID.
+- Question type (for example definition, context/usage, grammar or translation assessment).
+- Prompt and option content for the supported language pair.
+- Correct option ID, explanation and approval status.
+- Active/retired state and review metadata.
+
+Keep the correct option key separate from the sanitised question payload returned to the browser. A question's version must be immutable once referenced by a session. Corrections should create a new version rather than rewrite history.
+
+The question bank must have a clear authoring/review process. Every question must have one unambiguous correct answer, plausible but incorrect distractors, a curriculum mapping, context for ambiguous words and reviewed translations. Do not use unlicensed third-party question banks or copy Lesson practice prompts one-to-one.
+
+### 5.2 Private Quiz session and question snapshots
+
+Keep session state and answer keys in private server-side tables. A session should capture:
+
+- Owner user ID.
+- Selected difficulty and fixed question count.
+- Learning-course and translation language pair.
+- Selected composition and source-difficulty counts.
+- Session status: in progress, completed or abandoned.
+- Started/submitted timestamps and the effective timezone/window metadata needed for audit.
+- Stable question IDs and versions, lesson/topic IDs and immutable question snapshots.
+- Fixed question order and fixed option order.
+- Selected option IDs, stored as the learner answers.
+- Final score, percentage and completion metadata.
+
+The session snapshot must preserve enough prompt, option, correct-answer and explanation content to reconstruct review after the live question bank changes or a question is retired. Avoid storing typed free text, keystrokes, device fingerprints or unrelated telemetry.
+
+Enforce one active session per user at the database level with a unique partial index on the owner for sessions whose status is in progress. Do not rely on browser state or a frontend query alone.
+
+### 5.3 Server RPC contract
+
+Use narrow authenticated RPC operations, following the existing public-wrapper/private-implementation pattern after validating the required grants and schema access:
+
+1. **Quiz availability:** returns whether each difficulty is enabled for the selected language pair, the reason if unavailable, and the user's allowance state. It returns no answer key.
+2. **Start Quiz:** checks authentication, one-active-session rule, supported language pair, question-bank availability and current ability to complete under the applicable allowance. It selects questions, randomises question and option order, creates immutable snapshots and returns sanitised prompts/options.
+3. **Get/resume active session:** returns the caller's own active session and sanitised questions/selected answers, without correctness data.
+4. **Save answer:** validates session ownership/status, question membership and option membership; saves the selected option and current position. It rejects changes after completion.
+5. **Submit Quiz:** locks the session, verifies ownership and that every question is answered, evaluates all answers server-side, calculates score/percentage, marks the session completed and records one completed \`quiz\` activity event in the same transaction. The existing completion trigger then enforces the server-side daily allowance and increments the private ledger atomically. If any step fails, the transaction must roll back.
+6. **Abandon Quiz:** locks and marks only the caller's active session abandoned; no allowance is charged.
+7. **Completed review:** returns the caller's completed snapshot including selected/correct answers and explanations. It is read-only.
+
+The exact RPC names and table layout are to be finalised during implementation. Public RPC wrappers must not accept a caller-supplied user ID as authority. Derive ownership from \`auth.uid()\`; use idempotent submission so duplicate requests cannot create a second completion or allowance charge.
+
+### 5.4 Allowance timing
+
+- Starting and saving answers never write a completed activity event.
+- Successful final submission is the only event that charges the Quiz allowance.
+- Charge against the effective timezone and allowance window at the time of submission, not the session's start date. This matches the existing completion trigger and means a session started before midnight but submitted after midnight is charged to the new local day.
+- A session that crosses midnight remains resumable. It does not reserve or consume the previous day's allowance.
+- If the allowance is exhausted at start time, the UI should not invite the user to start a session that cannot be completed under the current rules. The server must still re-check the limit atomically at submission.
+- Free target is one completed Quiz per local day. Premium target is three per local day, subject to final Premium approval and a reviewed database configuration change.
+- Reviewing completed quizzes and abandoning unfinished sessions are free.
+- Do not extend the personal Lesson testing exemption to Quiz.
+
+### 5.5 Language and refresh behaviour
+
+For 2.4.0, support only the English learning curriculum and language pairs for which Quiz prompts, options, explanations and feedback have been authored and reviewed. The current Lesson curriculum provides English learning content with Simplified Chinese translations; it does not establish a Chinese-learning curriculum. A Chinese-learning Quiz remains unavailable until that curriculum is separately approved and authored.
+
+- The learning-course language determines the knowledge and curriculum being tested.
+- The selected translation language controls translations, explanations and feedback.
+- Translation-assessment questions may ask in English and use selected-translation-language answer options.
+- Normal knowledge/definition questions use English prompts and options; explanations and feedback use the selected translation language.
+- Store the language pair on the session at creation. A preference change affects a new session, not the content of an active session.
+- When either selector changes, rerender the current Quiz page and all dependent UI immediately. No navigation away/back should be needed.
+- Regression-test both selectors, switching back and forth, new sessions, active-session resume and completed review. Verify actual translation accuracy and completeness, not merely labels.
+
+### 5.6 Dashboard and Daily Revision
+
+Use completed Quiz question/topic mappings and correctness outcomes as additional evidence for topic-level revision. Prefer aggregating from the completed session snapshots rather than storing duplicate answer telemetry. A single wrong answer must not automatically label a topic as weak; combine Quiz evidence with existing Lesson and Daily Learning evidence and use recency/repeated performance.
+
+Dashboard should show Quiz completion count and recent score/percentage. Topic recommendations should explain that they are learning suggestions, not formal proficiency certification.
+
+## 6. Question-bank availability and sampling proposal
+
+**Observed inventory:** zero approved Quiz questions. All difficulties are unavailable at the start of this feature.
+
+The availability gate must be evaluated independently for each learning-course/translation-language pair and difficulty. Before a difficulty can be enabled, the server must verify:
+
+1. Enough approved, active, distinct question IDs exist to build the complete fixed-length session.
+2. The selected source-difficulty composition can be satisfied exactly.
+3. Every selected question belongs to an approved lesson/topic in the eligible curriculum.
+4. The pool has sufficient topic diversity. Recommended starting rule: at least three distinct topic IDs per session, with no single topic supplying more than 40% of the questions in that session.
+5. Every question has a valid answer key, plausible distractors, explanation and complete content for the selected language pair.
+6. No question is duplicated within one session.
+7. Question selection can avoid immediate repeats across recent sessions where the bank has enough remaining content.
+
+### Proposed pool-size thresholds (for owner review)
+
+A practical minimum-variety proposal is to maintain at least **two complete sessions' worth** of approved questions at the maximum source-difficulty counts for the selected difficulty. This provides at least two non-overlapping session pools when the same composition is selected.
+
+| Selected difficulty | Proposed minimum pool by source difficulty | Total |
+|---|---|---:|
+| Beginner | 20 Beginner | 20 |
+| Intermediate | 24 Intermediate + 16 Beginner | 40 |
+| Advanced | 32 Advanced + 8 Intermediate + 8 Beginner | 48 |
+
+These counts are derived from twice the maximum whole-question source counts required by the approved compositions. For example, Intermediate's largest per-session source counts are 12 Intermediate and 8 Beginner; Advanced's are 16 Advanced, 4 Intermediate and 4 Beginner.
+
+A larger **three-session pool** would be preferable if the future Premium allowance is confirmed at three quizzes per day and the product wants to avoid repeating questions across all three sessions on the same local day:
+
+| Selected difficulty | Three-session pool target |
+|---|---|
+| Beginner | 30 Beginner |
+| Intermediate | 36 Intermediate + 24 Beginner |
+| Advanced | 48 Advanced + 12 Intermediate + 12 Beginner |
+
+The two-session counts are a proposed hard launch threshold, not an owner-approved numeric policy yet. The three-session counts are a quality target tied to the proposed Premium allowance. The owner must confirm the cross-session reuse policy and Premium limit before these figures become final. If question reuse across separate sessions is permitted, the system should still avoid immediate repeats when possible and must never duplicate a question within one session.
+
+If a difficulty fails the gate, show it as unavailable with a clear explanation. Never shorten a quiz, silently relax a ratio, reuse a question within a session or substitute an out-of-scope question.
+
+## 7. User interface proposal
+
+### Quiz landing page
+
+- Keep the existing Quiz navigation route.
+- Show Beginner, Intermediate and Advanced difficulty cards with question count, availability and progress.
+- If a session is active, make **Resume Quiz** the primary action and prevent starting another difficulty.
+- Show a clear unavailable state and reason where the question bank or language pair is not ready.
+- Show completed quizzes with date, difficulty, score and percentage; provide a free read-only review action.
+- Do not show topic/category filters.
+
+### Active session
+
+- Show difficulty, question number and overall progress.
+- Present one question at a time with accessible answer cards.
+- Clearly distinguish selected from unselected options without revealing correctness.
+- Provide Previous and Next navigation.
+- Save each answer and navigation position reliably; show a subtle save state if network latency requires it.
+- Provide a final submission review that identifies unanswered questions and requires confirmation before submission.
+- No timer, countdown or time-pressure text.
+
+### Result and review
+
+- Display score and percentage only; no pass/fail.
+- Provide a topic summary and suggested revision where sufficient evidence exists.
+- Show every question with the selected answer, correct answer and explanation.
+- Disable answer controls and all editing in completed review.
+
+## 8. Privacy, legal and content-risk review
+
+This section is product-risk planning, not legal advice or a compliance certification.
+
+### New personal-data processing
+
+Unlike current Lesson practice, Quiz requires storing selected answer IDs and enough question/answer snapshots to support unfinished-session recovery and completed review. These are account-linked learning records. Store only the selected option identifier and necessary session/question metadata; do not store typed responses or keystrokes. Explain in the privacy notice that answers, scores and topic-level performance are retained for session recovery, results, progress and revision recommendations.
+
+The current privacy-policy draft says individual selected answers are not stored. That statement will become inaccurate if Quiz stores selected options. Update the English and Bahasa Malaysia notices before public release, including purpose, retention, access/correction/deletion, recipients, cross-border processing and the distinction between deleting history and resetting an allowance.
+
+### Malaysia
+
+The Personal Data Protection Act 2010 (Act 709), as amended in 2024, may apply to processing in respect of commercial transactions. A free, individually operated public learning service is not automatically outside scope; the controller's actual activities and the narrow personal/family/household exemption require legal assessment. The 2024 amendments commenced in stages on 1 January, 1 April and 1 June 2025.
+
+Before public release:
+
+- Obtain Malaysian legal advice on the Act's applicability and identify the data controller and privacy contact.
+- Review the 2026 reprint, privacy notice, security, retention, access/correction, deletion and breach-response requirements.
+- Complete DPIA screening for account-linked quiz answers, scores, topic-level performance and adaptive revision.
+- Assess whether regular/systematic monitoring triggers the DPO appointment requirement. JPDP's published criteria include processing more than 20,000 data subjects, more than 10,000 sensitive-data subjects, or regular and systematic monitoring. Do not assume the project is exempt solely because it is small.
+- Assess cross-border transfers and processor arrangements. The primary database is in Tokyo, Japan; this does not establish the locations of Auth, backups, logs, support access or all subprocessors.
+- Keep the breach-response process aligned with current JPDP notification guidance.
+
+### International users and age suitability
+
+- GDPR Article 3 may apply where a non-EU controller intentionally offers services to people in the EU or monitors their behaviour there. Mere accessibility alone is not sufficient; targeting and actual service design matter.
+- GDPR Article 8's parental-consent age for information-society services varies by Member State between 13 and 16. A 16+ intended audience does not remove all other child-data duties.
+- COPPA in the United States concerns services directed to children under 13 or actual knowledge of collecting their personal information. Keep the 16+ audience statement accurate and do not collect date of birth unless there is a defined legal/product need.
+- Conduct a country-by-country applicability screen before broad international promotion or monetisation.
+
+### Content and intellectual property
+
+Author original Quiz questions, options and explanations. Do not copy existing Lesson practice questions one-to-one or import third-party question banks without documented rights. Review dictionary/translation sources and any third-party assets used in explanations. Keep attribution and licence records with content.
+
+### Primary legal sources reviewed
+
+- Malaysia JPDP, Personal Data Protection (Amendment) Act 2024: https://www.pdp.gov.my/en/akta/personal-data-protection-amendment-act-2024/
+- Malaysia JPDP, commencement notice: https://www.pdp.gov.my/ppdpv1/wp-content/uploads/2024/12/PENETAPAN-TARIKH-PERMULAAN-KUAT-KUASA-1.pdf
+- Malaysia JPDP, Act 709 2026 reprint: https://pdp.gov.my/wp-content/uploads/2026/10/Akta-709-cetakan-semula-2026-BI.pdf
+- Malaysia JPDP, Cross Border Personal Data Transfer Guideline No. 3/2025: https://www.pdp.gov.my/ppdpv1/wp-content/uploads/2025/08/GP_CBPDT_EN.pdf
+- Malaysia JPDP, DPO appointment FAQ: https://www.pdp.gov.my/ppdpv1/wp-content/uploads/2025/05/FAQ-Soalan-Mengenai-DPO-1.pdf
+- Malaysia JPDP, DPIA Guideline: https://www.pdp.gov.my/en/akta/data-protection-impact-assessment-guideline-dpia/
+- EU GDPR, Regulation (EU) 2016/679: https://eur-lex.europa.eu/eli/reg/2016/679
+- US FTC, COPPA FAQs: https://www.ftc.gov/business-guidance/resources/complying-coppa-frequently-asked-questions
+
+## 9. Test and release strategy
+
+Do not test against production by creating synthetic user sessions or modifying live user data. Use the existing PostgreSQL/Playwright CI approach and disposable local Supabase environment where practical.
+
+### Content validation
+
+- Stable unique question IDs and versions.
+- Exact difficulty composition and whole-question counts.
+- At least the required number of distinct questions and topic coverage.
+- Exactly one correct option per question.
+- No duplicate options or ambiguous correct answers.
+- Every option ID maps to the intended displayed text after shuffle.
+- All question and explanation content is complete for each supported language pair.
+- Quiz wording is independent from Lesson practice wording.
+- Difficulty is appropriate for the mapped curriculum.
+
+### Database/security validation
+
+- Anonymous users cannot start, read or modify sessions.
+- Authenticated users can access only their own sessions.
+- One active session per account is enforced under concurrent start requests.
+- Correct answer keys are never returned before submission.
+- Client cannot alter score, completion status, question order or correct answers.
+- Save-answer calls reject invalid question/option IDs and completed/abandoned sessions.
+- Concurrent submissions are idempotent and charge at most once.
+- Completion and allowance increment succeed or roll back together.
+- Start/resume/abandon/review consume no allowance.
+- Completion uses the server-owned timezone and plan; midnight rollover charges the submission day.
+- Lesson-only personal test exemption cannot bypass Quiz allowance.
+- Learning-history deletion removes Quiz history but preserves the allowance ledger.
+- Account switching and shared-device sessions remain isolated.
+
+### Browser and interaction regression
+
+- Desktop and mobile layouts, keyboard navigation and accessible selected-state indicators.
+- Begin/resume/abandon and one-active-session handling.
+- Previous/next navigation and answer changes before submission.
+- Refresh, browser close/reopen, network interruption and cross-device resume.
+- No answer/correctness reveal before submission.
+- Submit confirmation and unanswered-question handling.
+- Result score, percentage, per-question review and read-only behaviour.
+- Translation/course selector refresh without navigating away/back.
+- Active session retains its captured language pair; new session uses new preferences.
+- Dashboard and Daily Revision consume Quiz evidence without over-weighting a single mistake.
+- Regression of Dictionary, Lessons, Daily Learning, Profile, Google sign-in, account switching and saved-word isolation.
+
+### Release gates
+
+1. Owner approves this specification and the remaining open product choices.
+2. Quiz bank is authored, linguistically reviewed and passes the availability thresholds.
+3. Feature branch is created from current \`main\`; production remains unchanged.
+4. Read-only Supabase inspection is repeated immediately before migration design.
+5. Migrations are reviewed and tested in disposable/local environments.
+6. CI, browser tests, security checks and translation QA pass.
+7. Owner reviews the preview and explicitly approves any production migration and deployment.
+8. Update privacy notices and operational procedures before public release.
+
+## 10. Decisions still requiring owner confirmation
+
+The core Quiz product scope is settled. The following implementation details should be confirmed before coding:
+
+1. **Answer-option count:** recommend four options when four strong, plausible distractors can be written; allow three rather than adding a weak fourth option. Existing Lesson practice currently uses three options.
+2. **Cross-session reuse:** recommend avoiding questions used in the same user's recent completed sessions where possible, while only forbidding duplicates within a single session. Confirm whether same-day repeats across separate sessions should be strictly prohibited; this affects the hard question-bank threshold.
+3. **Availability thresholds:** the two-session minimum and three-session Premium target in Section 6 are proposals. Confirm after the cross-session reuse policy and Premium limit are settled.
+4. **Premium allowance:** production currently has 12/day. The planned 3/day is a proposal and requires explicit configuration approval before a migration changes it.
+5. **Score rounding:** recommend a whole-number percentage rounded to the nearest integer, while retaining the exact numerator/denominator for display and analytics.
+
+## 11. Preparation outcome and recovery point
+
+- Production remains Update 2.3.3; merge commit \`90dc73a9b65fc3af713fefab4955057026089b96\`.
+- Quiz remains Coming Soon.
+- No application source, question bank, database schema, migration, live allowance setting, production data or deployment was changed during this preparation.
+- Documentation is maintained on \`docs/master-development-record\`.
+- The implementation branch has not been created. Do not begin implementation until the owner reviews the technical specification and confirms the remaining choices.
