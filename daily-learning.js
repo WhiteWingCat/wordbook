@@ -9,10 +9,10 @@
     "daily_revision_enabled"
   ];
   const activityMeta = {
-    daily_topic: { title: "Daily Topic", label: "Learn one focused idea", description: "A short guided explanation with examples." },
-    daily_application: { title: "Daily Application", label: "Use what you know", description: "Apply grammar and vocabulary in practical contexts." },
-    daily_discovery: { title: "Daily Discovery", label: "A word shared worldwide", description: "One less-common English word, selected for everyone each day and explored like a dictionary entry." },
-    daily_revision: { title: "Daily Revision", label: "Strengthen your memory", description: "An adaptive review chosen from your learning history." }
+    daily_topic: { title: "Daily Topic", titleZh:"每日主题", label: "Learn one focused idea", labelZh:"学习一个重点概念", description: "A short guided explanation with examples.", descriptionZh:"通过简短讲解和例句学习一个重点。" },
+    daily_application: { title: "Daily Application", titleZh:"每日应用", label: "Use what you know", labelZh:"运用所学知识", description: "Apply grammar and vocabulary in practical contexts.", descriptionZh:"在实际语境中运用语法和词汇。" },
+    daily_discovery: { title: "Daily Discovery", titleZh:"每日发现", label: "A word shared worldwide", labelZh:"全球每日共享词汇", description: "One less-common English word, selected for everyone each day and explored like a dictionary entry.", descriptionZh:"每天为所有用户介绍同一个较少见的英语词汇，并以词典形式深入认识。" },
+    daily_revision: { title: "Daily Revision", titleZh:"每日复习", label: "Strengthen your memory", labelZh:"巩固记忆", description: "An adaptive review chosen from your learning history.", descriptionZh:"根据你的学习记录安排个性化复习。" }
   };
 
   const dailyTopics = [
@@ -153,9 +153,26 @@
     return prefs?.timezone || "UTC";
   }
 
+  const dailyChineseTitles = {
+    "topic-present-perfect-01":"一般过去时还是现在完成时？","topic-articles-01":"根据发音选择 a 或 an","topic-quantity-01":"可数名词与不可数名词","topic-sentence-order-01":"构建清晰的英语句子","topic-collocations-01":"学习自然的词语搭配",
+    "topic-present-routines-01":"描述日常习惯与事实","topic-present-continuous-01":"描述正在发生的事情","topic-past-continuous-01":"用过去进行时交代背景","topic-prepositions-time-01":"用 in、on 和 at 表示时间","topic-pronouns-01":"选择主格和宾格代词",
+    "topic-articles-the-01":"了解 the 的使用时机","topic-quantity-many-much-01":"选择 many 或 much","topic-everyday-vocabulary-01":"选择准确的日常动词","topic-everyday-vocabulary-02":"表达动作发生的频率","topic-phrasal-verbs-01":"理解可分离短语动词",
+    "topic-phrasal-verbs-02":"在语境中学习短语动词","topic-word-formation-01":"用后缀构建词族","topic-word-formation-02":"识别常见否定前缀","topic-conditionals-01":"用第一类条件句表达真实可能性","topic-conditionals-02":"用第二类条件句表达假设情境",
+    "topic-advanced-inversion-01":"在否定副词后使用倒装","topic-advanced-modals-01":"用情态动词表达不同程度的确定性","topic-idioms-01":"把习语作为完整表达来理解","topic-idioms-02":"选择符合语境的表达","topic-academic-01":"更谨慎地表达观点",
+    "topic-academic-02":"用准确的连接词衔接观点","topic-precise-vocabulary-01":"区分 say、tell 和 mention","topic-precise-vocabulary-02":"用具体词语替换模糊表达",
+    "application-verb-patterns-01":"日常计划中的动词结构","application-articles-01":"真实句子中的冠词","application-quantity-01":"选择正确的数量词","application-say-tell-01":"Say 还是 tell？","application-collocations-01":"选择自然的词语搭配",
+    "application-present-routine-02":"日常习惯中的一般现在时","application-present-continuous-02":"描述当前正在发生的动作","application-past-continuous-02":"描述过去正在进行的动作","application-prepositions-time-01":"时间介词","application-pronouns-01":"主格代词还是宾格代词？",
+    "application-articles-the-02":"冠词与共同语境","application-many-much-02":"Many、much 和 a lot of","application-everyday-vocabulary-02":"日常动词搭配","application-frequency-01":"频率副词的位置","application-phrasal-separable-02":"在短语动词中放置宾语",
+    "application-phrasal-meaning-02":"理解语境中的短语动词","application-word-family-02":"识别后缀的含义","application-prefix-02":"选择否定前缀","application-first-conditional-02":"表达真实的未来可能性","application-second-conditional-02":"想象不同的情境",
+    "application-modals-02":"用情态动词表达确定性","application-inversion-02":"识别主语与助动词倒装","application-idioms-02":"理解常见表达","application-academic-02":"使用谨慎的学术表达","application-precise-02":"选择准确的表达动词"
+  };
+  const dailyUi = (english, chinese) => translationLanguage === "zh" ? chinese : english;
+  function dailyTitle(item) {
+    return translationLanguage === "zh" ? (item.titleZh || dailyChineseTitles[item.id] || item.title) : item.title;
+  }
   function selectedTranslation(item) {
     if (typeof translationLanguage !== "undefined" && translationLanguage === "zh" && item.zh) {
-      return '<p class="daily-translation">' + esc(item.zh) + '</p>';
+      return '<p class="daily-translation"><strong>中文说明：</strong>' + esc(item.zh) + '</p>';
     }
     return "";
   }
@@ -267,6 +284,10 @@
   function chooseContent(activityType, slot) {
     const day = snapshot.day;
     const baseIndex = dayOrdinal(day);
+    const accountKey = String(currentUser?.id || "anonymous");
+    const accountHash = [...accountKey].reduce((hash,char)=>((hash*31)+char.charCodeAt(0))>>>0,7);
+    const mockGeneration = Number(window.__swiftDictionaryMock?.selectionGeneration?.() || 0);
+    const accountOffset = (accountHash + mockGeneration) >>> 0;
     if (activityType === "daily_discovery") {
       const globalDay = new Date().toISOString().slice(0,10);
       const index = ((dayOrdinal(globalDay)%dailyDiscoveryVocabulary.length)+dailyDiscoveryVocabulary.length)%dailyDiscoveryVocabulary.length;
@@ -283,11 +304,17 @@
       // Never surface yesterday's completed Premium slot as today's first item.
       // If the curated pool is exhausted, fall back to a free replay.
       return available.length
-        ? available[(baseIndex + slot) % available.length]
-        : pool[(baseIndex + slot) % pool.length];
+        ? available[(baseIndex + slot + accountOffset) % available.length]
+        : pool[(baseIndex + slot + accountOffset) % pool.length];
     }
     const candidates = revisionCandidates(snapshot.lessonResults, snapshot.dailyResults, snapshot.completedToday);
-    const candidate = candidates[0] || { topicId:dailyApplications[0].topicId, reason:"A short review to keep your knowledge active." };
+    const best = candidates[0];
+    const equallyRanked = best && best.accuracy === null
+      ? candidates.filter(item=>item.priority===best.priority && item.accuracy===null)
+      : best && candidates.filter(item=>item.priority===best.priority && item.accuracy===best.accuracy);
+    const candidate = (equallyRanked?.length
+      ? equallyRanked[accountOffset % equallyRanked.length]
+      : best) || { topicId:dailyApplications[0].topicId, reason:"A short review to keep your knowledge active." };
     const topicPool = dailyApplications.filter(item => item.topicId === candidate.topicId);
     const previouslyUsedSources = new Set((snapshot.dailyResults || [])
       .filter(row => row.activity_type === "daily_revision" && row.topic_id === candidate.topicId)
@@ -297,7 +324,7 @@
       }).filter(Boolean));
     const unusedSources = topicPool.filter(item => !previouslyUsedSources.has(item.id));
     const sourcePool = unusedSources.length ? unusedSources : topicPool;
-    const source = sourcePool[(dayOrdinal(day) + slot) % sourcePool.length] || dailyApplications[0];
+    const source = sourcePool[(dayOrdinal(day) + slot + accountOffset) % sourcePool.length] || dailyApplications[0];
     const id = ["revision",candidate.topicId,source.id,day,String(slot+1)].join(":");
     return makeRevisionContent(candidate.topicId,id,candidate.reason);
   }
@@ -401,7 +428,7 @@
     for (const type of Object.keys(activityMeta)) slots[type] = completed[type] || 0;
     for (const type of Object.keys(activityMeta)) snapshot.content[type] = chooseContent(type,slots[type]);
     const timezoneChangePending = prefs.allowance_timezone && Date.parse(prefs.allowance_timezone_until || "") > Date.now();
-    status.textContent = "Your daily activities reset at midnight (" + timezone + "). Plan: " + (plan === "premium" ? "Premium" : "Free") + ". Daily activity content currently teaches English; selected Chinese translation is shown where available.";
+    status.textContent = dailyUi("Your daily activities reset at midnight (" + timezone + "). Plan: " + (plan === "premium" ? "Premium" : "Free") + ". English learning context is preserved; Chinese explanations are shown where available.","每日活动于午夜重置（" + timezone + "）。方案：" + (plan === "premium" ? "Premium" : "Free") + "。英语学习语境会保留，并在适用位置提供中文说明。");
     if (timezoneChangePending) status.textContent += " Your preferred timezone (" + prefs.timezone + ") will take effect after this allowance day ends.";
     if (language !== "en" || course !== "en") status.textContent += " Select English as your Learning course to start these activities. Your saved Chinese course preference is not changed by this message."
     renderCards();
@@ -437,27 +464,27 @@
         && (!limitConfig || limitConfig.enabled === false || remaining === null);
       const exhausted = !activeSession && !alreadyCompleted && !allowanceUnavailable && remaining <= 0;
       const remainingLabel = activeSession
-        ? "In progress · allowance is used only on completion"
+        ? dailyUi("In progress · allowance is used only on completion","进行中 · 完成后才会扣除次数")
         : alreadyCompleted
-          ? "Completed · replay is free"
+          ? dailyUi("Completed · replay is free","已完成 · 可免费重温")
           : allowanceUnavailable
-            ? (limitConfig?.enabled === false ? "Unavailable for this plan" : "Allowance unavailable")
-            : remaining + " / " + limit + " completions remaining";
-      const buttonLabel = activeSession ? "Resume activity"
-        : alreadyCompleted ? "Review completed content"
-        : allowanceUnavailable ? "Unavailable"
-        : exhausted ? "Daily limit reached" : "Start activity";
-      const reason = type === "daily_revision" ? '<p class="daily-activity-meta"><span class="daily-activity-tag">' + esc(content.body) + '</span></p>' : "";
+            ? (limitConfig?.enabled === false ? dailyUi("Unavailable for this plan","当前方案暂不提供") : dailyUi("Allowance unavailable","无法读取可用次数"))
+            : dailyUi(remaining + " / " + limit + " completions remaining","剩余 " + remaining + " / " + limit + " 次完成额度");
+      const buttonLabel = activeSession ? dailyUi("Resume activity","继续活动")
+        : alreadyCompleted ? dailyUi("Review completed content","重温已完成内容")
+        : allowanceUnavailable ? dailyUi("Unavailable","暂不可用")
+        : exhausted ? dailyUi("Daily limit reached","今日额度已用完") : dailyUi("Start activity","开始活动");
+      const reason = type === "daily_revision" ? '<p class="daily-activity-meta"><span class="daily-activity-tag">' + esc(translationLanguage === "zh" ? "根据你的学习记录选择" : content.body) + '</span></p>' : "";
       const preview = exhausted
-        ? '<div class="daily-reader-example daily-cooldown-message"><strong>Today’s activity is complete</strong><p>Your next activity will be available after the daily allowance resets at midnight (' + esc(snapshot.timezone || "your timezone") + ').</p></div>'
-        : '<div class="daily-reader-example"><strong>' + esc(content.title) + '</strong></div>';
+        ? '<div class="daily-reader-example daily-cooldown-message"><strong>' + esc(dailyUi("Today’s activity is complete","今日活动已完成")) + '</strong><p>' + esc(dailyUi("Your next activity will be available after the daily allowance resets at midnight (" + (snapshot.timezone || "your timezone") + ").","下一次活动将在每日额度于午夜重置后开放（" + (snapshot.timezone || "你的时区") + "）。")) + '</p></div>'
+        : '<div class="daily-reader-example"><strong>' + esc(dailyTitle(content)) + '</strong></div>';
       let disabledReason = "";
-      if (!currentUser || !supabaseClient) disabledReason = "Sign in to start and sync this activity.";
-      else if (snapshot.learningLanguage !== "en" || (typeof course !== "undefined" && course !== "en")) disabledReason = "Daily activities currently teach English. Select English in Learning course to begin.";
+      if (!currentUser || !supabaseClient) disabledReason = dailyUi("Sign in to start and sync this activity.","登录后即可开始活动并同步进度。");
+      else if (snapshot.learningLanguage !== "en" || (typeof course !== "undefined" && course !== "en")) disabledReason = dailyUi("Daily activities currently teach English. Select English in Learning course to begin.","每日活动目前以英语为学习内容。请将学习课程切换为 English 后开始。");
       else if (allowanceUnavailable) disabledReason = limitConfig?.enabled === false
-        ? "This activity is not available for your current plan."
-        : "Your allowance could not be checked. Please refresh before starting this activity.";
-      else if (exhausted) disabledReason = "You have used today's completion allowance. It resets at midnight (" + snapshot.timezone + ").";
+        ? dailyUi("This activity is not available for your current plan.","当前方案暂不提供此活动。")
+        : dailyUi("Your allowance could not be checked. Please refresh before starting this activity.","无法确认活动额度，请刷新页面后再试。");
+      else if (exhausted) disabledReason = dailyUi("You have used today's completion allowance. It resets at midnight (" + snapshot.timezone + ").","今日完成额度已用完，将于午夜重置（" + snapshot.timezone + "）。");
       const disabled = !!disabledReason;
       return '<article class="daily-activity-card" data-activity-card="' + type + '">'
         + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(meta.label) + '</span><span class="daily-activity-tag">' + esc(remainingLabel) + '</span></div>'
@@ -498,65 +525,69 @@
     }
   }
 
-  function renderReader(activityType,content,session) {
+  function renderReader(activityType,content,session,existingState=null) {
     const reader = byId("dailyActivityReader");
-    reader.classList.add("modal-backdrop");
+    const isDiscovery = activityType === "daily_discovery";
+    reader.classList.add("modal-backdrop","daily-activity-backdrop");
     reader.setAttribute("role","dialog");
     reader.setAttribute("aria-modal","true");
-    reader.setAttribute("aria-label",activityMeta[activityType].title);
+    reader.setAttribute("aria-label",dailyUi(activityMeta[activityType].title,activityMeta[activityType].titleZh));
     const completed = session.status === "completed";
     const isQuiz = activityType === "daily_application" || activityType === "daily_revision";
     reader.hidden = false;
     reader.classList.add("open");
     document.body.style.overflow = "hidden";
-    readerState = { activityType,content,session,firstTry:(content.questions || []).map(() => null),passed:(content.questions || []).map(() => false) };
-    let html = '<div class="daily-drawer-actions"><button type="button" class="secondary-button" data-daily-back>← Back to Lessons</button><button type="button" class="icon-button" data-daily-close aria-label="Close activity">×</button></div>'
-      + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(activityMeta[activityType].title) + '</span>'
-      + (completed ? '<span class="daily-activity-tag">Completed · replay is free</span>' : '<span class="daily-activity-tag">In progress · no allowance used yet</span>')
-      + '</div><h2>' + esc(content.title) + '</h2>';
-    if (activityType === "daily_discovery") {
-      html += '<div class="daily-discovery-word-meta"><strong>' + esc(content.part || "Vocabulary") + '</strong>' + (content.phonetic ? '<span>' + esc(content.phonetic) + '</span>' : '') + '</div>';
-      html += '<section class="daily-reader-example"><strong>Dictionary definition</strong><p>' + esc(typeof translationLanguage !== "undefined" && translationLanguage === "zh" && content.definitionZh ? content.definitionZh : content.definition || "") + '</p></section>';
-      html += '<p class="daily-discovery-frequency-note">A less-common word to recognise and understand. Frequency classification is curated, not a live conversational-corpus ranking.</p>';
-    }
-    if (content.body) html += '<p>' + esc(content.body) + '</p>';
-    const practiceExamples = isQuiz && Array.isArray(content.questions)
-      ? content.questions.map(question => String(question.q || "").replace(/_{2,}/g,question.options?.[question.answer] || "…"))
-      : [];
-    const extraExamples = [
-      ...(Array.isArray(content.examples)?content.examples:[]),
-      ...(!isQuiz && typeof content.example==="string" ? content.example.split(/\s+\/\s+/).slice(1) : []),
-      ...practiceExamples
-    ].filter(Boolean);
-    if (content.example && !isQuiz) html += '<div class="daily-reader-example"><strong>Example 1</strong><p>' + esc(content.example.split(/\s+\/\s+/)[0]) + '</p></div>';
-    if (extraExamples.length) html += '<section class="daily-extra-examples"><h3>More examples</h3>' + extraExamples.map((example,index)=>'<div class="daily-reader-example"><strong>Example '+(index+2)+'</strong><p>'+esc(example)+'</p></div>').join("") + '</section>';
-    if (content.tip) html += '<div class="daily-reader-example"><strong>Usage note</strong><p>' + esc(content.tip) + '</p></div>';
-    html += selectedTranslation(content);
-    if (content.zhExample && typeof translationLanguage !== "undefined" && translationLanguage === "zh") {
-      html += '<div class="daily-reader-example"><strong>例句</strong><p>' + esc(content.zhExample) + '</p></div>';
-    }
-    if (content.sourceUrl) {
-      html += '<p class="lesson-muted">Reference: <a href="' + esc(content.sourceUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(content.source) + '</a>. The explanation and examples above are original SwiftDictionary content.</p>';
-    }
-    if (isQuiz) {
-      html += '<div id="dailyQuestions">';
-      content.questions.forEach((question,index) => {
-        html += '<div class="daily-question" data-daily-question="' + index + '"><strong>' + (index+1) + '. ' + esc(question.q) + '</strong>';
-        question.options.forEach((option,optionIndex) => {
-          html += '<label><input type="radio" name="daily-question-' + index + '" value="' + optionIndex + '"' + (completed ? " disabled" : "") + '> <span>' + esc(option) + '</span></label>';
+    readerState = existingState || { activityType,content,session,firstTry:(content.questions || []).map(() => null),passed:(content.questions || []).map(() => false) };
+    const closeButton = '<button type="button" class="icon-button" data-daily-close aria-label="' + esc(dailyUi("Close activity","关闭活动")) + '">×</button>';
+    let html = "";
+    if (isDiscovery) {
+      const examples = [content.example,...(content.examples || [])].filter(Boolean);
+      html = '<div class="modal-head"><div><h2 class="modal-word">' + esc(content.word || content.title) + '</h2><div class="modal-pronunciation">' + esc(content.phonetic || "") + '</div><span class="part">' + esc(dailyUi(content.part || "Vocabulary",content.part === "adjective" ? "形容词" : content.part === "noun" ? "名词" : content.part === "verb" ? "动词" : "词汇")) + '</span></div>' + closeButton + '</div>'
+        + '<div class="modal-content">'
+        + '<section class="detail-section"><h3>' + esc(dailyUi("Definition","释义")) + '</h3><p class="definition">' + esc(translationLanguage === "zh" && content.definitionZh ? content.definitionZh : content.definition || "") + '</p></section>'
+        + '<section class="detail-section"><h3>' + esc(dailyUi("Examples","例句")) + '</h3><ul class="example-list">' + examples.map(example=>'<li>' + esc(example) + '</li>').join("") + '</ul></section>'
+        + (content.tip ? '<section class="detail-section"><h3>' + esc(dailyUi("Usage note","用法提示")) + '</h3><p class="tip">' + esc(content.tip) + '</p></section>' : "")
+        + '<p class="daily-discovery-frequency-note">' + esc(dailyUi("A less-common word to recognise and understand. Frequency classification is curated, not a live conversational-corpus ranking.","认识并理解一个较少见的词汇。目前词频分类由编辑整理，并非实时口语语料库排名。")) + '</p>'
+        + '<p class="muted-note">' + esc(completed ? dailyUi("Completed · replay is free","已完成 · 可免费重温") : dailyUi("In progress · no allowance used until completion","进行中 · 完成后才会扣除次数")) + '</p>';
+    } else {
+      html = '<div class="daily-drawer-actions"><button type="button" class="secondary-button" data-daily-back>' + esc(dailyUi("← Back to Lessons","← 返回课程")) + '</button>' + closeButton + '</div>'
+        + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(dailyUi(activityMeta[activityType].title,activityMeta[activityType].titleZh)) + '</span>'
+        + (completed ? '<span class="daily-activity-tag">' + esc(dailyUi("Completed · replay is free","已完成 · 可免费重温")) + '</span>' : '<span class="daily-activity-tag">' + esc(dailyUi("In progress · no allowance used yet","进行中 · 尚未扣除次数")) + '</span>')
+        + '</div><h2>' + esc(dailyTitle(content)) + '</h2>';
+      if (content.body) html += '<p>' + esc(content.body) + '</p>';
+      html += selectedTranslation(content);
+      const practiceExamples = isQuiz && Array.isArray(content.questions)
+        ? content.questions.map(question => String(question.q || "").replace(/_{2,}/g,question.options?.[question.answer] || "…"))
+        : [];
+      const examples = [
+        ...(content.example ? String(content.example).split(/\s+\/\s+/) : []),
+        ...(Array.isArray(content.examples) ? content.examples : []),
+        ...practiceExamples
+      ].filter(Boolean);
+      if (examples.length) html += '<section class="daily-reader-example daily-examples-box"><strong>' + esc(dailyUi("Examples","例句")) + '</strong><ul>' + examples.map(example=>'<li>' + esc(example) + '</li>').join("") + '</ul></section>';
+      if (content.tip) html += '<div class="daily-reader-example"><strong>' + esc(dailyUi("Usage note","用法提示")) + '</strong><p>' + esc(content.tip) + '</p></div>';
+      if (isQuiz) {
+        html += '<p class="daily-practice-instruction">' + esc(dailyUi("Read each English sentence and choose the correct answer. The English wording is kept as the learning context.","请阅读每个英语句子并选择正确答案。英语题目和选项会保留，以便学习英语语境。")) + '</p><div id="dailyQuestions">';
+        content.questions.forEach((question,index) => {
+          html += '<div class="daily-question" data-daily-question="' + index + '"><strong>' + (index+1) + '. ' + esc(question.q) + '</strong>';
+          question.options.forEach((option,optionIndex) => {
+            html += '<label><input type="radio" name="daily-question-' + index + '" value="' + optionIndex + '"' + (completed ? " disabled" : "") + '> <span>' + esc(option) + '</span></label>';
+          });
+          html += '<p class="daily-question-feedback" id="daily-feedback-' + index + '" role="status"></p></div>';
         });
-        html += '<p class="daily-question-feedback" id="daily-feedback-' + index + '"></p></div>';
-      });
-      html += '</div>';
-      if (!completed) html += '<button type="button" class="secondary-button" data-check-daily>Check answers</button>';
-      html += '<p id="dailyPracticeStatus" role="status" aria-live="polite" class="page-intro"></p>';
+        html += '</div>';
+        if (!completed) html += '<button type="button" class="secondary-button" data-check-daily>' + esc(dailyUi("Check answers","检查答案")) + '</button>';
+        html += '<p id="dailyPracticeStatus" role="status" aria-live="polite" class="page-intro"></p>';
+      }
     }
-    if (!completed && !isQuiz) html += '<button type="button" class="primary-button" data-complete-daily>Mark activity complete</button>';
-    if (!completed) html += '<button type="button" class="secondary-button" data-abandon-daily>Abandon session</button>';
-    if (!completed && isQuiz) html += '<button type="button" class="primary-button" data-complete-daily hidden>Complete activity</button>';
-    if (completed) html += '<p class="page-intro">This content is already completed. You can revisit it without using another daily allowance.</p>';
-    reader.innerHTML = '<article class="modal daily-activity-modal">' + html + '</article>';
-    reader.querySelector("[data-daily-back]").addEventListener("click",closeDailyReader);
+    if (!completed && !isQuiz) html += '<button type="button" class="primary-button" data-complete-daily>' + esc(dailyUi("Mark activity complete","标记活动为已完成")) + '</button>';
+    if (!completed) html += '<button type="button" class="secondary-button" data-abandon-daily>' + esc(dailyUi("Abandon session","放弃本次活动")) + '</button>';
+    if (!completed && isQuiz) html += '<button type="button" class="primary-button" data-complete-daily hidden>' + esc(dailyUi("Complete activity","完成活动")) + '</button>';
+    if (completed) html += '<p class="page-intro">' + esc(dailyUi("This content is already completed. You can revisit it without using another daily allowance.","此内容已完成。你可以免费重温，不会再次消耗每日额度。")) + '</p>';
+    if (isDiscovery) html += '</div>';
+    reader.innerHTML = '<article class="modal daily-activity-modal' + (isDiscovery ? ' daily-discovery-modal' : '') + '">' + html + '</article>';
+    const backButton = reader.querySelector("[data-daily-back]");
+    if (backButton) backButton.addEventListener("click",closeDailyReader);
     reader.querySelector("[data-daily-close]").addEventListener("click",closeDailyReader);
     reader.onclick = event => { if(event.target===reader) closeDailyReader(); };
     const checkButton = reader.querySelector("[data-check-daily]");
@@ -567,13 +598,41 @@
       const complete = reader.querySelector("[data-complete-daily]");
       if (complete) complete.hidden = true;
       const practiceStatus = byId("dailyPracticeStatus");
-      if (practiceStatus) practiceStatus.textContent = "Your answer changed. Check your answers again before completing.";
+      if (practiceStatus) practiceStatus.textContent = dailyUi("Your answer changed. Check your answers again before completing.","答案已更改。请重新检查答案后再完成活动。");
     }));
     const completeButton = reader.querySelector("[data-complete-daily]");
     if (completeButton) completeButton.addEventListener("click",completeDailyActivity);
     const abandonButton = reader.querySelector("[data-abandon-daily]");
     if (abandonButton) abandonButton.addEventListener("click",abandonDailyActivity);
+    if (existingState) {
+      existingState.passed.forEach((passed,index)=>{
+        const previous=document.querySelector('input[name="daily-question-'+index+'"]:checked');
+        if(previous) previous.checked=true;
+        if(existingState.firstTry[index]!==null){
+          const feedback=byId("daily-feedback-"+index);
+          if(feedback) feedback.textContent=dailyUi(passed?"Correct. Review the English explanation above.":"Not quite. Review the English explanation above.","已记录此题的检查结果。请结合上方英语语境复习。");
+        }
+      });
+      const complete=reader.querySelector("[data-complete-daily]");
+      if(complete && isQuiz) complete.hidden=!existingState.passed.every(Boolean);
+    }
   }
+
+  window.refreshDailyLearningTranslation = function() {
+    if (typeof renderCards === "function" && snapshot.content) renderCards();
+    if (readerState) {
+      const state=readerState;
+      const selected=state.content.questions ? state.content.questions.map((_,index)=>document.querySelector('input[name="daily-question-'+index+'"]:checked')?.value ?? null) : [];
+      renderReader(state.activityType,state.content,state.session,state);
+      selected.forEach((value,index)=>{
+        if(value!==null){
+          const input=document.querySelector('input[name="daily-question-'+index+'"][value="'+value+'"]');
+          if(input) input.checked=true;
+        }
+      });
+    }
+  };
+
 
   function closeDailyReader() {
     const reader=byId("dailyActivityReader");
@@ -593,23 +652,23 @@
       const feedback = byId("daily-feedback-" + i);
       if (!selected) {
         allCorrect = false;
-        feedback.textContent = "Choose an answer before checking.";
+        feedback.textContent = dailyUi("Choose an answer before checking.","检查答案前，请先选择一个选项。");
         continue;
       }
       const correct = Number(selected.value) === content.questions[i].answer;
       if (firstTry[i] === null) firstTry[i] = correct;
       passed[i] = correct;
       const translatedExplanation = typeof translationLanguage !== "undefined" && translationLanguage === "zh" && content.questions[i].zh ? " 中文说明：" + content.questions[i].zh : "";
-      if (correct) feedback.textContent = "Correct. " + content.questions[i].explanation + translatedExplanation;
+      if (correct) feedback.textContent = dailyUi("Correct. ","正确。") + content.questions[i].explanation + translatedExplanation;
       else {
         allCorrect = false;
-        feedback.textContent = "Not quite. Try again. " + content.questions[i].explanation + translatedExplanation;
+        feedback.textContent = dailyUi("Not quite. Try again. ","还不正确，请再试一次。") + content.questions[i].explanation + translatedExplanation;
       }
     }
     const completeButton = byId("dailyActivityReader").querySelector("[data-complete-daily]");
     if (completeButton) completeButton.hidden = !allCorrect;
     const status = byId("dailyPracticeStatus");
-    if (status) status.textContent = allCorrect ? "All answers are correct. You can now complete this activity." : "Review the feedback and try the unanswered or incorrect questions again.";
+    if (status) status.textContent = allCorrect ? dailyUi("All answers are correct. You can now complete this activity.","全部答案正确。现在可以完成此活动。") : dailyUi("Review the feedback and try the unanswered or incorrect questions again.","请查看反馈，并重新回答尚未作答或答错的题目。");
   }
 
   async function abandonDailyActivity() {
