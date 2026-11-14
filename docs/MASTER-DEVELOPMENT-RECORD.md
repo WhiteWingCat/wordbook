@@ -814,7 +814,7 @@ The owner selected **Option A**:
 ### Current recovery point and next actions
 
 1. Continue on feature/update-2-3-1-bug-fix-and-changes; PR #5 remains open and unmerged.
-2. Latest implementation commit at this record update: e1039bed85ed6f65514699f30cda8a06d2df0214.
+2. Latest application/code commit: 6bc0791116ca0a96410a84a3e3fe6953943b2ae3. Latest feature branch head after the handover-record update: e1039bed85ed6f65514699f30cda8a06d2df0214.
 3. Obtain full CI execution and inspect any failures before owner preview testing.
 4. Confirm Cloudflare Pages has rebuilt the current head. Use only ?swiftMock=1 and fictional Free/Premium Test User accounts; do not use real accounts or production data-changing tests.
 5. Verify Free sees exactly one Discovery card; Premium sees exactly three; both accounts share the same words for the UTC date; complete/abandon flows consume allowances correctly; translation switching updates definitions and usage notes; UTC rollover and local allowance reset remain understandable.
