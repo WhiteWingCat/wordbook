@@ -440,7 +440,7 @@ const runtimeContext = {
   currentUser: { id: "test-user" },
   supabaseClient: mockSupabase,
   course: "en",
-  translationLanguage: "zh",
+  translationLanguage: "en",
   escapeHTML: value => String(value),
   browserTimezone: () => "UTC",
   localDayStart: () => "2026-11-10",
