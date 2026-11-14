@@ -31,15 +31,40 @@ jobs:
           mkdir -p "$RUNNER_TEMP/swiftdictionary-quiz-supabase"
           cd "$RUNNER_TEMP/swiftdictionary-quiz-supabase"
           supabase init
-          cp "$GITHUB_WORKSPACE"/supabase/migrations/*.sql supabase/migrations/
 
       - name: Start disposable local Supabase services
         working-directory: ${{ runner.temp }}/swiftdictionary-quiz-supabase
         run: supabase start -x studio,edge-runtime,logflare,vector,imgproxy
 
-      - name: Apply all repository migrations to local Supabase
+      - name: Verify real Supabase Auth contract
         working-directory: ${{ runner.temp }}/swiftdictionary-quiz-supabase
-        run: supabase db reset
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/supabase-local-auth-contract.sql"
+
+      - name: Create synthetic SwiftDictionary application baseline
+        working-directory: ${{ runner.temp }}/swiftdictionary-quiz-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/tests/update-2-3-0/supabase-local-app-baseline.sql"
+
+      - name: Apply Update 2.3.x prerequisite migrations
+        working-directory: ${{ runner.temp }}/swiftdictionary-quiz-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/supabase/migrations/20261114082303_swiftdictionary_update_2_3_0_saved_words_privilege_hardening.sql"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/supabase/migrations/20261114082311_swiftdictionary_update_2_3_0_learning_content_catalog.sql"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/supabase/migrations/20261114082324_swiftdictionary_update_2_3_0_completion_based_allowance.sql"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/supabase/migrations/20261114082328_swiftdictionary_update_2_3_0_daily_activity_sessions.sql"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/supabase/migrations/20261114082332_swiftdictionary_update_2_3_0_current_window_allowance_ledger.sql"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/supabase/migrations/20261114082335_swiftdictionary_update_2_3_0_learning_history_deletion.sql"
+
+      - name: Apply Quiz question-bank and authenticated RPC migrations
+        working-directory: ${{ runner.temp }}/swiftdictionary-quiz-supabase
+        run: |
+          eval "$(supabase status --output env)"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/supabase/migrations/20261114120000_swiftdictionary_update_2_4_0_quiz_question_bank_foundation.sql"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/supabase/migrations/20261114160000_swiftdictionary_update_2_4_0_quiz_authenticated_rpcs.sql"
 
       - name: Install test-only observers and run authenticated Quiz RPC integration tests
         working-directory: ${{ runner.temp }}/swiftdictionary-quiz-supabase
