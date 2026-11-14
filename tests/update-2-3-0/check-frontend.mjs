@@ -158,12 +158,14 @@ const accountOffset = (userId, generation = 0) => new Function(
 const userAOffset = accountOffset("mock-user-a");
 const userBOffset = accountOffset("mock-user-b");
 if (userAOffset % curated.topics.length === userBOffset % curated.topics.length
-    || userAOffset % curated.applications.length === userBOffset % curated.applications.length) {
-  throw new Error("Fresh mock identities did not receive different Daily Topic and Daily Application selection offsets.");
+    || userAOffset % curated.applications.length === userBOffset % curated.applications.length
+    || userAOffset % revisionTopicIds.length === userBOffset % revisionTopicIds.length) {
+  throw new Error("Fresh mock identities did not receive different Daily Topic, Application and Revision selection offsets.");
 }
 if (accountOffset("mock-user-a",1) % curated.topics.length === userAOffset % curated.topics.length
-    || accountOffset("mock-user-a",1) % curated.applications.length === userAOffset % curated.applications.length) {
-  throw new Error("Resetting mock data did not advance the personalised daily activity selection.");
+    || accountOffset("mock-user-a",1) % curated.applications.length === userAOffset % curated.applications.length
+    || accountOffset("mock-user-a",1) % revisionTopicIds.length === userAOffset % revisionTopicIds.length) {
+  throw new Error("Resetting mock data did not advance all personalised daily activity selections.");
 }
 const chooserStart = dailyScript.indexOf("  function chooseContent(");
 const chooserEnd = dailyScript.indexOf("\n  function resolveSessionContent(", chooserStart);
@@ -172,6 +174,17 @@ if (chooserStart < 0 || chooserEnd < 0
     || chooserSource.indexOf('if (activityType === "daily_discovery")') > chooserSource.indexOf("const accountOffset = accountContentOffset()")
     || !chooserSource.includes('new Date().toISOString().slice(0,10)')) {
   throw new Error("Daily Discovery must remain globally date-selected before any account-specific selection is applied.");
+}
+const discoveryVocabularyStart = dailyScript.indexOf("const dailyDiscoveryVocabulary = [");
+const discoveryVocabularyEnd = dailyScript.indexOf("\n  ];", discoveryVocabularyStart);
+const discoveryVocabulary = new Function("return (" + dailyScript.slice(dailyScript.indexOf("[", discoveryVocabularyStart), discoveryVocabularyEnd + 4) + ")")();
+if (discoveryVocabulary.some(item => !item.tipZh)) throw new Error("Daily Discovery is missing Chinese usage-note translations.");
+const dailyStartActivityStart = dailyScript.indexOf("  async function startDailyActivity(");
+const dailyStartActivityEnd = dailyScript.indexOf("\n  function renderReader(", dailyStartActivityStart);
+const dailyStartActivitySource = dailyScript.slice(dailyStartActivityStart, dailyStartActivityEnd);
+if (!dailyStartActivitySource.includes('p_topic_id:activityType === "daily_discovery" ? null')
+    || !dailyStartActivitySource.includes('p_difficulty:activityType === "daily_discovery" ? null')) {
+  throw new Error("Global Daily Discovery sessions must use the approved null topic/difficulty catalogue metadata.");
 }
 if (!html.includes('id="lessonDetailPage"') || !html.includes('showPage("lessonDetail")')
     || !html.includes("function refreshTranslationViews()")
