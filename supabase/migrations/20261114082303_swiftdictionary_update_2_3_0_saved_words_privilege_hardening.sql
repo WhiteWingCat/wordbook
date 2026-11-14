@@ -2,8 +2,7 @@
 -- Read-only production review found unnecessary anon and authenticated grants.
 -- The browser only requires authenticated SELECT, INSERT (upsert DO NOTHING),
 -- and DELETE. RLS policies continue to scope all rows to auth.uid().
--- Apply only after the owner approves the production migration plan.
-
+-- Applied to the live SwiftDictionary Supabase project as migration 20261114082303.
 begin;
 
 revoke all privileges on table public.saved_words from public, anon, authenticated;
