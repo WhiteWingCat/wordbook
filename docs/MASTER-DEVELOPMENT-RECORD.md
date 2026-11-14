@@ -839,7 +839,7 @@ The CI run follows two corrected test-fixture issues: SQL exception-message quot
 ### Release status
 
 1. PR #5 remains open, targets main and is not merged.
-2. Latest feature head: 0531dfaea4903630eb147a75fdbbc122fbf8871d.
+2. Latest validated code/test commit: 0531dfaea4903630eb147a75fdbbc122fbf8871d. The current feature branch head is 2f0d62f9571b2170ba106ef42142829ad8044958 after documentation-only follow-up commits; no application or test files changed after run #632.
 3. CI success does not replace owner preview testing. The latest Cloudflare preview build has not yet been independently confirmed or tested by the owner.
 4. Continue using only the explicit mock preview and fictional Free/Premium accounts. Do not use real accounts or production data-changing tests.
 5. No production Supabase migration, production data operation, merge or deployment was performed.
