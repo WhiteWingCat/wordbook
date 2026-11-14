@@ -544,7 +544,7 @@ The current implementation exposes the English learning course only. A learning-
 
 ### 13.5 Same-day reservation and deletion behaviour
 
-A minimal private.quiz_daily_question_reservations table stores only the account ID, local date, question ID and reservation timestamp. It contains no prompt, options, selected answer, score or explanation. This separate ledger preserves the same-day no-repeat rule even if a user deletes Quiz history. Expired reservation rows are purged after a conservative 36-hour window when Quiz availability or a new session is requested.
+A minimal private.quiz_daily_question_reservations table stores only the account ID, local date, question ID and reservation timestamp. It contains no prompt, options, selected answer, score or explanation. This separate ledger preserves the same-day no-repeat rule even if a user deletes Quiz history. Reservations are eligible for cleanup after 36 hours and are purged on the next Quiz availability or start request; if no further Quiz request occurs, they may remain longer.
 
 Learning-history deletion removes Quiz sessions, answer snapshots and Quiz completion events, but deliberately retains:
 - the daily allowance ledger, so deleting history cannot reset a user's quota; and
