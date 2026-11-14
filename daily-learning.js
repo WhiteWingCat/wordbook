@@ -11,7 +11,7 @@
   const activityMeta = {
     daily_topic: { title: "Daily Topic", titleZh:"每日主题", label: "Learn one focused idea", labelZh:"学习一个重点概念", description: "A short guided explanation with examples.", descriptionZh:"通过简短讲解和例句学习一个重点。" },
     daily_application: { title: "Daily Application", titleZh:"每日应用", label: "Use what you know", labelZh:"运用所学知识", description: "Apply grammar and vocabulary in practical contexts.", descriptionZh:"在实际语境中运用语法和词汇。" },
-    daily_discovery: { title: "Daily Discovery", titleZh:"每日发现", label: "A word shared worldwide", labelZh:"全球每日共享词汇", description: "Three less-common English words are selected globally each day and explored like dictionary entries.", descriptionZh:"每天为所有用户全球统一安排三个较少见的英语词汇，并以词典形式深入认识。" },
+    daily_discovery: { title: "Daily Discovery", titleZh:"每日发现", label: "A word shared worldwide", labelZh:"全球每日共享词汇", description: "One of three less-common English words selected globally each day.", descriptionZh:"这是每天全球统一安排的三个较少见英语词汇之一。" },
     daily_revision: { title: "Daily Revision", titleZh:"每日复习", label: "Strengthen your memory", labelZh:"巩固记忆", description: "An adaptive review chosen from your learning history.", descriptionZh:"根据你的学习记录安排个性化复习。" }
   };
 
