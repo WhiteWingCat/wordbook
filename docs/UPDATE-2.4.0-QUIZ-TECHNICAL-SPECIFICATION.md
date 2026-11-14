@@ -559,7 +559,7 @@ The workflow .github/workflows/quiz-db-foundation.yml now has two isolated valid
 1. PostgreSQL 17 disposable service: applies the foundation and RPC migrations and tests constraints, question sampling, session lifecycle, scoring, answer review, allowance charging, deletion, ownership and access controls.
 2. Disposable local Supabase stack: validates the real local Auth schema/JWT helpers, applies the synthetic SwiftDictionary application baseline and 2.3.x prerequisite migrations, applies both Quiz migrations, runs the authenticated RPC integration tests, and runs Supabase security advisors.
 
-The local Supabase stack is created and destroyed within GitHub Actions. It is not a hosted Supabase branch and does not connect to the production project. The PostgreSQL and local Supabase integration jobs passed on workflow run 66 (2026-11-14); the 2.3.x PostgreSQL and browser regression jobs also passed on that run's companion workflow. A final access-control assertion for the temporary reservation table was added afterward and is awaiting its follow-up workflow run.
+The local Supabase stack is created and destroyed within GitHub Actions. It is not a hosted Supabase branch and does not connect to the production project. The PostgreSQL 17 and full local Supabase Auth/RPC/security-advisor jobs passed on workflow run 68 (2026-11-14), including the final access-control and RLS assertion for the temporary reservation table. The companion 2.3.x PostgreSQL and Chromium browser regression checks also passed.
 
 ### 13.7 Remaining work and release gates
 
