@@ -70,6 +70,7 @@ const scheduleRunner = vm.runInNewContext(`
   const dailyDiscoveryVocabulary = ${JSON.stringify(curated.discoveries)};
   const DAILY_DISCOVERY_SCHEDULE_EPOCH = "2026-11-15";
   const DAILY_DISCOVERY_SCHEDULE_VERSION = 1;
+  const DAILY_DISCOVERY_SCHEDULE_POOL_SIZE = 93;
   ${dayOrdinalSource}
   ${dailyScript.slice(discoveryScheduleStart,discoveryScheduleEnd)}
   dailyDiscoverySchedule;
