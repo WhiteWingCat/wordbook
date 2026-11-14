@@ -102,7 +102,7 @@
     "application-prepositions-time-01":["The appointment is on Friday morning.","The shop closes at nine o’clock."],
     "application-pronouns-01":["They invited my brother and me to the event.","The teacher spoke to us after class."],
     "application-articles-the-02":["I saw a dog outside. The dog was wearing a red collar.","Please open the window next to you."],
-    "application-many-much-02":["How much luggage can we take?","There are not many seats left."],
+    "application-many-much-02":["There is not much luggage in the car.","There are not many seats left."],
     "application-everyday-vocabulary-02":["Please take a photo of the sign.","We need to make a plan before we leave."],
     "application-frequency-01":["She usually arrives early for meetings.","They are often busy on Mondays."],
     "application-phrasal-separable-02":["The music is too loud, so please turn it down.","Please pick your bag up before we leave."],
