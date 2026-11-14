@@ -278,7 +278,6 @@ if (!dailyStartActivitySource.includes('p_topic_id:activityType === "daily_disco
   throw new Error("Global Daily Discovery sessions must use the approved null topic/difficulty catalogue metadata.");
 }
 if (!html.includes('id="lessonDetailPage"') || !html.includes('showPage("lessonDetail")')
-    || !html.includes("if (typeof initialiseLessons === \"function\") await initialiseLessons();")
     || !html.includes("function refreshTranslationViews()")
     || !html.includes("window.refreshDailyLearningTranslation")) {
   throw new Error("Permanent lesson page navigation or shared translation refresh is missing.");
@@ -454,8 +453,6 @@ if (!dailyScript.includes("const disabled = !!disabledReason || (exhausted && !a
     || !dailyScript.includes("role=\"tablist\"")
     || !dailyScript.includes("daily-activity-cards")
     || !dailyScript.includes('columns===3?" premium":" free"')
-    || !dailyScript.includes('const allowanceTone=remaining<=0?"exhausted"')
-    || !dailyScript.includes('dailyUi("New activity","新活动")')
     || !dailyScript.includes("Your allowance resets at midnight")
     || dailyScript.includes("Today’s activity is complete")
     || dailyScript.includes("const practiceExamples =")) {

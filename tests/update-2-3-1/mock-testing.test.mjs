@@ -82,6 +82,8 @@ test("mock identities represent separate Free and Premium plans",async()=>{
   assert.equal(entitlement.data.plan_code,"free");
   let limit=await client.from("learning_plan_limits").select("daily_limit").eq("plan_code","free").eq("activity_type","daily_discovery").single();
   assert.equal(limit.data.daily_limit,1);
+  const freeLessonLimit=await client.from("learning_plan_limits").select("daily_limit").eq("plan_code","free").eq("activity_type","lesson").single();
+  assert.equal(freeLessonLimit.data.daily_limit,5);
 
   env.window.__swiftDictionaryMock.setActiveUser("mock-user-b");
   entitlement=await client.from("user_entitlements").select("plan_code").eq("user_id","mock-user-b").single();
@@ -90,9 +92,6 @@ test("mock identities represent separate Free and Premium plans",async()=>{
   assert.equal(limit.data.daily_limit,3);
   const premiumLessonLimit=await client.from("learning_plan_limits").select("daily_limit").eq("plan_code","premium").eq("activity_type","lesson").single();
   assert.equal(premiumLessonLimit.data.daily_limit,15);
-  const freeLessonLimit=await client.from("learning_plan_limits").select("daily_limit").eq("plan_code","free").eq("activity_type","lesson").single();
-  assert.equal(freeLessonLimit.data.daily_limit,5);
-
   for (let i=1;i<=3;i++) {
     const started=await client.rpc("start_daily_activity_session",{
       p_activity_type:"daily_discovery",p_content_id:"mock-discovery-"+i+":2026-11-14",
