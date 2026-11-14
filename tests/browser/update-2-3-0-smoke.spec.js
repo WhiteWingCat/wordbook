@@ -862,3 +862,44 @@ test("mock mode fails closed on the local test server even with the opt-in query
   await expect(page.locator("#swiftMockPanel")).toHaveCount(0);
   await expect(page.locator("#dictionaryPage")).toBeVisible();
 });
+
+
+test("Dashboard favorite words open expanded details without navigating to Dictionary", async ({ page }) => {
+  const userId = "dashboard-favorite-details-user";
+  await installDailyLearningMock(page, userId);
+  await page.goto("/");
+  await page.evaluate(userId => {
+    const state = window.__swiftDailyMock;
+    state.tables.profiles = [{ user_id:userId, display_name:"Favorite Learner", avatar_icon:"🐦" }];
+    state.tables.saved_words = [
+      { user_id:userId, course:"en", word:"hello" },
+      { user_id:userId, course:"zh", word:"你" }
+    ];
+  }, userId);
+
+  await page.locator("#accountButton").click();
+  await page.locator("#menuProfile").click();
+  await expect(page.locator("#profilePage")).toBeVisible();
+  await page.locator("#favoriteEnglishGrid").locator("xpath=..").locator("summary").click();
+  await page.locator('#favoriteEnglishGrid button[aria-label="Open saved word hello"]').click();
+
+  await expect(page.locator("#profilePage")).toBeVisible();
+  await expect(page.locator("#dictionaryPage")).toBeHidden();
+  await expect(page.locator("#modalBackdrop")).toHaveClass(/open/);
+  await expect(page.locator("#modalWord")).toHaveText("hello");
+  await expect(page.locator("#previousButton")).toBeHidden();
+  await expect(page.locator("#nextButton")).toBeHidden();
+  await page.locator("#closeButton").click();
+  await expect(page.locator("#modalBackdrop")).not.toHaveClass(/open/);
+  await expect(page.locator("#profilePage")).toBeVisible();
+
+  await page.locator("#favoriteChineseGrid").locator("xpath=..").locator("summary").click();
+  await page.locator('#favoriteChineseGrid button[aria-label="Open saved word 你"]').click();
+  await expect(page.locator("#profilePage")).toBeVisible();
+  await expect(page.locator("#dictionaryPage")).toBeHidden();
+  await expect(page.locator("#modalBackdrop")).toHaveClass(/open/);
+  await expect(page.locator("#modalWord")).toHaveText("你");
+  await expect(page.locator("#modalPhonetic")).toContainText("Pinyin:");
+  await page.locator("#closeButton").click();
+  await expect(page.locator("#profilePage")).toBeVisible();
+});
