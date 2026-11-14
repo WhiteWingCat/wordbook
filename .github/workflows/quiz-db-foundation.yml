@@ -1,0 +1,69 @@
+name: Quiz database foundation
+
+on:
+  push:
+    branches:
+      - feature/update-2-4-0-quiz
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quiz-db-foundation:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: swiftdictionary_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d swiftdictionary_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: swiftdictionary_test
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Prepare minimal Supabase-compatible test roles and schemas
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          create role anon nologin;
+          create role authenticated nologin;
+          create schema auth;
+          create table auth.users (
+            id uuid primary key
+          );
+          create schema if not exists private;
+          create table public.languages (
+            code text primary key,
+            name text not null,
+            native_name text not null,
+            is_active boolean not null default true,
+            created_at timestamptz not null default now()
+          );
+          insert into public.languages (code, name, native_name)
+          values ('en', 'English', 'English'), ('zh', 'Chinese', '中文');
+          SQL
+
+      - name: Apply Quiz foundation migration
+        run: |
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261114120000_swiftdictionary_update_2_4_0_quiz_question_bank_foundation.sql
+
+      - name: Validate schema, constraints, access controls and uniqueness
+        run: |
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/quiz_question_bank_foundation.sql
