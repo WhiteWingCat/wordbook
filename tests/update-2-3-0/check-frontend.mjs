@@ -140,6 +140,51 @@ for (let i = 0; i < scripts.length; i += 1) {
 }
 
 if (checked === 0) throw new Error("No inline JavaScript blocks were checked.");
+const titleMapStart = dailyScript.indexOf("const dailyChineseTitles = {");
+const titleMapEnd = dailyScript.indexOf("\n  };", titleMapStart);
+if (titleMapStart < 0 || titleMapEnd < 0) throw new Error("Daily Learning Chinese title map is missing.");
+const dailyChineseTitles = new Function("return (" + dailyScript.slice(dailyScript.indexOf("{", titleMapStart), titleMapEnd + 4) + ")")();
+for (const item of [...curated.topics, ...curated.applications]) {
+  if (!dailyChineseTitles[item.id]) throw new Error(`Missing Chinese activity title translation: ${item.id}`);
+}
+
+const accountOffsetStart = dailyScript.indexOf("  function accountContentOffset()");
+const accountOffsetEnd = dailyScript.indexOf("\n  function chooseContent(", accountOffsetStart);
+if (accountOffsetStart < 0 || accountOffsetEnd < 0) throw new Error("Account-personalised activity selector is missing.");
+const accountOffsetSource = dailyScript.slice(accountOffsetStart, accountOffsetEnd);
+const accountOffset = (userId, generation = 0) => new Function(
+  "currentUser", "window", accountOffsetSource + "\nreturn accountContentOffset();"
+)({id:userId},{__swiftDictionaryMock:{selectionGeneration:()=>generation}});
+const userAOffset = accountOffset("mock-user-a");
+const userBOffset = accountOffset("mock-user-b");
+if (userAOffset % curated.topics.length === userBOffset % curated.topics.length
+    || userAOffset % curated.applications.length === userBOffset % curated.applications.length) {
+  throw new Error("Fresh mock identities did not receive different Daily Topic and Daily Application selection offsets.");
+}
+if (accountOffset("mock-user-a",1) % curated.topics.length === userAOffset % curated.topics.length
+    || accountOffset("mock-user-a",1) % curated.applications.length === userAOffset % curated.applications.length) {
+  throw new Error("Resetting mock data did not advance the personalised daily activity selection.");
+}
+const chooserStart = dailyScript.indexOf("  function chooseContent(");
+const chooserEnd = dailyScript.indexOf("\n  function resolveSessionContent(", chooserStart);
+const chooserSource = dailyScript.slice(chooserStart, chooserEnd);
+if (chooserStart < 0 || chooserEnd < 0
+    || chooserSource.indexOf('if (activityType === "daily_discovery")') > chooserSource.indexOf("const accountOffset = accountContentOffset()")
+    || !chooserSource.includes('new Date().toISOString().slice(0,10)')) {
+  throw new Error("Daily Discovery must remain globally date-selected before any account-specific selection is applied.");
+}
+if (!html.includes('id="lessonDetailPage"') || !html.includes('showPage("lessonDetail")')
+    || !html.includes("function refreshTranslationViews()")
+    || !html.includes("window.refreshDailyLearningTranslation")) {
+  throw new Error("Permanent lesson page navigation or shared translation refresh is missing.");
+}
+if (!html.includes(".daily-activity-backdrop{background:transparent}")
+    || !html.includes("daily-examples-box")
+    || !dailyScript.includes('dailyUi("Examples","例句")')
+    || dailyScript.includes("More examples")) {
+  throw new Error("Daily activity panel styling or unified examples presentation regressed.");
+}
+
 
 const dateFnStart = html.indexOf("function datePartsInZone(");
 const zoneFnStart = html.indexOf("function zonedMidnightUtc(", dateFnStart);
