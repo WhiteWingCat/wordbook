@@ -241,6 +241,7 @@ declare
   v_timezone text := v_ctx ->> 'timezone';
   v_day date := (v_ctx ->> 'local_date')::date;
   v_translation text;
+  v_learning text;
   v_active uuid;
   v_b integer := 0;
   v_i integer := 0;
@@ -259,7 +260,8 @@ declare
   v_advanced_fresh boolean;
   v_can_start boolean;
 begin
-  select p.translation_language into v_translation
+  select p.learning_language,p.translation_language
+    into v_learning,v_translation
   from public.user_preferences p where p.user_id = v_user;
 
   select s.id into v_active
@@ -302,9 +304,9 @@ begin
         and issued.question_id = q.question_id
     );
 
-  v_beginner_min := v_b >= 20;
-  v_intermediate_min := v_i >= 24 and v_b >= 16;
-  v_advanced_min := v_a >= 32 and v_i >= 8 and v_b >= 8;
+  v_beginner_min := v_learning = 'en' and v_b >= 20;
+  v_intermediate_min := v_learning = 'en' and v_i >= 24 and v_b >= 16;
+  v_advanced_min := v_learning = 'en' and v_a >= 32 and v_i >= 8 and v_b >= 8;
   v_beginner_target := v_b >= 30;
   v_intermediate_target := v_i >= 36 and v_b >= 24;
   v_advanced_target := v_a >= 48 and v_i >= 12 and v_b >= 12;
@@ -345,6 +347,7 @@ begin
         'available', v_beginner_min and v_beginner_fresh and v_can_start,
         'reason', case
           when v_active is not null then 'active_session_exists'
+          when v_learning <> 'en' then 'learning_course_not_supported'
           when (v_ctx ->> 'remaining_count')::integer < 1 then 'allowance_exhausted'
           when not v_beginner_min then 'question_bank_below_minimum'
           when not v_beginner_fresh then 'fresh_questions_unavailable_today'
@@ -360,6 +363,7 @@ begin
         'available', v_intermediate_min and v_intermediate_fresh and v_can_start,
         'reason', case
           when v_active is not null then 'active_session_exists'
+          when v_learning <> 'en' then 'learning_course_not_supported'
           when (v_ctx ->> 'remaining_count')::integer < 1 then 'allowance_exhausted'
           when not v_intermediate_min then 'question_bank_below_minimum'
           when not v_intermediate_fresh then 'fresh_questions_unavailable_today'
@@ -375,6 +379,7 @@ begin
         'available', v_advanced_min and v_advanced_fresh and v_can_start,
         'reason', case
           when v_active is not null then 'active_session_exists'
+          when v_learning <> 'en' then 'learning_course_not_supported'
           when (v_ctx ->> 'remaining_count')::integer < 1 then 'allowance_exhausted'
           when not v_advanced_min then 'question_bank_below_minimum'
           when not v_advanced_fresh then 'fresh_questions_unavailable_today'
@@ -397,6 +402,7 @@ declare
   v_timezone text;
   v_day date;
   v_translation text;
+  v_learning text;
   v_active uuid;
   v_question_count integer;
   v_b integer := 0;
@@ -419,7 +425,7 @@ begin
   if v_user is null then
     raise exception 'Authentication required' using errcode = '42501';
   end if;
-  if p_difficulty not in ('beginner','intermediate','advanced') then
+  if p_difficulty is null or p_difficulty not in ('beginner','intermediate','advanced') then
     raise exception 'Invalid Quiz difficulty' using errcode = '22023';
   end if;
 
@@ -428,8 +434,14 @@ begin
   v_timezone := v_ctx ->> 'timezone';
   v_day := (v_ctx ->> 'local_date')::date;
 
-  select p.translation_language into v_translation
+  select p.learning_language,p.translation_language
+    into v_learning,v_translation
   from public.user_preferences p where p.user_id = v_user;
+
+  if v_learning is distinct from 'en' then
+    raise exception 'Quiz currently supports the English learning course only'
+      using errcode='42501', detail='learning_course_not_supported';
+  end if;
 
   select s.id into v_active
   from private.quiz_sessions s
