@@ -375,19 +375,6 @@ begin
     pg_catalog.hashtextextended(v_user::text, 0)
   );
 
-  select * into v_session
-  from public.daily_activity_sessions
-  where user_id = v_user
-    and activity_type = p_activity_type
-    and status = 'in_progress'
-  order by started_at desc
-  limit 1
-  for update;
-
-  if found then
-    return v_session;
-  end if;
-
   select case
            when p.allowance_timezone is not null
                 and p.allowance_timezone_until > pg_catalog.now()
@@ -431,6 +418,22 @@ begin
     and status = 'completed'
   order by completed_at desc
   limit 1;
+
+  if found then
+    return v_session;
+  end if;
+
+  -- Completed content is checked before another open session so a learner can
+  -- explicitly review a completed item even if another item is unfinished.
+  -- Otherwise, preserve the one-open-session-per-category resume behaviour.
+  select * into v_session
+  from public.daily_activity_sessions
+  where user_id = v_user
+    and activity_type = p_activity_type
+    and status = 'in_progress'
+  order by started_at desc
+  limit 1
+  for update;
 
   if found then
     return v_session;
