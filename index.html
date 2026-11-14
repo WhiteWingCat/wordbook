@@ -296,6 +296,21 @@
 .lesson-reader-bottom-actions { display:flex; justify-content:flex-end; margin:18px 0 30px; }
 .lesson-reader-bottom-actions .secondary-button { min-width:150px; }
 
+
+    .active-language-row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 14px;padding:7px 0;border-top:1px solid var(--border)}
+    .active-language-row span{color:var(--muted);font-size:.84rem}
+    .activity-overview{display:grid;gap:15px;padding:12px 2px 4px}
+    .activity-overview-row{display:grid;gap:7px}
+    .activity-overview-heading{display:flex;justify-content:space-between;gap:12px;font-size:.9rem}
+    .activity-overview-heading span{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+    .activity-overview-track{height:11px;border-radius:999px;overflow:hidden;background:var(--panel-hover);border:1px solid var(--border)}
+    .activity-overview-track span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .25s ease}
+    .daily-activity-modal{width:min(50vw,760px);min-width:440px}
+    .daily-activity-modal .daily-reader-card{max-width:none;margin:0;border:0;box-shadow:none;padding:0}
+    .daily-activity-modal .daily-extra-examples{display:grid;gap:9px}
+    .daily-activity-modal .daily-extra-examples p{margin:0}
+    @media(max-width:650px){.daily-activity-modal{width:88vw;min-width:0}.activity-overview-heading{align-items:flex-start}}
+
 </style>
 </head>
 <body>
@@ -371,7 +386,7 @@
     <section id="dailyLearningPage" class="lesson-daily-section" aria-labelledby="dailyLearningHeading">
       <p class="eyebrow">DAILY PRACTICE</p>
       <h2 id="dailyLearningHeading">Daily Learning</h2>
-      <p class="page-intro">Short activities to build consistency, apply what you know, discover something new, and revisit topics at the right time.</p>
+      <p class="page-intro">Build consistency with personalised activities and a shared daily dictionary word for everyone.</p>
       <p id="dailyLearningStatus" role="status" aria-live="polite" class="page-intro">Sign in to save daily activity progress across devices.</p>
       <fieldset class="daily-preferences">
         <legend>My daily activities</legend>
@@ -18177,17 +18192,28 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
         });
         const activeLanguageRows = [...latestByLanguage.entries()].sort((a,b)=>b[1]-a[1]);
         document.getElementById("activeLanguageCount").textContent = activeLanguageRows.length;
+        const relativeLastActive = stamp => {
+          const elapsed = Math.max(0,Date.now()-stamp), minutes=Math.floor(elapsed/60000), hours=Math.floor(elapsed/3600000), days=Math.floor(elapsed/86400000);
+          if(minutes<1)return "Last active just now";
+          if(hours<1)return "Last active "+minutes+" minute"+(minutes===1?"":"s")+" ago";
+          if(days<1)return "Last active "+hours+" hour"+(hours===1?"":"s")+" ago";
+          if(days<30)return "Last active "+days+" day"+(days===1?"":"s")+" ago";
+          const weeks=Math.floor(days/7); if(weeks<8)return "Last active "+weeks+" week"+(weeks===1?"":"s")+" ago";
+          const months=Math.floor(days/30); return "Last active "+months+" month"+(months===1?"":"s")+" ago";
+        };
         document.getElementById("activeLanguagesList").innerHTML = activeLanguageRows.length ? activeLanguageRows.map(([code,stamp]) => {
-          const label = code === "zh" ? "简体中文" : code === "en" ? "English" : escapeHTML(code);
-          const date = new Intl.DateTimeFormat(undefined,{dateStyle:"medium",timeStyle:"short",timeZone:displayTimezone}).format(new Date(stamp));
-          return '<div class="active-language-row"><strong>' + label + '</strong><span>Last active · ' + escapeHTML(date) + ' (' + escapeHTML(displayTimezone) + ')</span></div>';
+          const label=code==="zh"?"简体中文":code==="en"?"English":escapeHTML(code);
+          return '<div class="active-language-row"><strong>'+label+'</strong><span>'+escapeHTML(relativeLastActive(stamp))+'</span></div>';
         }).join("") : "No completed learning activity recorded yet.";
-        const counts = Object.fromEntries(types.map(type=>[type,completedActivity.filter(row=>row.activity_type===type).length]));
-        const progressSummary = types.map(type=>{
-          const label=type.replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase());
-          return dailyPracticeUnavailable && type.startsWith("daily_") ? label + ": Unavailable until the server update" : label + ": " + counts[type] + " session(s)";
-        }).join(" · ");
-        document.getElementById("progressDetails").textContent = completedActivity.length ? progressSummary : "No completed learning activity recorded yet. " + (dailyPracticeUnavailable ? "Daily activity history will appear after the server update." : "Your completed lessons and daily activities will appear here.");
+        const counts=Object.fromEntries(types.map(type=>[type,completedActivity.filter(row=>row.activity_type===type).length]));
+        const activityLabels={lesson:"Permanent lessons",quiz:"Quiz",flashcard:"Flashcards",daily_topic:"Daily Topic",daily_application:"Daily Application",daily_discovery:"Daily Discovery",daily_revision:"Daily Revision"};
+        const maxCount=Math.max(1,...Object.values(counts));
+        const progressHost=document.getElementById("progressDetails");
+        progressHost.classList.remove("muted-note"); progressHost.classList.add("activity-overview");
+        progressHost.innerHTML=completedActivity.length?types.map(type=>{
+          const count=counts[type]||0, unavailable=dailyPracticeUnavailable&&type.startsWith("daily_"), width=Math.round(count/maxCount*100);
+          return '<div class="activity-overview-row"><div class="activity-overview-heading"><strong>'+activityLabels[type]+'</strong><span>'+(unavailable?"Unavailable":count+(count===1?" completion":" completions"))+'</span></div><div class="activity-overview-track" role="img" aria-label="'+activityLabels[type]+': '+count+' completions"><span style="width:'+(unavailable?0:width)+'%"></span></div></div>';
+        }).join(""):'<p class="muted-note">No completed learning activity recorded yet. '+(dailyPracticeUnavailable?"Daily activity history will appear after the server update.":"Your completed lessons and daily activities will appear here.")+'</p>';
         renderDashboardAllowanceBars(plan,limits,allowanceUsageRows,tz,personalTestAccess);
 
         // Practice insights use aggregate counts only. No individual answers or
