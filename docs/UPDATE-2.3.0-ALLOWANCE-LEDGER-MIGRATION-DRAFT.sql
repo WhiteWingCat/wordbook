@@ -398,15 +398,6 @@ begin
       using errcode = '22023';
   end if;
 
-  -- Validate the exact approved content before creating a new session.
-  -- Daily Discovery validation also enforces the global UTC slot and plan visibility.
-  if not private.is_approved_learning_content(
-    p_activity_type,p_content_id,p_topic_id,p_difficulty,v_language,p_source
-  ) then
-    raise exception 'Content is not in the approved learning catalogue or daily schedule'
-      using errcode = '22023';
-  end if;
-
   -- Replaying the same completed content in the same learning language is free,
   -- including when it is surfaced again on a later day.
   select * into v_session
@@ -437,6 +428,16 @@ begin
 
   if found then
     return v_session;
+  end if;
+
+  -- Validate new content only after exact completed/open sessions have been
+  -- considered. This keeps previously approved content reviewable across UTC
+  -- Discovery rollover, plan changes, and activity preference changes.
+  if not private.is_approved_learning_content(
+    p_activity_type,p_content_id,p_topic_id,p_difficulty,v_language,p_source
+  ) then
+    raise exception 'Content is not in the approved learning catalogue or daily schedule'
+      using errcode = '22023';
   end if;
 
   if not v_preference_enabled then
