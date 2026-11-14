@@ -88,6 +88,10 @@ test("mock identities represent separate Free and Premium plans",async()=>{
   assert.equal(entitlement.data.plan_code,"premium");
   limit=await client.from("learning_plan_limits").select("daily_limit").eq("plan_code","premium").eq("activity_type","daily_discovery").single();
   assert.equal(limit.data.daily_limit,3);
+  const premiumLessonLimit=await client.from("learning_plan_limits").select("daily_limit").eq("plan_code","premium").eq("activity_type","lesson").single();
+  assert.equal(premiumLessonLimit.data.daily_limit,15);
+  const freeLessonLimit=await client.from("learning_plan_limits").select("daily_limit").eq("plan_code","free").eq("activity_type","lesson").single();
+  assert.equal(freeLessonLimit.data.daily_limit,5);
 
   for (let i=1;i<=3;i++) {
     const started=await client.rpc("start_daily_activity_session",{

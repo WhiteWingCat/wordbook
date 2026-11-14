@@ -453,6 +453,8 @@ if (!dailyScript.includes("const disabled = !!disabledReason || (exhausted && !a
     || !dailyScript.includes("role=\"tablist\"")
     || !dailyScript.includes("daily-activity-cards")
     || !dailyScript.includes('columns===3?" premium":" free"')
+    || !dailyScript.includes('const allowanceTone=remaining<=0?"exhausted"')
+    || !dailyScript.includes('dailyUi("New activity","新活动")')
     || !dailyScript.includes("Your allowance resets at midnight")
     || dailyScript.includes("Today’s activity is complete")
     || dailyScript.includes("const practiceExamples =")) {
