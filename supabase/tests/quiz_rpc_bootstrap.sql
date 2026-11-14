@@ -241,14 +241,14 @@ returns integer
 language plpgsql
 security definer
 set search_path=''
-as $
+as $$
 declare v_count integer;
 begin
   select count(*)::integer into v_count
   from private.quiz_sessions s where s.user_id=auth.uid();
   return v_count;
 end;
-$;
+$$;
 
 create or replace function public.test_my_quiz_completed_event_count()
 returns integer
