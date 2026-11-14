@@ -5,19 +5,39 @@ begin;
 insert into auth.users(id) values
  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'),
- ('cccccccc-cccc-4ccc-8ccc-cccccccccccc');
+ ('cccccccc-cccc-4ccc-8ccc-cccccccccccc')
+on conflict (id) do nothing;
 
 insert into public.user_preferences(user_id,learning_language,translation_language,timezone)
 values
  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','en','zh','Asia/Kuala_Lumpur'),
  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','en','zh','Asia/Kuala_Lumpur'),
- ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','en','zh','Asia/Kuala_Lumpur');
+ ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','en','zh','Asia/Kuala_Lumpur')
+on conflict (user_id) do update set
+  learning_language=excluded.learning_language,
+  translation_language=excluded.translation_language,
+  timezone=excluded.timezone;
 
 insert into public.user_entitlements(user_id,plan_code,status)
 values
  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','free','active'),
  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','premium','active'),
- ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','free','active');
+ ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','free','active')
+on conflict (user_id) do update set
+  plan_code=excluded.plan_code,status='active',valid_from=null,valid_until=null;
+
+-- Isolated local quota fixtures use the confirmed target limits, without
+-- modifying the connected production project.
+update public.learning_plan_limits set daily_limit=1,is_enabled=true
+where plan_code='free' and activity_type='quiz';
+update public.learning_plan_limits set daily_limit=3,is_enabled=true
+where plan_code='premium' and activity_type='quiz';
+
+insert into private.learning_content_catalog(activity_type,content_id,language_code,is_active)
+select 'permanent_lesson','lesson-'||n,'en',true
+from generate_series(1,5) n
+on conflict (activity_type,content_id,language_code)
+do update set is_active=true;
 
 -- Synthetic bank: 3-session target capacity for all three difficulties,
 -- with five distinct topics and five approved lesson mappings.
@@ -52,7 +72,9 @@ values (
  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
  now(),
  now()+interval '1 hour'
-);
+)
+on conflict (id) do update set
+  user_id=excluded.user_id,created_at=excluded.created_at,not_after=excluded.not_after;
 
 create temporary table quiz_test_refs(user_a_session_id uuid);
 grant select,insert on quiz_test_refs to authenticated;
