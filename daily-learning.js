@@ -810,7 +810,7 @@
     let cards = [];
     if (isEnabled && type === "daily_discovery") {
       const scheduled = Array.isArray(snapshot.content.daily_discovery) ? snapshot.content.daily_discovery : chooseContent("daily_discovery",0);
-      const visible = scheduled.slice(0,Math.min(3,Math.max(1,limit || 1)));
+      const visible = remaining > 0 ? scheduled.slice(0,Math.min(3,Math.max(1,limit || 1))) : [];
       const seen = new Set();
       visible.forEach((content,index) => { seen.add(content.id); cards.push(renderCard(content,index,false)); });
       completedRows.forEach(row => { if (seen.has(row.content_id)) return; seen.add(row.content_id); const item=resolveSessionContent(type,row,null); if(item) cards.push(renderCard(item,null,true)); });
