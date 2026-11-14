@@ -91,33 +91,18 @@ values
   ('daily_application','application-idioms-02','idioms-fixed-expressions','intermediate','en',true),
   ('daily_application','application-academic-02','academic-professional-english','advanced','en',true),
   ('daily_application','application-precise-02','precise-vocabulary','advanced','en',true),
-  ('daily_discovery','discovery-look-forward-01',null,null,'en',true),
-  ('daily_discovery','discovery-less-fewer-01',null,null,'en',true),
-  ('daily_discovery','discovery-say-tell-01',null,null,'en',true),
-  ('daily_discovery','discovery-information-01',null,null,'en',true),
-  ('daily_discovery','discovery-salary-01',null,null,'en',true),
-  ('daily_discovery','discovery-verb-patterns-01',null,null,'en',true),
-  ('daily_discovery','discovery-present-simple-02',null,null,'en',true),
-  ('daily_discovery','discovery-present-continuous-02',null,null,'en',true),
-  ('daily_discovery','discovery-time-prepositions-02',null,null,'en',true),
-  ('daily_discovery','discovery-pronouns-02',null,null,'en',true),
-  ('daily_discovery','discovery-the-02',null,null,'en',true),
-  ('daily_discovery','discovery-many-much-02',null,null,'en',true),
-  ('daily_discovery','discovery-everyday-get-02',null,null,'en',true),
-  ('daily_discovery','discovery-frequency-02',null,null,'en',true),
-  ('daily_discovery','discovery-phrasal-pronoun-02',null,null,'en',true),
-  ('daily_discovery','discovery-word-suffix-02',null,null,'en',true),
-  ('daily_discovery','discovery-conditionals-02',null,null,'en',true),
-  ('daily_discovery','discovery-second-conditional-02',null,null,'en',true),
-  ('daily_discovery','discovery-modal-deduction-02',null,null,'en',true),
-  ('daily_discovery','discovery-inversion-02',null,null,'en',true),
-  ('daily_discovery','discovery-idiom-context-02',null,null,'en',true),
-  ('daily_discovery','discovery-academic-caution-02',null,null,'en',true),
-  ('daily_discovery','discovery-reporting-verbs-02',null,null,'en',true),
-  ('daily_discovery','discovery-precise-vocabulary-02',null,null,'en',true),
-  ('daily_discovery','discovery-word-choice-02',null,null,'en',true),
-  ('daily_discovery','discovery-un-countable-02',null,null,'en',true),
-  ('daily_discovery','discovery-idiom-register-02',null,null,'en',true),
+  ('daily_discovery','discovery-word-meticulous-01',null,null,'en',true),
+  ('daily_discovery','discovery-word-reluctant-01',null,null,'en',true),
+  ('daily_discovery','discovery-word-plausible-01',null,null,'en',true),
+  ('daily_discovery','discovery-word-fleeting-01',null,null,'en',true),
+  ('daily_discovery','discovery-word-cumbersome-01',null,null,'en',true),
+  ('daily_discovery','discovery-word-quaint-01',null,null,'en',true),
+  ('daily_discovery','discovery-word-weary-01',null,null,'en',true),
+  ('daily_discovery','discovery-word-subtle-01',null,null,'en',true),
+  ('daily_discovery','discovery-word-obsolete-01',null,null,'en',true),
+  ('daily_discovery','discovery-word-resilient-01',null,null,'en',true),
+  ('daily_discovery','discovery-word-bewildered-01',null,null,'en',true),
+  ('daily_discovery','discovery-word-scarce-01',null,null,'en',true),
   ('permanent_lesson','b-sentence','sentence-basics','beginner','en',true),
   ('permanent_lesson','b-present','verb-tenses','beginner','en',true),
   ('permanent_lesson','b-articles','nouns-and-articles','beginner','en',true),
@@ -155,11 +140,35 @@ set search_path = ''
 as $function$
 declare
   v_revision_parts text[];
+  v_discovery_parts text[];
 begin
   if auth.uid() is null
      or p_content_id is null
      or p_language_code is null then
     return false;
+  end if;
+
+  if p_activity_type = 'daily_discovery' then
+    if p_source <> 'daily' or p_topic_id is not null or p_difficulty is not null then
+      return false;
+    end if;
+    v_discovery_parts := pg_catalog.regexp_match(
+      p_content_id,
+      '^([a-z0-9-]+):([0-9]{4}-[0-9]{2}-[0-9]{2})$'
+    );
+    if v_discovery_parts is null then
+      return false;
+    end if;
+    return exists (
+      select 1
+      from private.learning_content_catalog c
+      where c.activity_type = 'daily_discovery'
+        and c.content_id = v_discovery_parts[1]
+        and c.topic_id is null
+        and c.difficulty is null
+        and c.language_code = p_language_code
+        and c.is_active
+    );
   end if;
 
   if p_activity_type = 'daily_revision' then
