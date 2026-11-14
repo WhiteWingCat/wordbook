@@ -54,8 +54,8 @@ test("exhausted lesson allowance blocks new lessons but preserves completed less
   });
   await page.locator('[data-page="lessons"]').click();
   await expect(page.locator("#lessonAllowanceCount")).toHaveText("0 / 5");
-  const completed = page.locator("#lessonCards .lesson-card").filter({hasText:"Build a clear basic sentence"});
-  const notStarted = page.locator("#lessonCards .lesson-card").filter({hasText:"Use the present simple"});
+  const completed = page.locator("#lessonCards .lesson-card").nth(0);
+  const notStarted = page.locator("#lessonCards .lesson-card").nth(1);
   await expect(completed).toBeEnabled();
   await expect(notStarted).toBeDisabled();
   await completed.click();
@@ -112,15 +112,15 @@ test("signed-in Daily Topic completes through the server RPC without answer-leve
   expect(JSON.stringify(calls)).not.toMatch(/selectedAnswer|answerIndex|questionAnswer/i);
   const topicCards = page.locator('#dailyActivityGrid [data-activity-card="daily_topic"]');
   await expect(topicCards).toHaveCount(2);
-  await expect(topicCards.first()).toContainText("Review completed content");
+  await expect(topicCards.first()).toContainText("重温已完成内容");
   await expect(topicCards.first().locator("[data-start-daily]")).toBeEnabled();
-  await expect(topicCards.last()).toContainText("Daily limit reached");
+  await expect(topicCards.last()).toContainText("今日额度已用完");
   await expect(topicCards.last().locator("[data-start-daily]")).toBeDisabled();
 
   // Reviewing the completed item reopens the saved content without charging again.
   await topicCards.first().locator("[data-start-daily]").click();
   await expect(page.locator("#dailyActivityReader")).toBeVisible();
-  await expect(page.locator("#dailyActivityReader")).toContainText("Completed · replay is free");
+  await expect(page.locator("#dailyActivityReader")).toContainText("已完成 · 可免费重温");
   await expect(page.locator("#dailyActivityReader [data-complete-daily]")).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => window.__swiftDailyMock.allowanceUsage.find(row => row.activity_type === "daily_topic").used_count)).toBe(1);
 });
