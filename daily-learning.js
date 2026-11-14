@@ -281,19 +281,23 @@
     return candidates;
   }
 
-  function chooseContent(activityType, slot) {
-    const day = snapshot.day;
-    const baseIndex = dayOrdinal(day);
+  function accountContentOffset() {
     const accountKey = String(currentUser?.id || "anonymous");
     const accountHash = [...accountKey].reduce((hash,char)=>((hash*31)+char.charCodeAt(0))>>>0,7);
     const mockGeneration = Number(window.__swiftDictionaryMock?.selectionGeneration?.() || 0);
-    const accountOffset = (accountHash + mockGeneration) >>> 0;
+    return (accountHash + mockGeneration) >>> 0;
+  }
+
+  function chooseContent(activityType, slot) {
+    const day = snapshot.day;
+    const baseIndex = dayOrdinal(day);
     if (activityType === "daily_discovery") {
       const globalDay = new Date().toISOString().slice(0,10);
       const index = ((dayOrdinal(globalDay)%dailyDiscoveryVocabulary.length)+dailyDiscoveryVocabulary.length)%dailyDiscoveryVocabulary.length;
       const word = dailyDiscoveryVocabulary[index];
       return {...word,id:word.id+":"+globalDay,title:word.word,example:word.examples[0],examples:word.examples.slice(1),zh:word.definitionZh};
     }
+    const accountOffset = accountContentOffset();
     const pools = {daily_topic:dailyTopics,daily_application:dailyApplications};
     if (pools[activityType]) {
       const pool = pools[activityType];
