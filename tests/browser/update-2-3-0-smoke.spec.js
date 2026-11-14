@@ -468,7 +468,6 @@ test("Daily Revision presents real examples separately from its practice questio
   await page.goto("/");
   await page.locator('[data-page="lessons"]').click();
   await page.locator('[data-daily-tab="daily_revision"]').click();
-  await page.locator('[data-daily-tab="daily_revision"]').click();
   await page.locator('#dailyActivityGrid [data-start-daily="daily_revision"]').click();
   await expect(page.locator("#dailyActivityReader")).toBeVisible();
   const examples = page.locator("#dailyActivityReader .daily-examples-box li");
@@ -501,6 +500,7 @@ test("completed Discovery content remains reviewable across UTC rollover within 
     state.allowanceUsage.find(row => row.activity_type === "daily_discovery").used_count = 1;
   });
   await page.locator('[data-page="lessons"]').click();
+  await page.locator('[data-daily-tab="daily_discovery"]').click();
   await expect(page.locator('#dailyActivityGrid [data-discovery-card]')).toHaveCount(1);
   const discoveryCards = page.locator('#dailyActivityGrid [data-activity-card="daily_discovery"]');
   await expect(discoveryCards).toHaveCount(2);
@@ -553,9 +553,9 @@ test("Daily Discovery shows one Free entry and three identical Premium entries g
     await page.locator('[data-daily-tab="daily_discovery"]').click();
     await expect(page.locator('#dailyActivityGrid [data-discovery-card]')).toHaveCount(page === freePage ? 1 : 3);
   }
-  const freeWords = await freePage.locator('#dailyActivityGrid [data-discovery-card] h2').allTextContents();
-  const premiumWordsA = await premiumPageA.locator('#dailyActivityGrid [data-discovery-card] h2').allTextContents();
-  const premiumWordsB = await premiumPageB.locator('#dailyActivityGrid [data-discovery-card] h2').allTextContents();
+  const freeWords = await freePage.locator('#dailyActivityGrid [data-discovery-card] h3').allTextContents();
+  const premiumWordsA = await premiumPageA.locator('#dailyActivityGrid [data-discovery-card] h3').allTextContents();
+  const premiumWordsB = await premiumPageB.locator('#dailyActivityGrid [data-discovery-card] h3').allTextContents();
   expect(freeWords).toHaveLength(1);
   expect(premiumWordsA).toHaveLength(3);
   expect(new Set(premiumWordsA).size).toBe(3);
@@ -570,7 +570,6 @@ test("Daily Discovery uses dictionary layout and the approved global catalogue m
   await installDailyLearningMock(page, "daily-discovery-layout-user");
   await page.goto("/");
   await page.locator('[data-page="lessons"]').click();
-  await page.locator('[data-daily-tab="daily_discovery"]').click();
   await page.locator('[data-daily-tab="daily_discovery"]').click();
   await page.locator('#dailyActivityGrid [data-start-daily="daily_discovery"]').click();
   const reader = page.locator("#dailyActivityReader");
@@ -626,6 +625,7 @@ test("Daily Revision is adaptive, abandonment is free, and Daily Discovery is un
     ];
   });
   await page.locator('[data-page="lessons"]').click();
+  await page.locator('[data-daily-tab="daily_revision"]').click();
 
   await page.locator('#dailyActivityGrid [data-start-daily="daily_revision"]').click();
   await expect(page.locator("#dailyActivityReader #dailyQuestions .daily-question").first()).toBeVisible();
