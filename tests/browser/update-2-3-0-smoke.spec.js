@@ -63,6 +63,24 @@ test("exhausted lesson allowance blocks new lessons but preserves completed less
   await expect(page.locator("#lessonStatus")).toContainText("Completed lesson reopened — free revisit.");
 });
 
+test("Premium lesson allowance blocks new lessons after fifteen completions but keeps reviews free", async ({ page }) => {
+  await installDailyLearningMock(page,"premium-lesson-limit-user","premium");
+  await page.goto("/");
+  await expect.poll(() => page.evaluate(() => window.__swiftDailyMock?.user?.id)).toBe("premium-lesson-limit-user");
+  await page.evaluate(() => {
+    const state = window.__swiftDailyMock;
+    state.allowanceUsage.find(row => row.activity_type === "lesson").used_count = 15;
+    state.tables.lesson_progress = [{
+      user_id:"premium-lesson-limit-user",difficulty:"beginner",lesson_id:"b-sentence",status:"completed",
+      started_at:new Date().toISOString(),completed_at:new Date().toISOString(),updated_at:new Date().toISOString()
+    }];
+  });
+  await page.locator('[data-page="lessons"]').click();
+  await expect(page.locator("#lessonAllowanceCount")).toHaveText("0 / 15");
+  await expect(page.locator("#lessonCards .lesson-card").nth(0)).toBeEnabled();
+  await expect(page.locator("#lessonCards .lesson-card").nth(1)).toBeDisabled();
+});
+
 test("Daily Learning is integrated into Lessons and does not expose account progress while signed out", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('[data-page="daily-learning"]')).toHaveCount(0);
@@ -280,7 +298,7 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
             daily_revision_enabled: true
           }],
           user_entitlements: [{ user_id: ${JSON.stringify(userId)}, plan_code: ${JSON.stringify(plan)}, status: "active", valid_from: null, valid_until: null }],
-          learning_plan_limits: [{ plan_code: ${JSON.stringify(plan)}, activity_type:"lesson", daily_limit:${JSON.stringify(plan)} === "premium" ? 15 : 5, is_enabled:true }, ...["daily_topic","daily_application","daily_discovery","daily_revision"].map(activity_type => ({ plan_code: ${JSON.stringify(plan)}, activity_type, daily_limit: activity_type === "daily_discovery" && ${JSON.stringify(plan)} === "premium" ? 3 : 1, is_enabled: true }))],
+          learning_plan_limits: [{ plan_code: ${JSON.stringify(plan)}, activity_type:"lesson", daily_limit:${JSON.stringify(plan)} === "premium" ? 15 : 5, is_enabled:true }, ...["daily_topic","daily_application","daily_discovery","daily_revision"].map(activity_type => ({ plan_code: ${JSON.stringify(plan)}, activity_type, daily_limit: ${JSON.stringify(plan)} === "premium" ? 3 : 1, is_enabled: true }))],
           lesson_progress: [],
           learning_activity_log: [],
           lesson_practice_results: [],
