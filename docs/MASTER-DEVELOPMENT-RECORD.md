@@ -3,9 +3,9 @@
 > Durable project handover and source-of-truth summary for future development conversations.
 >
 > **Repository:** https://github.com/WhiteWingCat/wordbook  
-> **Last consolidated:** 2026-11-14  
+> **Last consolidated:** 2026-11-14 (Quiz planning decisions and multilingual learning/translation rule added)  
 > **Current baseline:** Update 2.3.3 merged to main and GitHub Pages deployment succeeded on 2026-11-14 (merge commit `90dc73a9b65fc3af713fefab4955057026089b96`); six 2.3.0 Supabase migrations are applied to production  
-> **Current work:** Owner live-testing Update 2.3.3 Daily Learning and Dashboard Favorite Words details; production Daily Learning schema is installed. Next roadmap feature remains Update 2.4.0 Quiz  
+> **Current work:** Update 2.3.3 is live and owner-confirmed working. Planning Update 2.4.0 Quiz; no Quiz implementation has started.  
 > **Record status:** Updated after the six approved production migrations were applied and verified, PR #7 merged, and main GitHub Pages deployment succeeded. No production user-content bulk operation was performed.
 
 This record combines confirmed owner decisions, repository evidence and the latest development handover. It is not proof that the live application or production database matches a draft branch.
@@ -1259,3 +1259,72 @@ Malaysia PDPA and general international privacy obligations remain relevant to a
 3. Record any production-only bugs as a small 2.3.3 follow-up patch if needed.
 4. Continue to Update 2.4.0 Quiz after the 2.3.3 rollout is accepted.
 
+
+## 28. Update 2.4.0 — Quiz planning and multilingual learning/translation rules (2026-11-14)
+
+### Planning status
+
+Update 2.4.0 Quiz is in product-planning only. No Quiz frontend, question bank, schema migration, allowance configuration, production data change or deployment has been implemented or authorised by this planning discussion. Preserve the existing Coming Soon state until implementation is separately approved and validated.
+
+### Owner-confirmed Quiz product decisions
+
+- Quiz is an assessment experience, distinct from Lessons: Lessons teach knowledge; Quiz tests knowledge learned through the lesson curriculum.
+- Quiz tests vocabulary knowledge and definitions (for example, asking for the definition of “Ability”), and may use independently authored questions based on lesson knowledge.
+- Quiz questions must not be direct one-to-one copies of Lesson practice questions. Quiz must have its own question wording, answer choices and distractors while assessing related knowledge.
+- No user-facing Quiz topic/category selection is required. Questions are drawn from mixed topics within the selected difficulty. Internal topic and lesson metadata remains necessary for progress analysis and Dashboard recommendations.
+- One difficulty is selected per quiz session:
+  - Beginner: 10 questions.
+  - Intermediate: 15 questions.
+  - Advanced: 20 questions.
+- Question difficulty and eligibility must be aligned with the relevant lesson curriculum, avoiding assessment of knowledge outside the learner's applicable course scope.
+- Update 2.4.0 uses multiple-choice questions only. Fill-in-the-blank is deliberately deferred to a later update until flexible answer evaluation can be designed reliably.
+- Answer options are randomly arranged. Randomisation should be fixed for the lifetime of a quiz session so that resuming or navigating does not unexpectedly reorder options.
+- No correct-answer reveal, correctness feedback or result disclosure before the learner submits the completed quiz. Wrong answers are included in the results; users cannot change answers after submission.
+- Completed results must include all questions, the learner's selected answers, correct answers and explanations.
+- Quiz feedback and explanations follow the user's selected translation language.
+- Unfinished quiz progress is saved and can be resumed. Only one quiz may be in progress for an account at a time; a learner cannot start another while one remains active.
+- Free plan: one completed quiz per local day. Proposed Premium plan: three different completed quizzes per local day. Only successful submission/completion consumes an allowance; abandoning or resuming does not. Reviewing a completed quiz is free and does not count as a retake.
+- Completed quizzes can be reviewed, but cannot be retaken. Review is read-only.
+- Quiz results should inform Dashboard learning recommendations and weak-topic prioritisation for relevant Lessons/Daily Revision. Avoid treating one quiz result as definitive mastery.
+- Visual direction: clean, organised layout; question text in bold white; answer cards arranged adaptively in a row or two columns when answer text is sufficiently short, otherwise use a readable wider layout.
+- The earlier proposal for a time limit was not confirmed. Do not introduce a timer without owner approval; default planning direction should remain consistent with the no-time-pressure lesson experience.
+
+### Multilingual course and translation architecture — standing future rule
+
+This is a cross-feature, long-term product rule for every language added to SwiftDictionary, not a Quiz-only requirement:
+
+- Keep **learning course language** and **selected translation language** as distinct settings and inputs.
+- The learning course determines the knowledge, vocabulary, curriculum and source language being taught or assessed.
+- The selected translation language determines the language used for translations, explanations, feedback and other learner-support content where appropriate.
+- Content must be authored or adapted for the actual learning-course/translation-language combination. Do not assume that translating or swapping labels on one language pair is sufficient.
+- For translation-assessment questions, ask in the learning course language and provide answer choices in the selected translation language where that is the learning objective. Example: English course + Chinese translation may ask “What is the Chinese translation of ‘Ability’?” with Chinese answer choices.
+- For ordinary knowledge/definition questions, retain the learning course language for the question and answer choices unless the question is specifically testing translation; provide explanations and feedback in the selected translation language.
+- Explanations and feedback must follow the selected translation language, as explicitly confirmed by the owner.
+- Apply this design consistently across Lessons, Quiz and Flashcards when Chinese becomes a full learning course, and to every additional language introduced in future. Support combinations in both directions where the product offers them (for example, Chinese learning with English translation as well as English learning with Chinese translation).
+- Avoid ambiguous translation keys. Where a source word has multiple senses, tie the question and accepted answer(s) to the intended sense/context.
+- Persist the course and translation language combination with an active learning session so a preference change does not silently mutate an in-progress session. A new session should use the newly selected preferences.
+- Question/content catalogues should identify supported course and translation language pairs and retain stable links to the relevant lesson/topic concepts. Do not expose internal topic metadata as a required user-facing category system.
+
+This rule is a future architecture requirement. It does **not** mean a full Chinese learning curriculum is part of Update 2.4.0. The current Quiz scope must be explicitly limited to the language/course combinations whose content is actually available and reviewed.
+
+### Remaining design and implementation questions
+
+Before implementation, settle:
+1. Whether a quiz may assess all approved lessons at the selected difficulty or only lessons the individual learner has completed. The owner requires avoiding unseen curriculum content; do not assume completion-gating without clarification.
+2. Exact difficulty-to-curriculum mapping, including whether Intermediate includes Beginner knowledge and Advanced includes all lower-level knowledge.
+3. Whether learners may navigate backward and change selections before final submission; after submission the result is immutable.
+4. How to handle an abandoned active session across a daily allowance reset, content retirement or a change in course/translation preferences.
+5. Whether results include a pass threshold or only score, percentage and per-question review. No pass mark has been approved.
+6. Exact daily quiz uniqueness/allowance enforcement, including prevention of duplicate or cloned sessions while allowing resume and read-only review.
+7. Which result fields are required to reproduce completed reviews if catalogue content changes. Prefer storing stable question/version references and the minimum answer/result snapshot needed for review.
+8. How question selection guarantees a balanced enough curriculum sample despite mixed-topic random selection and limited eligible content.
+
+### Data, security and legal planning notes
+
+- Reuse the established completion-based allowance principles, but inspect the live `learning_plan_limits`, activity categories, RPCs and private allowance ledger before designing or applying Quiz-specific configuration. Do not assume that the existing presence of a `quiz` activity type means daily Quiz limits are already configured.
+- The existing personal testing exemption is lesson-only. Do not extend it to Quiz without explicit owner approval.
+- Enforce one-active-session-per-account and ownership checks server-side; do not rely only on browser state.
+- Do not reveal correct answers or answer keys to the browser before final submission. Evaluate submissions through a trusted server-side path.
+- Preserve sufficient versioned result information for read-only review while minimising stored personal data. Align Quiz history with the existing learning-history deletion model and ensure deletion does not accidentally reset allowance ledgers.
+- Keep account isolation, shared-device account switching, timezone-based midnight reset and free dictionary search intact.
+- Perform the mandatory Malaysia PDPA and international privacy review before implementation. Review content licensing/originality, retention and deletion, security, age-related obligations and cross-border processing as relevant. This is planning guidance, not legal advice or a compliance certification.
