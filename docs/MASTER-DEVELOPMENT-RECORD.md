@@ -4,9 +4,9 @@
 >
 > **Repository:** https://github.com/WhiteWingCat/wordbook  
 > **Last consolidated:** 2026-11-14  
-> **Current baseline:** Update 2.3.0 merged to main on 2026-11-13  
-> **Current work:** Update 2.3.1 merged to main on 2026-11-14; next planned milestone is Update 2.4.0 Quiz  
-> **Record status:** Updated after Update 2.3.1 owner approval and PR #5 merge; verify main-branch deployment and production Supabase migration state separately before any release operation.
+> **Current baseline:** Update 2.3.2 merged to main on 2026-11-14; production Daily Learning database schema remains pending  
+> **Current work:** Verify main-branch deployment and prepare the missing Update 2.3.0 Supabase production migrations; then proceed to Update 2.4.0 Quiz  
+> **Record status:** Updated after Update 2.3.2 PR #6 merge and read-only production database inspection; no production migration or bulk data operation was performed.
 
 This record combines confirmed owner decisions, repository evidence and the latest development handover. It is not proof that the live application or production database matches a draft branch.
 
@@ -1103,3 +1103,78 @@ Update 2.5.0 — Flashcards remains planned after Quiz. Do not treat either road
 2. Confirm production Supabase migration state read-only before proposing any production migration. No production migration or production data operation was performed in this session.
 3. Do not initiate a production migration, destructive operation or additional deployment without explicit owner approval.
 4. Continue using isolated mock identities for future browser tests; never use real user accounts or production data in automated tests.
+
+
+## 26. Update 2.3.2 — Favorite Words course isolation hotfix and Daily Learning database diagnosis (2026-11-14)
+
+### Owner request
+
+The owner reported that most Update 2.3.1 features were available on the live website, but Daily Learning was waiting for a server database update. The owner also observed English and Simplified Chinese saved words appearing in the wrong Favorite Words category on the Dashboard. The owner requested a quick Update 2.3.2 hotfix and explicitly authorised merging it to `main` after validation.
+
+### Production Supabase diagnosis — read-only
+
+The connected SwiftDictionary Supabase project was healthy and running PostgreSQL 17.11.0.003. Its migration history ended at `20261110041007` (`swiftdictionary_update_2_2_0_reconciliation_baseline`). The 2.3.0 server migrations had not been applied.
+
+Read-only schema checks confirmed the following were absent:
+- `public.daily_activity_sessions`
+- `private.learning_content_catalog`
+- `private.learning_allowance_usage`
+- RPCs `public.start_daily_activity_session`, `public.complete_daily_activity_session` and `public.get_my_learning_allowance_usage()`
+
+The 2.3.0 server-side fields were also missing: daily activity preference flags and allowance-timezone fields on `user_preferences`, completion event fields on `learning_activity_log`, and the Daily Learning category rows in `learning_plan_limits`. The live limits table still had only `lesson`, `quiz` and `flashcard`.
+
+This is the direct reason the live website reports that Daily Learning is waiting for the matching server database update. It is a production schema/migration gap, not a browser cache problem.
+
+### Pending production migration sequence
+
+The repository currently contains these 2.3.0 SQL drafts under `docs/`; they are not yet timestamped deployment files under `supabase/migrations/`:
+1. Saved-words least-privilege hardening (independent, review before applying).
+2. Approved learning content catalogue.
+3. Completion-based allowance foundation.
+4. Daily activity session foundation.
+5. Separate current-window allowance ledger.
+6. Learning-history deletion implementation.
+
+The dependency order is important: the content catalogue precedes the allowance foundation; Daily Activity follows the allowance foundation; the ledger follows both allowance and Daily Activity; learning-history deletion follows allowance, Daily Activity and ledger. The drafts have passed the repository's disposable PostgreSQL 17 and local Supabase CLI compatibility workflows, but this is not a production migration.
+
+No production migration, production SQL write, or production saved-word bulk update was executed in this session. Before changing production, create proper timestamped migration files, review the exact SQL and historical data backfill, verify backups/rollback strategy and apply in order only after explicit owner approval. Afterward, verify migration history, schema objects, RLS/grants, allowance RPC results and Daily Learning start/complete/resume/review behavior with synthetic test identities.
+
+### Favorite Words root cause and fix
+
+The Dashboard grouped saved words by the database `course` field, but the dictionary's in-memory saved-state set was keyed only by the word text. This allowed identical text values to share saved state across English and Chinese. The live `saved_words` table already had a `course` column, a unique key on `(user_id, course, word)`, and owner-scoped RLS policies. Read-only inspection also found legacy rows whose stored course did not agree with the script/catalogue; no word contents or user IDs were copied into the development record.
+
+The Update 2.3.2 hotfix:
+- Keys in-memory favorites by both course and word.
+- Persists signed-out local favorites as explicit course/word pairs while accepting legacy string-only local entries.
+- On a signed-in user's Dashboard load, identifies clearly classifiable legacy mismatches using Han-script code points and exact dictionary-catalogue membership.
+- Repairs only the authenticated user's own rows: insert the correctly classified `(user_id, course, word)` row first, then delete the old course row. If insertion fails, preserve the original. Unknown entries are not guessed or moved.
+- Uses the existing authenticated INSERT/DELETE permissions and RLS; it does not require a new schema migration or a privileged cross-user operation.
+- Adds browser regression coverage for legacy mixed-course rows and static checks that course and word are both part of saved-state identity.
+
+### Branch, CI and merge
+
+- Branch: `hotfix/update-2-3-2-favorite-words-course-isolation`
+- PR #6: https://github.com/WhiteWingCat/wordbook/pull/6
+- Final hotfix head: `b50f0cc7b6ec74b065342c1e953d2f6d85d44fcd`
+- GitHub Actions run #774 passed all three jobs: 22 Chromium browser regression tests, PostgreSQL 17 migration/allowance tests, and disposable local Supabase Auth compatibility.
+- An earlier run #773 exposed two test-harness issues (a strict locator assertion after adding multiple saved rows, and changed mock INSERT timing). Both were corrected; run #774 passed.
+- PR #6 merged on 2026-11-14 at 08:10:27 UTC.
+- Merge commit and verified `main` HEAD: `60904fb77fec0c3757e8aa1947439440954ae385`.
+- Main GitHub Pages deployment workflow #43574533852 was queued immediately after merge. Verify its completion before describing the live site as updated.
+
+### Privacy and legal-risk review
+
+- No new personal-data fields, analytics, tracking, raw answer telemetry or third-party content were added.
+- Favorite-word correction processes existing saved-word data within the authenticated user's own RLS scope. It does not collect additional information or inspect other users' word contents in the browser.
+- Unknown saved entries are left unchanged rather than inferred. Insert-before-delete avoids losing a saved word if the first write fails.
+- Malaysia PDPA and general privacy obligations remain applicable. The correction is a limited data-quality operation on existing user-owned records, not a new purpose or new data collection category. Review the privacy notice if future changes introduce broader profiling or analytics. This is planning guidance, not legal-compliance certification.
+- Daily Learning's production migration remains separate and pending explicit owner approval. No production schema or data operation was performed here.
+
+### Recovery point and next actions
+
+1. Confirm GitHub Pages deployment #43574533852 completed successfully for merge commit `60904fb77fec0c3757e8aa1947439440954ae385`.
+2. The Favorite Words hotfix is merged. After the new main deployment is live, the owner can refresh the site and open Dashboard; the signed-in account's clearly identifiable legacy saved-word course mismatches will be repaired on that Dashboard load.
+3. Prepare the six Update 2.3.0 production migration files in the dependency order above, using proper Supabase-generated timestamps and preserving the tested SQL.
+4. Before applying production migrations, present the exact migration list, data backfill effects, security/RLS changes and rollback/backup plan, then obtain explicit owner approval.
+5. Verify production migration history and schema after approval; then retest Daily Learning start, resume, completion, review, timezone reset and Free/Premium allowance behavior.
+6. Update 2.4.0 Quiz remains planned after the 2.3.0 server database rollout is complete.
