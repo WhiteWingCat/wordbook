@@ -282,6 +282,15 @@ if (!html.includes('id="lessonDetailPage"') || !html.includes('showPage("lessonD
     || !html.includes("window.refreshDailyLearningTranslation")) {
   throw new Error("Permanent lesson page navigation or shared translation refresh is missing.");
 }
+if (!html.includes(".daily-activity-cards.premium { grid-template-columns:minmax(0,1fr); }")
+    || !html.includes(".daily-activity-tab { flex:0 0 auto; border:1px solid var(--border); border-bottom:0; border-radius:10px 10px 0 0; padding:12px 18px; background:var(--panel); color:#fff;")
+    || !html.includes(".daily-activity-count.healthy")
+    || !html.includes('if (typeof initialiseLessons === "function") await initialiseLessons();')
+    || !dailyScript.includes('dailyUi("New activity","新活动")')
+    || !dailyScript.includes("const allowanceTone=remaining<=0")
+    || !dailyScript.includes("daily-activity-count '+allowanceTone")) {
+  throw new Error("Update 2.3.1 category layout, title-side allowance indicator, neutral card status, or account-switch lesson refresh is missing.");
+}
 if (!html.includes(".daily-activity-backdrop{background:transparent}")
     || !html.includes(".daily-activity-modal{width:min(580px,92vw);min-width:0;max-width:760px;height:100dvh;max-height:100dvh;overflow-y:auto;overscroll-behavior:contain;padding:clamp(20px,3vw,34px);border:0;")
     || !html.includes(".definition-sense-text { margin:4px 0 0; line-height:1.65; color:var(--text); }")
