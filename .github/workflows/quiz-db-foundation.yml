@@ -34,27 +34,27 @@ jobs:
           cp "$GITHUB_WORKSPACE"/supabase/migrations/*.sql supabase/migrations/
 
       - name: Start disposable local Supabase services
-        working-directory: \${{ runner.temp }}/swiftdictionary-quiz-supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-quiz-supabase
         run: supabase start -x studio,edge-runtime,logflare,vector,imgproxy
 
       - name: Apply all repository migrations to local Supabase
-        working-directory: \${{ runner.temp }}/swiftdictionary-quiz-supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-quiz-supabase
         run: supabase db reset
 
       - name: Install test-only observers and run authenticated Quiz RPC integration tests
-        working-directory: \${{ runner.temp }}/swiftdictionary-quiz-supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-quiz-supabase
         run: |
           eval "$(supabase status --output env)"
           psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/supabase/tests/quiz_rpc_test_observers.sql"
           psql "$DB_URL" -X -v ON_ERROR_STOP=1 -f "$GITHUB_WORKSPACE/supabase/tests/quiz_authenticated_rpcs.sql"
 
       - name: Run Supabase security advisors against the local Quiz schema
-        working-directory: \${{ runner.temp }}/swiftdictionary-quiz-supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-quiz-supabase
         run: supabase db advisors --type security --fail-on error
 
       - name: Stop disposable local Supabase services
         if: always()
-        working-directory: \${{ runner.temp }}/swiftdictionary-quiz-supabase
+        working-directory: ${{ runner.temp }}/swiftdictionary-quiz-supabase
         run: supabase stop --no-backup
 
   quiz-db-foundation:
