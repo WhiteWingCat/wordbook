@@ -1,10 +1,5 @@
--- DRAFT ONLY — not an applied Supabase migration.
--- Before deployment, create the timestamped migration with the Supabase CLI
--- and move this reviewed SQL into that generated file. This draft has only
--- been tested in the free PostgreSQL compatibility harness; it is not a
--- substitute for an isolated Supabase database test.
--- SwiftDictionary Update 2.3.0 — completion-based allowance foundation
-
+-- SwiftDictionary Update 2.3.0 — completion-based allowance foundation.
+-- Applied to the live SwiftDictionary Supabase project as migration 20261114082324.
 -- 1) Preserve the meaning of historical activity rows. Before this change,
 -- every lesson_progress insert produced one lesson activity row (a start).
 -- Pair those rows with progress rows in per-user chronological order. Abort
