@@ -17,12 +17,12 @@ function readCuratedArray(name) {
 const curated = {
   topics: readCuratedArray("dailyTopics"),
   applications: readCuratedArray("dailyApplications"),
-  discoveries: readCuratedArray("dailyDiscoveries")
+  discoveries: readCuratedArray("dailyDiscoveryVocabulary")
 };
 for (const [name, items, minimum] of [
   ["Daily Topic", curated.topics, 20],
   ["Daily Application", curated.applications, 20],
-  ["Daily Discovery", curated.discoveries, 20]
+  ["Daily Discovery", curated.discoveries, 10]
 ]) {
   if (items.length < minimum) throw new Error(`${name} content pool too small: ${items.length}`);
   const ids = items.map(item => item.id);
@@ -47,8 +47,9 @@ for (const item of curated.applications) {
   }
 }
 for (const item of curated.discoveries) {
-  if (!item.category || !item.title || !item.body || !item.example || !item.zh) {
-    throw new Error(`Daily Discovery is missing required metadata or Chinese translation: ${item.id}`);
+  if (!item.id || !item.word || !item.part || !item.definition || !item.definitionZh
+      || !item.body || !item.examples?.length || !item.phonetic) {
+    throw new Error(`Daily Discovery vocabulary is missing dictionary metadata or translation: ${item.id}`);
   }
 }
 const revisionTopicIds = [
@@ -284,7 +285,7 @@ if (/Account preferences|Privacy and data/i.test(dashboardShell)
     || !/Privacy and data/i.test(preferencesShell)) {
   throw new Error("Account preferences and Privacy and Data must live in the dedicated Preferences page.");
 }
-for (const fragment of ["dailyTopics","dailyApplications","dailyDiscoveries","sourceUrl","get_my_learning_allowance_usage","lesson_practice_results"]) {
+for (const fragment of ["dailyTopics","dailyApplications","dailyDiscoveryVocabulary","legacyDailyDiscoveriesBacklog","sourceUrl","get_my_learning_allowance_usage","lesson_practice_results"]) {
   if (!dailyScript.includes(fragment)) throw new Error(`Daily Learning content check failed: missing ${fragment}`);
 }
 if (dailyScript.includes('.from("daily_activity_sessions").insert(')
