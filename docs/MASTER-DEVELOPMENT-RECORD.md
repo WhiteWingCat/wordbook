@@ -1277,7 +1277,7 @@ Update 2.4.0 Quiz is in product-planning only. No Quiz frontend, question bank, 
   - Beginner: 10 questions.
   - Intermediate: 15 questions.
   - Advanced: 20 questions.
-- Question difficulty and eligibility must be aligned with the relevant lesson curriculum, avoiding assessment of knowledge outside the learner's applicable course scope. **Eligibility mode: curriculum** — draw from all approved curriculum lessons within the selected difficulty, regardless of whether the individual learner has personally completed each lesson. Do not draw from unapproved or out-of-scope content. Exact cumulative mapping between difficulty levels remains to be specified.
+- Question difficulty and eligibility must be aligned with the relevant lesson curriculum, avoiding assessment of knowledge outside the learner's applicable course scope. **Eligibility mode: curriculum** — draw from all approved curriculum lessons within the selected difficulty, regardless of whether the individual learner has personally completed each lesson. Do not draw from unapproved or out-of-scope content. Difficulty composition is now owner-defined: Beginner = 100% Beginner; Intermediate = 50–80% Intermediate and 20–50% Beginner (including 50/50 and 80/20 mixes); Advanced = 60–80% Advanced, exactly 20% Intermediate and 0–20% Beginner. The selected proportions must total 100%. Higher-level quizzes may include lower-level material, never the reverse.
 - Update 2.4.0 uses multiple-choice questions only. Fill-in-the-blank is deliberately deferred to a later update until flexible answer evaluation can be designed reliably.
 - Answer options are randomly arranged. Randomisation should be fixed for the lifetime of a quiz session so that resuming or navigating does not unexpectedly reorder options.
 - No correct-answer reveal, correctness feedback or result disclosure before the learner submits the completed quiz. Wrong answers are included in the results. **Answer navigation: change** — learners may navigate between questions and revise their selections any time before final submission. After submission, answers are locked and the result is immutable.
@@ -1311,12 +1311,11 @@ This rule is a future architecture requirement. It does **not** mean a full Chin
 ### Remaining design and implementation questions
 
 Before implementation, settle:
-1. Exact difficulty-to-curriculum mapping, including whether Intermediate includes Beginner knowledge and Advanced includes all lower-level knowledge.
-2. How to handle an abandoned active session across a daily allowance reset, content retirement or a change in course/translation preferences.
-3. Whether results include a pass threshold or only score, percentage and per-question review. No pass mark has been approved.
-4. Exact daily quiz uniqueness/allowance enforcement, including prevention of duplicate or cloned sessions while allowing resume and read-only review.
-5. Which result fields are required to reproduce completed reviews if catalogue content changes. Prefer storing stable question/version references and the minimum answer/result snapshot needed for review.
-6. How question selection guarantees a balanced enough curriculum sample despite mixed-topic random selection and limited eligible content.
+1. How to handle an abandoned active session across a daily allowance reset, content retirement or a change in course/translation preferences.
+2. Whether results include a pass threshold or only score, percentage and per-question review. No pass mark has been approved.
+3. Exact daily quiz uniqueness/allowance enforcement, including prevention of duplicate or cloned sessions while allowing resume and read-only review.
+4. Which result fields are required to reproduce completed reviews if catalogue content changes. Prefer storing stable question/version references and the minimum answer/result snapshot needed for review.
+5. How question selection guarantees a balanced enough curriculum sample despite mixed-topic random selection and limited eligible content.
 
 ### Data, security and legal planning notes
 
@@ -1357,3 +1356,20 @@ These are planning and QA requirements only. No application source, question con
 - Documentation branch: `docs/master-development-record`.
 - Production baseline remains Update 2.3.3; merge commit `90dc73a9b65fc3af713fefab4955057026089b96`.
 - Quiz remains unimplemented; the existing Coming Soon state must remain until a separately approved and validated release.
+
+
+## 30. Update 2.4.0 — owner-defined difficulty composition (2026-11-14)
+
+The owner confirmed the curriculum difficulty mix for Quiz. A higher-difficulty quiz may include lower-difficulty curriculum material as reinforcement, but a lower-difficulty quiz must not include higher-difficulty material.
+
+| Selected Quiz difficulty | Approved question composition |
+|---|---|
+| Beginner | 100% Beginner |
+| Intermediate | 50–80% Intermediate and 20–50% Beginner. The owner explicitly accepts both 50/50 and 80/20 distributions; intermediate mixes within that range may be used when appropriate. |
+| Advanced | 60–80% Advanced, exactly 20% Intermediate, and 0–20% Beginner. |
+
+All percentages for an individual quiz must total 100%. Question counts are fixed by the existing plan (Beginner 10, Intermediate 15, Advanced 20), so the implementation must translate the allowed percentages into feasible whole-question counts and define a deterministic rounding/balancing method. It must not silently produce a ratio outside the approved ranges. The question bank must contain enough approved questions at each source difficulty to satisfy the selected composition; if it does not, the system should not quietly substitute out-of-scope questions.
+
+This resolves the previously open question about cumulative difficulty composition. It does not change the separate rule that questions may come from all approved curriculum lessons within the selected difficulty scope regardless of the learner's personal lesson-completion history.
+
+No application implementation, question-bank content, migration, production data or deployment was changed by this planning decision.
