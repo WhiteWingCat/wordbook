@@ -17861,6 +17861,9 @@
           document.getElementById("profileContent").hidden = true;
           document.getElementById("profileSignedOut").hidden = false;
         }
+        // Account switching must refresh the permanent lesson library's progress and
+        // entitlement-based allowance; otherwise a previous account's 5/15 count can linger.
+        if (typeof initialiseLessons === "function") await initialiseLessons();
       }
       await refreshAccount();
       supabaseClient.auth.onAuthStateChange((event, session) => {

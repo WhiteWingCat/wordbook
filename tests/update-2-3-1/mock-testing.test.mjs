@@ -120,6 +120,27 @@ test("mock identities represent separate Free and Premium plans",async()=>{
   assert.equal(afterReplay.data.find(row=>row.activity_type==="daily_discovery").used_count,3);
 });
 
+test("Premium mock permanent lesson allowance permits 15 completions and blocks the 16th",async()=>{
+  const env=makeContext("feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev");
+  const client=env.window.supabase.createClient();
+  env.window.__swiftDictionaryMock.setActiveUser("mock-user-b");
+  for(let i=1;i<=16;i++){
+    const lessonId="premium-lesson-"+i;
+    const inserted=await client.from("lesson_progress").insert({
+      user_id:"mock-user-b",difficulty:"beginner",lesson_id:lessonId,status:"in_progress"
+    }).select("difficulty,lesson_id,status").single();
+    assert.equal(inserted.error,null);
+    const completed=await client.rpc("complete_permanent_lesson",{
+      p_difficulty:"beginner",p_lesson_id:lessonId,p_topic_id:"greetings",
+      p_correct_count:2,p_question_count:2
+    });
+    if(i<=15) assert.equal(completed.error,null,"Premium completion "+i+" should be allowed");
+    else assert.equal(completed.error.code,"P0001","Premium completion 16 should be blocked");
+  }
+  const usage=await client.rpc("get_my_learning_allowance_usage");
+  assert.equal(usage.data.find(row=>row.activity_type==="lesson").used_count,15);
+});
+
 test("Free users cannot start a new daily activity after one completion but can review it",async()=>{
   const env=makeContext("feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev");
   const client=env.window.supabase.createClient();
