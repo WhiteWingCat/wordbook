@@ -76,16 +76,26 @@ from (
 ) bank;
 
 insert into auth.sessions(id,user_id,created_at,not_after)
-values (
- 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
- 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
- now(),
- now()+interval '1 hour'
-)
+values
+ (
+  'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  now(),
+  now()+interval '1 hour'
+ ),
+ (
+  'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+  'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+  now(),
+  now()+interval '1 hour'
+ )
 on conflict (id) do update set
   user_id=excluded.user_id,created_at=excluded.created_at,not_after=excluded.not_after;
 
-create temporary table quiz_test_refs(user_a_session_id uuid);
+create temporary table quiz_test_refs(
+  user_a_session_id uuid,
+  user_c_used_ids text[]
+);
 grant select,insert on quiz_test_refs to authenticated;
 
 set local role authenticated;
@@ -359,6 +369,7 @@ begin
   if v_seen && v_new then
     raise exception 'A question repeated across Advanced and Beginner on the same local day';
   end if;
+  insert into pg_temp.quiz_test_refs(user_c_used_ids) values (v_seen||v_new);
   perform public.abandon_my_quiz((v_beginner->>'session_id')::uuid);
 end;
 $advanced$;
@@ -393,6 +404,45 @@ begin
   end if;
 end;
 $unsupported_course$;
+
+
+-- History deletion removes answer/session snapshots but retains the minimal
+-- same-day question reservation ledger until its local-day retention expires.
+select set_config('request.jwt.claim.sub','cccccccc-cccc-4ccc-8ccc-cccccccccccc',true);
+select set_config('request.jwt.claims',
+  '{"sub":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","session_id":"eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee"}',true);
+do $c_history_delete$
+begin
+  perform public.delete_my_learning_history();
+  if public.test_my_quiz_session_count()<>0 then
+    raise exception 'Quiz session snapshots remained after history deletion';
+  end if;
+  if public.test_current_quiz_usage()<>0 then
+    raise exception 'Abandoned history deletion changed the completion allowance';
+  end if;
+end;
+$c_history_delete$;
+
+update public.user_preferences
+set learning_language='en'
+where user_id=auth.uid();
+
+do $c_no_repeat_after_delete$
+declare
+  v_session jsonb;
+  v_new_ids text[];
+  v_used_ids text[];
+begin
+  v_used_ids:=(select user_c_used_ids from pg_temp.quiz_test_refs where user_c_used_ids is not null limit 1);
+  v_session:=public.start_my_quiz('beginner');
+  select array_agg(q->>'question_id') into v_new_ids
+  from jsonb_array_elements(v_session->'questions') q;
+  if v_used_ids && v_new_ids then
+    raise exception 'Same-day question reservation was lost when Quiz history was deleted';
+  end if;
+  perform public.abandon_my_quiz((v_session->>'session_id')::uuid);
+end;
+$c_no_repeat_after_delete$;
 
 -- Recent-authenticated history deletion removes Quiz sessions but preserves allowance usage.
 select set_config('request.jwt.claim.sub','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',true);
