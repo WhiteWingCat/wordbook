@@ -300,6 +300,63 @@ create trigger guard_quiz_session_question_update
 before update on private.quiz_session_questions
 for each row execute function private.guard_quiz_session_question_update();
 
+-- Validate that the persisted shuffled option order is a permutation of
+-- the four snapshotted options. This runs on insert and update.
+create or replace function private.validate_quiz_session_question_row()
+returns trigger
+language plpgsql
+set search_path = ''
+as $function$
+declare
+  v_snapshot_ids text[];
+  v_distinct_count integer;
+begin
+  if pg_catalog.jsonb_typeof(new.options_snapshot) <> 'array'
+     or pg_catalog.jsonb_array_length(new.options_snapshot) <> 4
+     or pg_catalog.cardinality(new.option_order) <> 4
+     or pg_catalog.array_position(new.option_order, null) is not null then
+    raise exception 'Quiz session questions require four ordered answer options'
+      using errcode = '23514';
+  end if;
+
+  select pg_catalog.array_agg(x.option_id order by x.ordinality),
+         pg_catalog.count(distinct x.option_id)::integer
+  into v_snapshot_ids, v_distinct_count
+  from pg_catalog.jsonb_array_elements(new.options_snapshot)
+       with ordinality as e(value, ordinality)
+  cross join lateral (
+    select e.value ->> 'id' as option_id, e.ordinality
+  ) x;
+
+  if v_distinct_count <> 4
+     or v_snapshot_ids is null
+     or pg_catalog.array_position(v_snapshot_ids, null) is not null
+     or not (new.correct_option_id_snapshot = any(v_snapshot_ids))
+     or not (new.option_order @> v_snapshot_ids
+             and v_snapshot_ids @> new.option_order) then
+    raise exception 'Quiz session option order must be a permutation of the four snapshotted option IDs'
+      using errcode = '23514';
+  end if;
+
+  if new.selected_option_id is not null
+     and not (new.selected_option_id = any(new.option_order)) then
+    raise exception 'Selected option does not belong to this Quiz question'
+      using errcode = '23514';
+  end if;
+
+  return new;
+end;
+$function$;
+
+revoke all on function private.validate_quiz_session_question_row()
+  from public, anon, authenticated;
+
+drop trigger if exists validate_quiz_session_question_row
+  on private.quiz_session_questions;
+create trigger validate_quiz_session_question_row
+before insert or update on private.quiz_session_questions
+for each row execute function private.validate_quiz_session_question_row();
+
 -- No direct Data API access. RLS is enabled as defence in depth even though
 -- the schema is not exposed and all table privileges are revoked.
 alter table private.quiz_question_bank enable row level security;
