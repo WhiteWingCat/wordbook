@@ -243,6 +243,15 @@ Use completed Quiz question/topic mappings and correctness outcomes as additiona
 
 Dashboard should show Quiz completion count and recent score/percentage. Topic recommendations should explain that they are learning suggestions, not formal proficiency certification.
 
+### 5.7 Frontend integration
+
+- Prefer a dedicated \`quiz.js\` file for Quiz rendering, navigation and client-side session interaction rather than adding another large feature block to the already large \`index.html\`.
+- Because the current inline application script owns lexical state such as the Supabase client, signed-in user and language preferences, expose only a narrow, explicit application bridge for Quiz. The bridge should provide the authenticated client context, current user identity, current course/translation pair, route/refresh callbacks and a way to report UI status. Do not expose service-role credentials or private server data.
+- Keep all authoritative decisions in database RPCs. The browser may hold the sanitised question payload and current UI selection, but it must not calculate or submit a trusted score.
+- Initialise Quiz only after authentication and preference state are ready. On account switch/sign-out, clear the previous account's in-memory Quiz state before loading the newly active account's own session.
+- Keep the integration compatible with the existing static GitHub Pages deployment; no bundler or paid runtime is required for this feature.
+- Reuse the existing Playwright setup and add a dedicated Quiz browser suite. Do not refactor unrelated Dictionary/Lessons/Daily Learning code as part of the Quiz feature unless a narrowly scoped integration fix is required.
+
 ## 6. Question-bank availability and sampling proposal
 
 **Observed inventory:** zero approved Quiz questions. All difficulties are unavailable at the start of this feature.
