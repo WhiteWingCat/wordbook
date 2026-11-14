@@ -162,7 +162,7 @@
     },
     "everyday-vocabulary": {
       title:"Choose natural everyday combinations", titleZh:"选择自然的日常词语搭配",
-      examples:["I usually make breakfast before checking my messages.","Could you give me a hand with these boxes?"],
+      examples:["He packed a lunch before leaving for the hike.","The receptionist gave us directions to the meeting room."],
       questions:[
         {q:"Which verb completes the natural expression “_____ a promise”?",options:["do","make","take"],answer:1,explanation:"Make a promise is the established collocation.",zh:"make a promise 是固定且自然的词语搭配。"},
         {q:"Choose the phrase that means to become ready.",options:["get ready","make ready up","take ready"],answer:0,explanation:"Get ready is the common expression meaning prepare yourself.",zh:"get ready 是表示做好准备的常见表达。"}
