@@ -721,3 +721,53 @@ An earlier browser attempt failed only because an existing test expected an Engl
 6. The owner-confirmed Cloudflare preview host remains feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev. Confirm Cloudflare rebuilt the latest commit before testing. Use the explicit mock opt-in and fictional Test User A/B only; do not use real accounts or real data-changing tests.
 7. Owner retest priorities: inspect the reader edge; switch translation while the Daily Learning status is visible; verify only one cooldown explanation; inspect definition contrast in Discovery and permanent lessons; leave an activity unfinished across local midnight and verify it is abandoned before a fresh session starts; complete an activity and confirm the reader closes.
 8. Dashboard remains frozen unless the owner raises a new issue. Do not merge PR #5 or deploy without explicit owner approval.
+
+
+## 18. Update 2.3.1 — Daily Discovery visibility and global rotation plan (2026-11-14)
+
+### Owner decision
+
+The owner explicitly selected **Option A** for Free-plan Daily Discovery visibility:
+
+- The global schedule contains three distinct Daily Discovery entries per UTC day.
+- Free users see and can complete only the first entry in that day's schedule.
+- Premium users see and can complete all three entries.
+- Do not show the second and third entries as locked cards or previews to Free users. They are not displayed in the Free experience.
+- Existing completion allowances remain unchanged: Free = 1 completion/day; Premium = 3 completions/day.
+
+### Global schedule and account isolation
+
+- Daily Discovery remains globally shared: every user receives the same scheduled entries for a given UTC date, subject to plan visibility.
+- The global schedule advances by UTC date, never according to any user's completion, account, timezone, or activity.
+- A user's completion state and allowance remain account-scoped. One learner completing, abandoning, or skipping an entry must not change another learner's schedule or availability.
+- Keep the existing allowance-day timezone behavior for per-user quota resets. Do not conflate the user's local allowance reset with the UTC global content assignment.
+- Use stable approved content IDs and date-scoped session IDs. The server-side private catalogue validator must approve every scheduled entry.
+
+### Backlog and rotation
+
+- Expand the curated Daily Discovery vocabulary backlog from the current 12 entries to a target of at least 90 reviewed entries before enabling the full three-entry schedule.
+- At three entries per UTC day, 90 entries provide a 30-day initial rotation without reusing an entry.
+- Assign three distinct entries to each UTC date. Avoid repeats within a daily set and do not immediately repeat the previous rotation's final entries at the start of the next cycle.
+- Rotation must be deterministic and versioned so that users opening the activity on different devices receive the same daily set.
+- Adding or editing backlog content must not silently change assignments already published for a date. Any schedule revision must be explicit and versioned.
+- If the approved backlog is temporarily insufficient, do not silently repeat or generate unapproved content. Keep the schedule within the available approved entries and surface an operational/content-readiness issue for review.
+- The 90-entry target is a planning threshold, not a claim that the current 12-entry pilot already supports 30 days.
+
+### Implementation sequence
+
+1. Audit the current client-side UTC selector, daily Discovery rendering, stable IDs, allowance display, and server-side catalogue validation.
+2. Prepare and editorially review the expanded vocabulary backlog, including accurate definitions, pronunciation, Chinese translations, examples, usage notes, and source/licensing review where external corpus data is used.
+3. Implement a deterministic, UTC-date-based three-entry schedule with a versioned rotation and no per-user influence.
+4. Update plan-aware rendering: Free receives only schedule position 1; Premium receives positions 1–3. Do not render locked placeholders for positions 2–3 to Free users.
+5. Update the private approved-content catalogue and server validation so every scheduled stable ID is approved. Preserve null topic/difficulty metadata for Discovery and existing account-scoped completion RPCs.
+6. Add automated tests for global schedule consistency across accounts, UTC date rollover, rotation uniqueness and boundary behavior, Free visibility of exactly one item, Premium visibility of exactly three items, per-user completion isolation, and allowance enforcement.
+7. Run the existing browser, PostgreSQL and disposable local Supabase validation suites. Retest only with the explicit mock preview and fictional Test User A/B.
+8. Update the Master Development Record and conversation archive with the final implementation, validation evidence, and any remaining content limitations.
+
+### Non-regression and release boundaries
+
+- Do not change Daily Topic, Daily Application, Daily Revision, the Dashboard, or the existing lesson experience as part of this work unless a directly related regression requires it and the owner approves the scope.
+- Preserve aggregate-only practice outcomes, existing RLS/account isolation, and the privacy-first catalogue design. Do not introduce answer-level telemetry or a global user completion table.
+- Do not claim statistically ranked spoken-frequency selection unless the corpus data, methodology, reuse terms and attribution have been verified. Curated content must continue to be labelled as curated.
+- Perform the standing Malaysia and general legal/privacy review for any new data source, corpus reuse, or feature expansion. This planning decision does not constitute legal compliance certification.
+- Continue on feature/update-2-3-1-bug-fix-and-changes and PR #5. The plan update does not authorize merging, production database changes, production data operations, or production deployment.
