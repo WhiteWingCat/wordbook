@@ -3,9 +3,9 @@
 > Durable project handover and source-of-truth summary for future development conversations.
 >
 > **Repository:** https://github.com/WhiteWingCat/wordbook  
-> **Last consolidated:** 2026-11-14 (Quiz pre-development decisions approved)  
+> **Last consolidated:** 2026-11-14 (Quiz technical preparation and read-only repository/Supabase inspection)  
 > **Current baseline:** Update 2.3.3 merged to main and GitHub Pages deployment succeeded on 2026-11-14 (merge commit `90dc73a9b65fc3af713fefab4955057026089b96`); six 2.3.0 Supabase migrations are applied to production  
-> **Current work:** Update 2.3.3 is live and owner-confirmed working. Planning Update 2.4.0 Quiz; no Quiz implementation has started.  
+> **Current work:** Update 2.3.3 is live and owner-confirmed working. Update 2.4.0 Quiz technical specification prepared; owner review and remaining product confirmations are pending. No Quiz implementation has started.  
 > **Record status:** Updated after the six approved production migrations were applied and verified, PR #7 merged, and main GitHub Pages deployment succeeded. No production user-content bulk operation was performed.
 
 This record combines confirmed owner decisions, repository evidence and the latest development handover. It is not proof that the live application or production database matches a draft branch.
@@ -1411,3 +1411,73 @@ The owner explicitly approved the following three decisions to close the remaini
 - No application source, question bank, Supabase schema/migration, production data, allowance setting or deployment was changed by this approval.
 - Production remains Update 2.3.3 (main merge commit `90dc73a9b65fc3af713fefab4955057026089b96`). Quiz remains Coming Soon.
 - Documentation branch: `docs/master-development-record`.
+
+
+## 32. Update 2.4.0 — technical preparation and read-only architecture inspection (2026-11-14)
+
+### Preparation status
+
+The owner asked to proceed to the next stage after approving the Quiz scoring, unfinished-session persistence and minimum question-bank availability principles. The technical specification is recorded at \`docs/UPDATE-2.4.0-QUIZ-TECHNICAL-SPECIFICATION.md\`; the session archive is \`docs/conversation-archive/2026-11-14-update-2-4-0-quiz-technical-preparation.md\`.
+
+This is technical preparation only. No implementation branch was created and no application source, Quiz question bank, schema, migration, production allowance setting, production user data or deployment was changed.
+
+### Current repository and curriculum findings
+
+- Production/main baseline remains Update 2.3.3, merge commit \`90dc73a9b65fc3af713fefab4955057026089b96\`.
+- The static app's main UI and most application logic remain in \`index.html\` (approximately 932 KB / 18,530 lines at inspection); Daily Learning is in \`daily-learning.js\`. Existing Playwright, mock-testing and SQL regression infrastructure can be extended.
+- Quiz navigation and route exist, but Quiz is still Coming Soon.
+- The current Lessons curriculum is English learning with Simplified Chinese translations. It contains 15 lessons and 52 Lesson practice questions: Beginner 5/18, Intermediate 5/17 and Advanced 5/17.
+- No Quiz question bank, Quiz session table or Quiz RPC exists in production. There are zero approved Quiz questions. The Lesson practice bank is not a substitute for the separate Quiz bank. All Quiz difficulties remain unavailable until new approved Quiz content meets the availability gate.
+- A full Chinese-learning Quiz is outside 2.4.0 because the current permanent Lessons curriculum is English learning with Chinese translations, not a Chinese-learning curriculum.
+
+### Supabase architecture findings
+
+Read-only inspection of the connected SwiftDictionary project confirmed PostgreSQL 17.11 in Tokyo (\`ap-northeast-1\`) and 18 applied migrations, including the six Update 2.3.0 migrations.
+
+Existing foundations that can be reused:
+- \`learning_activity_log\` and its activity constraint already include Quiz.
+- \`private.learning_allowance_usage\` already supports Quiz.
+- The server-side activity insert trigger charges only completed events, uses the effective server-owned timezone and plan, serialises per-user completion and updates the private allowance ledger atomically.
+- The personal testing exemption is explicitly lesson-only and must not extend to Quiz.
+- Existing Daily Learning sessions enforce one open session per user/category and use their own rollover behaviour. Quiz needs one active session per account and indefinite persistence; do not reuse the Daily Learning session model unchanged.
+- The existing learning-history deletion implementation must be extended to delete Quiz session/answer/review history while preserving the separate allowance ledger.
+
+**Live Quiz allowance mismatch:** production currently contains Free 5/day and Premium 12/day. The planning target is Free 1/day and proposed Premium 3/day. These values do not match. No live setting was changed; a reviewed migration and explicit owner approval are required before enabling Quiz.
+
+### Technical direction proposed
+
+- Private, versioned Quiz question bank with stable question, lesson and topic identifiers.
+- Private session/question snapshots that preserve question version, fixed order, fixed option order, selected answer, correct answer and explanation.
+- Server RPCs for availability, start, resume, save answer, submit, abandon and completed review.
+- Correct answer keys stay server-side until submission. Evaluation, score calculation, session completion and allowance charge occur atomically.
+- One-active-session-per-account database constraint; explicit abandonment frees the slot without charge.
+- Completion charges the current local allowance window at submission time, including a session resumed after midnight.
+- Supported course/translation pairs must have authored and reviewed content. For 2.4.0, English learning is the supported curriculum; Chinese learning remains future scope.
+- Dashboard/Daily Revision use topic-level performance without treating a single wrong answer as definitive mastery.
+
+### Question-bank threshold proposal
+
+The production Quiz bank currently contains zero questions. The technical specification proposes a two-session minimum pool of 20 Beginner; 24 Intermediate + 16 Beginner; and 32 Advanced + 8 Intermediate + 8 Beginner. A three-session pool is proposed as a future Premium quality target if three quizzes/day and same-day non-reuse are confirmed.
+
+These are not yet owner-approved numeric thresholds. The final availability gate depends on confirmation of the cross-session question-reuse policy and Premium allowance. It must also enforce exact source-difficulty ratios, at least three topic IDs per session as a proposed starting rule, no topic supplying more than 40% of a session, and complete reviewed language-pair content.
+
+### Legal and privacy planning
+
+Quiz introduces account-linked selected answer IDs, question snapshots, scores and topic performance. The current privacy-policy draft says individual selected answers are not stored; it must be revised before release if the approved Quiz design stores selected options.
+
+The technical specification records a preliminary Malaysia Act 709/2024 amendment review, JPDP cross-border transfer/DPO/DPIA guidance, GDPR territorial/child-consent scope and US COPPA considerations. Specific release gates include determining Act 709 applicability to the actual public-service activity, identifying the controller and privacy contact, bilingual privacy notice, cross-border processor/location assessment, DPO/DPIA screening for systematic learning-performance monitoring, retention/deletion and breach-response procedures. This is planning guidance, not legal advice or compliance certification.
+
+### Remaining owner confirmations
+
+1. Four answer options where strong distractors exist, with three allowed rather than adding a weak fourth.
+2. Whether same-day repeats across separate completed sessions should be prohibited.
+3. Approve or revise the proposed two-session hard minimum and three-session Premium quality target.
+4. Confirm the proposed Premium Quiz allowance of 3/day; production currently has 12/day.
+5. Confirm nearest-integer percentage rounding.
+
+### Recovery point
+
+- Production remains Update 2.3.3, merge commit \`90dc73a9b65fc3af713fefab4955057026089b96\`.
+- Documentation branch: \`docs/master-development-record\`.
+- Quiz remains Coming Soon.
+- No implementation branch or production change has been made. Wait for owner review of the technical specification and remaining choices before starting feature implementation.
