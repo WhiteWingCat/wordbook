@@ -834,7 +834,7 @@
       const nextContent = active
         ? resolveSessionContent(type,active,snapshot.content[type])
         : snapshot.content[type] || chooseContent(type,snapshot.completed?.[type] || 0);
-      if (nextContent && !seen.has(nextContent.id)) reviewCards.unshift(renderCard(type,nextContent));
+      if (nextContent && !seen.has(nextContent.id)) reviewCards.push(renderCard(type,nextContent));
       else if (!nextContent && !reviewCards.length) {
         const fallback = chooseContent(type,snapshot.completed?.[type] || 0);
         if (fallback) reviewCards.push(renderCard(type,fallback));
