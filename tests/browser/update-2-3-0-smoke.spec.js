@@ -637,6 +637,7 @@ test("Daily Revision is adaptive, abandonment is free, and Daily Discovery is un
   const revisionUsage = await page.evaluate(() => window.__swiftDailyMock.allowanceUsage.find(row => row.activity_type === "daily_revision").used_count);
   expect(revisionUsage).toBe(0);
 
+  await page.locator('[data-daily-tab="daily_discovery"]').click();
   await page.locator('#dailyActivityGrid [data-start-daily="daily_discovery"]').click();
   await expect(page.locator("#dailyActivityReader")).toBeVisible();
   await expect(page.locator("#dailyActivityReader #dailyQuestions")).toHaveCount(0);
