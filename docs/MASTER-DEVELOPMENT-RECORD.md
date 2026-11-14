@@ -572,3 +572,91 @@ The 13 November legal review was refined to clarify the PDPA personal/household 
 - Static JavaScript syntax and catalogue matching checks also passed.
 - This CI evidence does not replace owner preview testing. Cloudflare preview deployment for the latest commit has not been independently confirmed in this record.
 - The current Daily Discovery set is still a curated pilot, not statistically ranked by spoken-corpus frequency. This remains a known content-quality limitation.
+
+
+## 16. Update 2.3.1 — second owner preview review and refinement pass (2026-11-14)
+
+### Owner's latest feedback and scope
+
+The owner reviewed the prior Update 2.3.1 preview and requested:
+
+1. Fix permanent-lesson translation refresh when changing translation language.
+2. Improve Simplified Chinese translation coverage throughout Daily Learning while preserving English learning context (grammar prompts, example sentences and answer choices).
+3. Remove the dark translucent backdrop behind the left-side activity panel and add sufficient inset spacing around the panel content.
+4. Present Daily Discovery in dictionary-style detail layout, without previous/next navigation.
+5. Make Daily Topic, Daily Application and Daily Revision more clearly personalised by account; switching mock identities must show distinct content, and resetting mock data must rotate the selections. Daily Discovery remains globally shared for the same UTC day.
+6. Combine all relevant examples into one Examples box; remove the separate “More examples” treatment.
+7. Open permanent lessons on a dedicated page instead of expanding the lesson reader inside the lesson library.
+
+**Dashboard scope freeze:** the owner explicitly confirmed that the Dashboard is in a good place and requested no further Dashboard changes for now. No Dashboard layout, statistics or visualisation changes were made in this pass.
+
+### Implementation on the existing feature branch
+
+- **Branch:** `feature/update-2-3-1-bug-fix-and-changes`.
+- **PR:** [#5](https://github.com/WhiteWingCat/wordbook/pull/5), still open and unmerged; base remains `main`.
+- **Latest application commit:** `d1af4357fdbca0b86765ebba22750457eb9b62a5`.
+- **Files changed in this pass:** `index.html`, `daily-learning.js`, `mock-testing.js`, `tests/browser/update-2-3-0-smoke.spec.js`, `tests/update-2-3-0/check-frontend.mjs`, and `tests/update-2-3-1/mock-testing.test.mjs`.
+
+#### Translation and Daily Learning
+
+- Added a shared translation-view refresh path. Changing the top translation selector now refreshes the open dictionary entry, permanent lesson, Daily Learning cards and an open Daily Activity reader. Saving Profile preferences uses the same refresh path.
+- Fixed an activity-reader state-reference error found during browser regression testing so checked answers and their English/Chinese explanations remain visible after switching languages.
+- Added Chinese translations for all 28 Daily Topic titles and all 25 Daily Application titles, plus Daily Learning headings, preference labels, card metadata, status messages, reader controls and Daily Discovery usage notes.
+- English sentence prompts, answer options, grammar terms and examples remain in English as learning context. Chinese explanations are shown alongside the relevant material or after answer checking.
+- Daily Discovery retains its English headword and examples, while showing the Chinese definition and Chinese usage note when Simplified Chinese is selected.
+- Daily Discovery start RPC arguments now explicitly send null topic and difficulty metadata, matching the approved server catalogue's global-word contract.
+
+#### Activity reader and examples
+
+- The activity backdrop is transparent; the left-side panel itself remains interactive and dismissible.
+- Added internal panel padding and separate inset spacing for the dictionary-style Daily Discovery content.
+- Daily Discovery now uses dictionary-style headword, pronunciation, part-of-speech, definition, examples and usage-note sections, without previous/next controls.
+- Relevant examples are combined into one Examples box. The separate “More examples” treatment has been removed.
+
+#### Personalised activity selection and mock reset
+
+- Daily Topic, Daily Application and Daily Revision now include a stable account-derived selection offset, while Daily Discovery is selected solely by the global UTC date and remains identical across accounts on that date.
+- Adaptive revision still prioritises the best-ranked weakness group; account-derived selection chooses within equally ranked candidates, including unseen topics for new accounts.
+- Mock mode exposes a session-storage selection-generation counter. Resetting mock data increments the generation while preserving unrelated session-storage keys, then clears the mock user stores. The new generation rotates the personalised Topic/Application/Revision selection after reload.
+- The selection-generation counter is test-only and stays in the exact-host, explicit-opt-in mock environment. It is not a new production preference, table or account-data field.
+
+#### Permanent lesson navigation
+
+- Moved the permanent lesson reader to a separate `lessonDetailPage` page panel.
+- Opening a lesson now navigates away from the lesson library; the dedicated back control returns to Lessons. Browser hash handling recognises the lesson-detail route and safely falls back to Lessons when no active lesson is loaded.
+- Translation changes rerender the active lesson from its source record while preserving practice state.
+
+### Validation and CI evidence
+
+- Latest GitHub Actions run: [run #549](https://github.com/WhiteWingCat/wordbook/actions/runs/43553866219).
+- **All three CI jobs passed**:
+  - Chromium browser regression: 15 tests passed, including bilingual Daily Learning refresh, dictionary-style Discovery, transparent panel inset, and dedicated permanent lesson page.
+  - PostgreSQL 17 migration and allowance tests passed, including frontend/RPC integration checks and mock-adapter unit tests.
+  - Disposable local Supabase Auth compatibility and security-advisor checks passed.
+- Earlier CI attempts exposed test/implementation issues which were corrected before run #549:
+  - Mock reset tests now verify unrelated session-storage values remain intact while the generation counter advances.
+  - Existing browser assertions were updated for Chinese UI text when the fixture preference is Simplified Chinese.
+  - The translation-refresh feedback renderer now references the preserved reader state correctly.
+  - Discovery padding assertions inspect the inner dictionary content panel, where the padding is applied.
+  - The frontend timezone-helper test boundary was updated after adding the bilingual UI helpers.
+- Static checks also confirmed all 28 Topic and 25 Application title translations exist, all 12 Discovery words have Chinese usage notes, mock A/B selection offsets differ for Topic/Application/Revision, and reset changes all three offsets.
+- No production database migration, production data mutation, PR merge or production deployment was performed.
+
+### Legal, privacy and data-safety review
+
+- This pass adds no new production personal-data field, table, raw-answer collection or learner-profiling category.
+- The account-derived offset is calculated client-side from the signed-in account identifier and is not persisted or sent as a new field. Keep it out of logs and analytics.
+- The mock selection-generation counter is stored only in session storage within the explicitly enabled mock preview.
+- Existing account isolation, RLS, aggregate-only practice results, allowance rules and global UTC Daily Discovery selection remain intact.
+- The work is a UI/selection bug-fix pass, not a legal-compliance certification. Malaysia PDPA and global privacy/age obligations remain project-wide review requirements.
+
+### Exact recovery and next testing point
+
+1. Continue from `feature/update-2-3-1-bug-fix-and-changes`; do not recreate the branch.
+2. Latest PR #5 head: `d1af4357fdbca0b86765ebba22750457eb9b62a5`.
+3. CI run #549 passed all three jobs. The browser suite passed 15 tests.
+4. The owner-confirmed Cloudflare preview host remains `feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev`. The latest Cloudflare deployment itself has not been independently confirmed; allow it to rebuild before owner testing.
+5. Use `?swiftMock=1` and fictional Test User A/B only. The preview frontend still references the production Supabase configuration outside the mock adapter; do not use real accounts or real data-changing tests.
+6. Owner retest priorities: switch translation while a permanent lesson is open; switch translation while a Daily Activity is open and after checking answers; verify English learning context remains English; inspect activity panel backdrop/insets; verify Discovery layout; compare A/B Topic/Application/Revision and shared Discovery; reset mock data and verify the personalised selections rotate; open/back from a permanent lesson page.
+7. Dashboard is frozen unless the owner raises a new issue. Statistical spoken-frequency ranking for Daily Discovery remains future work; the current 12-word set is curated, not corpus-ranked.
+8. Wait for owner testing feedback before any further app changes. Do not merge PR #5 or deploy without explicit approval.
