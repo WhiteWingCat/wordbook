@@ -513,6 +513,11 @@
       + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(activityMeta[activityType].title) + '</span>'
       + (completed ? '<span class="daily-activity-tag">Completed · replay is free</span>' : '<span class="daily-activity-tag">In progress · no allowance used yet</span>')
       + '</div><h2>' + esc(content.title) + '</h2>';
+    if (activityType === "daily_discovery") {
+      html += '<div class="daily-discovery-word-meta"><strong>' + esc(content.part || "Vocabulary") + '</strong>' + (content.phonetic ? '<span>' + esc(content.phonetic) + '</span>' : '') + '</div>';
+      html += '<section class="daily-reader-example"><strong>Dictionary definition</strong><p>' + esc(typeof translationLanguage !== "undefined" && translationLanguage === "zh" && content.definitionZh ? content.definitionZh : content.definition || "") + '</p></section>';
+      html += '<p class="daily-discovery-frequency-note">A less-common word to recognise and understand. Frequency classification is curated, not a live conversational-corpus ranking.</p>';
+    }
     if (content.body) html += '<p>' + esc(content.body) + '</p>';
     const practiceExamples = isQuiz && Array.isArray(content.questions)
       ? content.questions.map(question => String(question.q || "").replace(/_{2,}/g,question.options?.[question.answer] || "…"))
