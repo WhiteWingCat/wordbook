@@ -749,3 +749,78 @@ Intermediate test failures were corrected before run #705. They included questio
 4. Retest the four reported issues: distinct Application/Revision examples and Q&A; examples are actual examples; new lessons/daily activities are blocked at exhausted Free/Premium limits; completed content remains reviewable without consuming allowance.
 5. Specifically verify Discovery review across UTC rollover while the local allowance day remains active, and verify Chinese translation refresh still updates the reader in place.
 6. Do not merge PR #5, apply production migrations, or deploy without explicit owner approval.
+
+## 23. Update 2.3.1 — Daily Learning category tabs and plan-sized activity rows (2026-11-14)
+
+### Owner feedback and scope
+
+After reviewing the previous content-quality, allowance and completed-review fixes, the owner requested a final Daily Learning layout refinement:
+- Replace the combined list of all daily activities with separate category tabs: Daily Topic, Daily Application, Daily Discovery and Daily Revision.
+- Free sees one activity card per tab; Premium sees three cards in a row, following the permanent lesson-library layout.
+- Place Start, Resume and Review completed content actions on the right side of each card row.
+- When a category allowance is exhausted, place its midnight-reset explanation below that category title, not inside an additional locked lesson card.
+
+No allowance amount, course, content-library or Dashboard scope decision was changed.
+
+### Implementation on the feature branch
+
+**Tabbed category navigation**
+- Added four accessible tab buttons and one active tab panel.
+- Selected category persists through rerenders caused by completion, preference updates and translation changes.
+- Existing daily activity preference controls remain. A paused category retains its tab and shows the paused state within the panel.
+- Tab labels update with the selected translation language.
+
+**Plan-sized activity rows**
+- Free renders one card per category; Premium renders three.
+- Daily Topic and Daily Application use separate curated content per Premium slot.
+- Daily Revision preserves the highest-priority adaptive topic in the first slot and uses different candidate topics for additional Premium slots.
+- Daily Discovery retains the account-independent global UTC schedule: Free sees slot one and Premium sees up to three.
+- Completed items and in-progress sessions remain available as review/resume cards. Once the allowance is exhausted, uncompleted Discovery schedule entries are not shown as locked lessons; completed Discovery items remain reviewable across UTC rollover.
+- Premium cards use a three-column desktop grid, with responsive reduction at narrower widths. Free uses a single-column layout.
+- Each card uses a horizontal row layout, with Start, Resume or Review completed content action aligned on the right.
+
+**Allowance reset message**
+- Removed the exhausted-allowance cooldown message from individual lesson cards.
+- The active category panel shows its remaining allowance count and, once exhausted, the midnight-reset explanation directly below the category title.
+- The message uses the effective allowance timezone for the account.
+- Existing allowance amounts, local-midnight reset behavior, server-side enforcement and free review policy remain unchanged.
+
+**Accessibility and responsive behavior**
+- Tabs use tablist/tab/tabpanel semantics, selected-state attributes and focus handling.
+- The card rows and actions adapt to mobile widths.
+- Permanent lesson navigation and Dashboard remain unchanged.
+
+### Validation
+
+GitHub Actions run **#749** completed successfully against code/test commit **55ad7a12abaa462142a7c6e88b8466d11851040a**:
+https://github.com/WhiteWingCat/wordbook/actions/runs/43568453615
+
+All three jobs passed:
+- **Chromium browser regression:** 22 tests passed. New coverage verifies all four tabs, Free one-card and Premium three-card rows for every category, right-side row actions, reset-message placement after Daily Topic completion, and Discovery review across UTC rollover. Existing content-quality, lesson/daily allowance, completed-review, translation, Dashboard, sign-in and account-switching tests passed.
+- **PostgreSQL 17 migration and allowance tests:** passed. The layout change did not alter the database schema or allowance ledger. Frontend syntax/integration, catalogue validation, direct-RPC checks, completion/review, concurrency and deletion tests passed.
+- **Supabase CLI local Auth compatibility:** passed, including local Auth contract and security-advisor checks.
+
+### Legal, privacy and release boundaries
+
+- This is a presentation/navigation change using existing plan limits, activity preferences, completed sessions and approved content. It adds no personal-data fields, tracking, analytics, answer-level telemetry or external content source.
+- No new dictionary corpus, question bank or third-party licensed content was introduced.
+- Malaysia PDPA and general privacy planning remains unchanged. If Premium is commercialised later, subscription pricing, renewal, cancellation/refund and consumer disclosures still need separate review. This is a planning note, not legal-compliance certification.
+- Dashboard scope remains frozen.
+- No production Supabase migration, production data operation, merge or deployment was performed.
+
+### Current recovery point and next actions
+
+1. Continue on `feature/update-2-3-1-bug-fix-and-changes`; PR #5 remains open and unmerged.
+2. Latest application code/test commit validated by CI: `55ad7a12abaa462142a7c6e88b8466d11851040a`. Subsequent commits on the feature branch update only the Master Development Record, conversation archive and archive index.
+3. Confirm Cloudflare Pages has rebuilt the latest feature branch before the final owner retest. Use only the mock preview with fictional Test User A (Free) and Test User B (Premium):
+   `https://feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev/?swiftMock=1`
+4. Owner retest checklist:
+   - Confirm all four tabs appear and switch independently.
+   - Confirm Free sees one card and Premium sees three in each category.
+   - Confirm Start/Resume/Review actions are at the right side of each row.
+   - Exhaust Daily Topic and confirm the reset description appears below the category title, with no locked cooldown card inserted into the lessons.
+   - Confirm completed content remains reviewable without consuming another allowance.
+   - Confirm Discovery still follows the global UTC schedule and local allowance day.
+   - Confirm Chinese/English translation refresh works without navigating away.
+5. Do not merge PR #5, apply production migrations or deploy until the owner explicitly approves.
+6. The preceding Update 2.3.1 content-quality/allowance work remains in force and is recorded in the prior archive. This layout change does not reverse those fixes.
