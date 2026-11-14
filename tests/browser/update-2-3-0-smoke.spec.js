@@ -89,8 +89,9 @@ test("Daily Learning is integrated into Lessons and does not expose account prog
   const order = await page.evaluate(() => document.getElementById("dailyLearningPage").compareDocumentPosition(document.querySelector(".difficulty-tabs")));
   expect(order & 4).toBeTruthy();
   await expect(page.locator("#dailyLearningStatus")).toContainText("Sign in");
-  await expect(page.locator("#dailyActivityGrid [data-activity-card]")).toHaveCount(4);
-  await expect(page.locator("#dailyActivityGrid [data-start-daily]:disabled")).toHaveCount(4);
+  await expect(page.locator("#dailyActivityGrid [role=" + '"' + "tab" + '"' + "]")).toHaveCount(4);
+  await expect(page.locator("#dailyActivityPanel [data-activity-card]")).toHaveCount(1);
+  await expect(page.locator("#dailyActivityPanel [data-start-daily]:disabled")).toHaveCount(1);
   await expect(page.locator('[data-daily-pref="daily_topic_enabled"]')).toBeChecked();
   await expect(page.locator('[data-daily-pref="daily_application_enabled"]')).toBeChecked();
   await expect(page.locator('[data-daily-pref="daily_discovery_enabled"]')).toBeChecked();
@@ -129,11 +130,10 @@ test("signed-in Daily Topic completes through the server RPC without answer-leve
   });
   expect(JSON.stringify(calls)).not.toMatch(/selectedAnswer|answerIndex|questionAnswer/i);
   const topicCards = page.locator('#dailyActivityGrid [data-activity-card="daily_topic"]');
-  await expect(topicCards).toHaveCount(2);
-  await expect(topicCards.first()).toContainText("重温已完成内容");
+  await expect(topicCards).toHaveCount(1);
+  await expect(page.locator("#dailyActivityPanel .daily-activity-heading-note")).toContainText("每日额度将在午夜重置");
+  await expect(topicCards.first()).toContainText("已完成 · 可免费重温");
   await expect(topicCards.first().locator("[data-start-daily]")).toBeEnabled();
-  await expect(topicCards.last()).toContainText("今日额度已用完");
-  await expect(topicCards.last().locator("[data-start-daily]")).toBeDisabled();
 
   // Reviewing the completed item reopens the saved content without charging again.
   await topicCards.first().locator("[data-start-daily]").click();
@@ -147,6 +147,7 @@ test("signed-in Daily Application submits only aggregate first-try results", asy
   await installDailyLearningMock(page, "daily-user-b");
   await page.goto("/");
   await page.locator('[data-page="lessons"]').click();
+  await page.locator('[data-daily-tab="daily_application"]').click();
   const start = page.locator('#dailyActivityGrid [data-start-daily="daily_application"]');
   await expect(start).toBeEnabled();
   await start.click();
@@ -436,6 +437,7 @@ test("Daily activity translation refreshes in place while preserving English lea
   await expect(page.locator("#dailyLearningHeading")).toHaveText("每日学习");
   await expect(page.locator('[data-daily-pref-label="daily_topic"]')).toHaveText("每日主题");
   await expect(page.locator("#dailyLearningStatus")).toContainText("每日活动于午夜重置");
+  await page.locator('[data-daily-tab="daily_application"]').click();
   await page.locator('#dailyActivityGrid [data-start-daily="daily_application"]').click();
   await expect(page.locator("#dailyActivityReader")).toBeVisible();
   await expect(page.locator("#dailyActivityReader [data-daily-back]")).toHaveText("← 返回课程");
@@ -465,6 +467,7 @@ test("Daily Revision presents real examples separately from its practice questio
   await installDailyLearningMock(page,"daily-revision-example-user");
   await page.goto("/");
   await page.locator('[data-page="lessons"]').click();
+  await page.locator('[data-daily-tab="daily_revision"]').click();
   await page.locator('#dailyActivityGrid [data-start-daily="daily_revision"]').click();
   await expect(page.locator("#dailyActivityReader")).toBeVisible();
   const examples = page.locator("#dailyActivityReader .daily-examples-box li");
@@ -508,6 +511,34 @@ test("completed Discovery content remains reviewable across UTC rollover within 
   await expect(page.locator("#dailyActivityReader")).toContainText("meticulous");
 });
 
+test("Daily activity tabs show one Free card or three Premium cards with row actions", async ({ browser }) => {
+  const freePage = await browser.newPage();
+  const premiumPage = await browser.newPage();
+  await installDailyLearningMock(freePage,"daily-tabs-free","free");
+  await installDailyLearningMock(premiumPage,"daily-tabs-premium","premium");
+  for (const page of [freePage,premiumPage]) {
+    await page.goto("/");
+    await page.locator('[data-page="lessons"]').click();
+    await expect(page.locator("#dailyActivityGrid [role='tab']")).toHaveCount(4);
+    for (const type of ["daily_topic","daily_application","daily_discovery","daily_revision"]) {
+      await page.locator('[data-daily-tab="' + type + '"]').click();
+      const panel = page.locator("#dailyActivityPanel");
+      await expect(panel.locator('[data-activity-card="' + type + '"]')).toHaveCount(page===freePage?1:3);
+      await expect(page.locator('[data-daily-tab="' + type + '"]')).toHaveAttribute("aria-selected","true");
+      const card = panel.locator('[data-activity-card="' + type + '"]').first();
+      await expect(card.locator(".daily-activity-card-action")).toBeVisible();
+      const actionLayout = await card.evaluate(el => {
+        const copy = el.querySelector(".daily-activity-card-copy");
+        const action = el.querySelector(".daily-activity-card-action");
+        return action.getBoundingClientRect().left >= copy.getBoundingClientRect().right - 1;
+      });
+      expect(actionLayout).toBeTruthy();
+    }
+  }
+  await freePage.close();
+  await premiumPage.close();
+});
+
 test("Daily Discovery shows one Free entry and three identical Premium entries globally", async ({ browser }) => {
   const freePage = await browser.newPage();
   const premiumPageA = await browser.newPage();
@@ -537,6 +568,7 @@ test("Daily Discovery uses dictionary layout and the approved global catalogue m
   await installDailyLearningMock(page, "daily-discovery-layout-user");
   await page.goto("/");
   await page.locator('[data-page="lessons"]').click();
+  await page.locator('[data-daily-tab="daily_discovery"]').click();
   await page.locator('#dailyActivityGrid [data-start-daily="daily_discovery"]').click();
   const reader = page.locator("#dailyActivityReader");
   await expect(reader.locator(".daily-discovery-modal .modal-head")).toBeVisible();
