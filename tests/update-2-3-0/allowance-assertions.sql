@@ -702,12 +702,31 @@ commit;
 
 -- Preferences are owner-scoped and disabled activities cannot be newly started.
 begin;
+-- Resolve a valid current UTC Discovery slot before switching to the authenticated role.
+create temporary table test_daily_discovery_first on commit drop as
+with params as (
+  select (pg_catalog.now() at time zone 'UTC')::date as utc_day,
+         pg_catalog.count(*)::integer as pool_size
+  from private.learning_content_catalog
+  where activity_type='daily_discovery' and is_active and rotation_order between 1 and 93
+), offsets as (
+  select utc_day,pool_size,
+    pg_catalog.mod(pg_catalog.mod((utc_day - date '2026-11-15') * 3,pool_size)+pool_size,pool_size)+1 as first_order
+  from params
+)
+select c.content_id || ':' || pg_catalog.to_char(o.utc_day,'YYYY-MM-DD') as content_id
+from offsets o
+join private.learning_content_catalog c on c.rotation_order=o.first_order
+where c.activity_type='daily_discovery' and c.is_active;
+grant select on test_daily_discovery_first to authenticated;
 select set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
 set local role authenticated;
 do $$
 declare
   v_rejected boolean := false;
+  v_discovery_content_id text;
 begin
+  select content_id into v_discovery_content_id from test_daily_discovery_first;
   if not (select daily_topic_enabled and daily_application_enabled
           and daily_discovery_enabled and daily_revision_enabled
           from public.user_preferences where user_id = auth.uid()) then
@@ -720,7 +739,7 @@ begin
 
   begin
     perform public.start_daily_activity_session(
-      'daily_discovery','discovery-day-1:2026-11-14',null,null,'daily'
+      'daily_discovery',v_discovery_content_id,null,null,'daily'
     );
   exception when insufficient_privilege then
     v_rejected := true;
