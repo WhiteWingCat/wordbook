@@ -118,9 +118,12 @@ begin
   where l.plan_code = v_plan
     and l.activity_type = 'quiz';
 
-  if not found or not v_enabled or v_limit < 1 then
-    raise exception 'Quiz is currently unavailable for this plan' using errcode = '42501';
+  if not found then
+    v_limit := 0;
+    v_enabled := false;
   end if;
+  v_limit := coalesce(v_limit,0);
+  v_enabled := coalesce(v_enabled,false);
 
   v_local_date := (pg_catalog.now() at time zone v_timezone)::date;
   v_used := private.current_learning_allowance_usage(v_user, 'quiz', v_timezone);
@@ -131,6 +134,7 @@ begin
     'local_date', v_local_date,
     'plan_code', v_plan,
     'daily_limit', v_limit,
+    'plan_enabled', v_enabled and v_limit > 0,
     'used_count', v_used,
     'remaining_count', greatest(v_limit - v_used, 0)
   );
@@ -307,9 +311,9 @@ begin
   v_beginner_min := v_learning = 'en' and v_b >= 20;
   v_intermediate_min := v_learning = 'en' and v_i >= 24 and v_b >= 16;
   v_advanced_min := v_learning = 'en' and v_a >= 32 and v_i >= 8 and v_b >= 8;
-  v_beginner_target := v_b >= 30;
-  v_intermediate_target := v_i >= 36 and v_b >= 24;
-  v_advanced_target := v_a >= 48 and v_i >= 12 and v_b >= 12;
+  v_beginner_target := v_learning = 'en' and v_b >= 30;
+  v_intermediate_target := v_learning = 'en' and v_i >= 36 and v_b >= 24;
+  v_advanced_target := v_learning = 'en' and v_a >= 48 and v_i >= 12 and v_b >= 12;
 
   v_beginner_fresh := v_rb >= 10;
   v_intermediate_fresh :=
@@ -324,7 +328,9 @@ begin
     or (v_ra >= 12 and v_rb >= 4)
   );
 
-  v_can_start := (v_ctx ->> 'remaining_count')::integer > 0 and v_active is null;
+  v_can_start := coalesce((v_ctx ->> 'plan_enabled')::boolean,false)
+                 and (v_ctx ->> 'remaining_count')::integer > 0
+                 and v_active is null;
 
   return pg_catalog.jsonb_build_object(
     'timezone', v_timezone,
@@ -347,7 +353,8 @@ begin
         'available', v_beginner_min and v_beginner_fresh and v_can_start,
         'reason', case
           when v_active is not null then 'active_session_exists'
-          when v_learning <> 'en' then 'learning_course_not_supported'
+          when v_learning is distinct from 'en' then 'learning_course_not_supported'
+          when not coalesce((v_ctx ->> 'plan_enabled')::boolean,false) then 'plan_not_enabled'
           when (v_ctx ->> 'remaining_count')::integer < 1 then 'allowance_exhausted'
           when not v_beginner_min then 'question_bank_below_minimum'
           when not v_beginner_fresh then 'fresh_questions_unavailable_today'
@@ -452,6 +459,11 @@ begin
       'status','active_session_exists',
       'session',private.quiz_session_payload(v_active,false)
     );
+  end if;
+
+  if not coalesce((v_ctx ->> 'plan_enabled')::boolean,false) then
+    raise exception 'Quiz is currently unavailable for this plan'
+      using errcode='42501',detail='plan_not_enabled';
   end if;
 
   if (v_ctx ->> 'remaining_count')::integer < 1 then
