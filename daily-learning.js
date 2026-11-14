@@ -204,6 +204,7 @@
   ];
   const DAILY_DISCOVERY_SCHEDULE_VERSION = 1;
   const DAILY_DISCOVERY_SCHEDULE_EPOCH = "2026-11-15";
+  const DAILY_DISCOVERY_SCHEDULE_POOL_SIZE = 93;
 
   const legacyDailyDiscoveriesBacklog = [
     { id:"discovery-look-forward-01", category:"Grammar insight", title:"The hidden grammar in “look forward to”", body:"In this expression, to is a preposition rather than an infinitive marker. Follow it with a noun or an -ing form.", example:"I look forward to meeting your team.", zh:"这个表达中的 to 是介词，不是不定式标记。后面可以接名词或 -ing 形式。", zhExample:"I look forward to meeting your team.", source:"Cambridge Dictionary · English Grammar Today", sourceUrl:"https://dictionary.cambridge.org/grammar/british-grammar/word-patterns-look-forward-to" },
@@ -429,8 +430,8 @@
   }
 
   function dailyDiscoverySchedule(globalDay) {
-    const poolSize = dailyDiscoveryVocabulary.length;
-    if (poolSize < 90 || poolSize % 3 !== 0) {
+    const poolSize = DAILY_DISCOVERY_SCHEDULE_POOL_SIZE;
+    if (dailyDiscoveryVocabulary.length < poolSize || poolSize < 90 || poolSize % 3 !== 0) {
       throw new Error("Daily Discovery requires an approved vocabulary pool of at least 90 entries in groups of three.");
     }
     const dayOffset = dayOrdinal(globalDay) - dayOrdinal(DAILY_DISCOVERY_SCHEDULE_EPOCH);
