@@ -119,6 +119,9 @@ begin
     raise exception 'Duplicate option IDs were unexpectedly accepted';
   end if;
 
+  -- Create the synthetic account required by the auth.users foreign key.
+  insert into auth.users (id) values (v_user);
+
   -- Session snapshots store the selected option order and preserve the answer
   -- key privately. A pre-submission answer selection remains changeable.
   insert into private.quiz_sessions (
