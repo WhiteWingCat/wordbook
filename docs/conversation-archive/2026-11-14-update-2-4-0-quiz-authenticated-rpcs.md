@@ -65,7 +65,7 @@ The workflow includes:
 
 Workflow run 68 passed both Quiz jobs (PostgreSQL 17 and full local Supabase Auth/RPC integration plus security advisors), including the final direct-access and RLS assertion for the daily reservation table. The companion 2.3.x workflow's PostgreSQL, local Supabase Auth compatibility and Chromium browser regression jobs also passed.
 
-The local Supabase stack is created and destroyed within GitHub Actions. It is not a hosted Supabase branch and is not connected to the production project.
+The local Supabase stack is created and destroyed within GitHub Actions. It is not a hosted Supabase branch and is not connected to the production project. RPC tests use the authenticated database role with request claims set, exercising the real auth.uid()/auth.jwt() helpers and grants; signed-token HTTP/PostgREST coverage remains for frontend end-to-end testing.
 
 ## Current limitations
 
