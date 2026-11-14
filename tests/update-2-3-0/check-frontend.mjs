@@ -215,10 +215,9 @@ if (chooserStart < 0 || chooserEnd < 0
     || !chooserSource.includes('new Date().toISOString().slice(0,10)')) {
   throw new Error("Daily Discovery must remain globally date-selected before any account-specific selection is applied.");
 }
-const discoveryVocabularyStart = dailyScript.indexOf("const dailyDiscoveryVocabulary = [");
-const discoveryVocabularyEnd = dailyScript.indexOf("\n  ];", discoveryVocabularyStart);
-const discoveryVocabulary = new Function("return (" + dailyScript.slice(dailyScript.indexOf("[", discoveryVocabularyStart), discoveryVocabularyEnd + 4) + ")")();
-if (discoveryVocabulary.some(item => !item.tipZh)) throw new Error("Daily Discovery is missing Chinese usage-note translations.");
+if (curated.discoveries.length !== 93 || curated.discoveries.some(item => !item.tipZh)) {
+  throw new Error("Daily Discovery must contain 93 translated vocabulary entries with Chinese usage notes.");
+}
 const dailyStartActivityStart = dailyScript.indexOf("  async function startDailyActivity(");
 const dailyStartActivityEnd = dailyScript.indexOf("\n  function renderReader(", dailyStartActivityStart);
 const dailyStartActivitySource = dailyScript.slice(dailyStartActivityStart, dailyStartActivityEnd);
