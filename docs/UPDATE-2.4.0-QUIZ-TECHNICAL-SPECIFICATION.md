@@ -485,3 +485,110 @@ The first test run exposed an ordering-column defect in the question-bank valida
 This stage does not yet implement authenticated RPCs, question selection/random sampling, source-difficulty composition enforcement, session creation/resume/abandon/submit, server-side scoring, allowance charging, learning-history deletion integration or approved content ingestion. These are required before the feature can be used. No Quiz questions have been approved or inserted, and all difficulties remain unavailable.
 
 No production Supabase migration, allowance change, user data change, merge or deployment was performed.
+
+
+## 13. Authenticated Quiz session RPC implementation (2026-11-14)
+
+### 13.1 Implementation scope
+
+The next backend stage has been implemented on the feature/update-2-4-0-quiz branch in migration:
+
+- supabase/migrations/20261114160000_swiftdictionary_update_2_4_0_quiz_authenticated_rpcs.sql
+
+It builds on the question-bank/session foundation migration from section 12. No production Supabase migration was applied.
+
+### 13.2 Server-side RPC surface
+
+Public, authenticated-only, SECURITY INVOKER wrappers are provided for:
+
+- get_my_quiz_availability()
+- start_my_quiz(p_difficulty)
+- get_my_active_quiz()
+- save_my_quiz_answer(p_session_id, p_question_id, p_selected_option_id, p_current_position)
+- submit_my_quiz(p_session_id)
+- abandon_my_quiz(p_session_id)
+- get_my_quiz_history(p_limit)
+- get_my_quiz_review(p_session_id)
+
+The existing delete_my_learning_history() RPC is extended to delete Quiz session snapshots as part of learning-history deletion.
+
+Each implementation derives ownership from auth.uid(); no client-supplied user ID is accepted. Implementations live in the non-exposed private schema as narrowly scoped SECURITY DEFINER functions with an empty fixed search_path. Direct access to Quiz tables is revoked, RLS is enabled, and anonymous execution is revoked. Correct option IDs and explanations are withheld from active-session payloads and returned only after completion.
+
+### 13.3 Question selection and availability
+
+The RPC layer enforces the approved source-difficulty compositions:
+
+| Selected difficulty | Session composition |
+|---|---|
+| Beginner | 10 Beginner |
+| Intermediate | 12 Intermediate + 3 Beginner, or 8 + 7, or 7 + 8 |
+| Advanced | 12–16 Advanced + 4 Intermediate + 0–4 Beginner |
+
+For Intermediate, the RPC chooses randomly among compositions that still have enough unseen questions. Advanced likewise chooses randomly among feasible Beginner counts, rather than selecting a composition that cannot be fulfilled. This prevents avoidable failures when the remaining same-day pool is uneven.
+
+The two-session minimum and three-session target are checked against approved question counts mapped to active permanent lessons. Current availability also checks same-day unseen counts and at least three distinct topics. Session selection caps any one topic at 40% of the quiz and requires at least three topics.
+
+The current implementation exposes the English learning course only. A learning-course selection without an approved Quiz bank is reported as unavailable; a session's language selections are snapshotted so later preference changes do not rewrite an unfinished session.
+
+### 13.4 Session lifecycle and scoring
+
+- One unfinished session per account is enforced; a second start returns the existing session for resumption.
+- Session question order and option order are randomized and stored, so refreshes do not reshuffle an active session.
+- Selected answers and current position are saved server-side and can be changed until submission.
+- Unfinished sessions have no timer or automatic expiry. They remain resumable until completion or explicit abandonment.
+- Abandonment does not consume allowance, but issued questions remain reserved for that local day.
+- Submission requires every question to be answered. The server calculates correct count and percentage, rounded to the nearest whole percentage.
+- Completion is recorded through the existing learning_activity_log completion trigger, so the existing server-side daily allowance ledger remains authoritative. Duplicate submission is idempotent.
+- Completed reviews reveal the correct option and explanations; active sessions do not.
+- History returns completed Quiz summaries, with full review available through a separate owner-checked RPC.
+
+### 13.5 Same-day reservation and deletion behaviour
+
+A minimal private.quiz_daily_question_reservations table stores only the account ID, local date, question ID and reservation timestamp. It contains no prompt, options, selected answer, score or explanation. This separate ledger preserves the same-day no-repeat rule even if a user deletes Quiz history. Expired reservation rows are purged after a conservative 36-hour window when Quiz availability or a new session is requested.
+
+Learning-history deletion removes Quiz sessions, answer snapshots and Quiz completion events, but deliberately retains:
+- the daily allowance ledger, so deleting history cannot reset a user's quota; and
+- the minimal temporary question-reservation ledger, so deleting history cannot cause a same-day question repeat.
+
+This retention behaviour must be explained in the Privacy Notice before public release. Account deletion still removes these user-linked rows through the account foreign-key cascade.
+
+### 13.6 Validation
+
+The workflow .github/workflows/quiz-db-foundation.yml now has two isolated validation paths:
+
+1. PostgreSQL 17 disposable service: applies the foundation and RPC migrations and tests constraints, question sampling, session lifecycle, scoring, answer review, allowance charging, deletion, ownership and access controls.
+2. Disposable local Supabase stack: validates the real local Auth schema/JWT helpers, applies the synthetic SwiftDictionary application baseline and 2.3.x prerequisite migrations, applies both Quiz migrations, runs the authenticated RPC integration tests, and runs Supabase security advisors.
+
+The local Supabase stack is created and destroyed within GitHub Actions. It is not a hosted Supabase branch and does not connect to the production project. The PostgreSQL and local Supabase integration jobs passed on workflow run 66 (2026-11-14); the 2.3.x PostgreSQL and browser regression jobs also passed on that run's companion workflow. A final access-control assertion for the temporary reservation table was added afterward and is awaiting its follow-up workflow run.
+
+### 13.7 Remaining work and release gates
+
+- No approved Quiz question content has been inserted. The production question bank remains empty, so no difficulty should be made available yet.
+- Quiz frontend screens and navigation are not implemented in this stage.
+- Production Quiz allowance values remain Free 5/day and Premium 12/day. The confirmed target is Free 1/day and Premium 3/day; a separate reviewed migration must update the production limits before Quiz is enabled.
+- PR #8 remains a draft validation PR. Do not merge it, apply production migrations, change production allowance rows, or deploy until explicitly approved.
+- Next work should cover the question-bank authoring/import/approval pipeline, content minimums and curriculum coverage, then the Quiz UI and end-to-end browser tests.
+
+### 13.8 Preliminary Malaysia privacy/legal review
+
+Quiz adds account-linked learning-performance records: issued question IDs, answer selections, completion timestamps, scores, source lesson/topic mappings, local date and timezone. This is personal learning data even though it is not intended to be sensitive personal data. The feature adds no advertising tracker or third-party analytics.
+
+The Malaysian Personal Data Protection Act 2010 regulates personal-data processing in commercial transactions. The project's current free/personal purpose makes its precise application a matter for the later legal review; any Premium/commercial operation increases the likelihood that the Act applies. The 2024 amendment's DPO and breach-notification provisions took effect on 1 June 2025. The Commissioner's DPO guidance identifies thresholds including more than 20,000 data subjects, more than 10,000 sensitive-data subjects, or processing requiring regular and systematic monitoring. Adaptive weak-topic prioritisation uses learning-performance data to evaluate a learner's progress and may fall within the Commissioner's 2026 profiling guidance; the DPO and profiling implications need specific legal assessment rather than an assumption that the small project is exempt.
+
+Before public release, the later legal milestone should:
+- update the Privacy Notice to describe quiz-answer/progress processing, purpose, retention and deletion behaviour, including the temporary 36-hour reservation ledger and retained allowance count;
+- assess whether the project falls within a registrable data-controller class under the Commissioner's 2026 registration circular;
+- assess whether adaptive topic recommendations constitute profiling or regular/systematic monitoring and whether a DPO or DPIA is required;
+- verify the Supabase project region, subprocessors and a valid section 129 cross-border transfer basis if data leaves Malaysia;
+- define breach-response and notification procedures, data-subject request handling, and account deletion/retention rules; and
+- review age eligibility and applicable privacy rules for the global 16+ audience.
+
+This is a preliminary engineering risk check, not legal advice. The dedicated Terms and Legal update remains scheduled after Flashcards is released to main, as previously decided.
+
+Official reference material:
+- [PDPA 2010 reprint (2026)](https://www.pdp.gov.my/wp-content/uploads/2026/10/Akta-709-cetakan-semula-2026-BI.pdf)
+- [JPDP FAQ — scope, data-controller registration and DPO criteria](https://www.pdp.gov.my/en/faq/)
+- [DPO appointment guidance](https://www.pdp.gov.my/en/akta/personal-data-protection-guidelines-on-the-appointment-of-data-protection-officer-dpo/)
+- [Automated Decision-Making and Profiling Guideline (issued 30 April 2026)](https://www.pdp.gov.my/en/akta/automated-decision-making-and-profiling-guideline-admp/)
+- [Cross-Border Transfer Guideline](https://www.pdp.gov.my/en/akta/personal-data-protection-guidelines-on-cross-border-transfer-of-personal-data-cbpdt/)
+- [Circular No. 1/2026 — Registration of Data Controllers](https://www.pdp.gov.my/en/akta/personal-data-protection-commissioners-circular-no-1-2026-registration-of-data-controllers/)
