@@ -75,3 +75,8 @@ Primary sources are listed in the technical specification and should be rechecke
 - No application code, content bank, Supabase schema, migration, live allowance value, production user data or deployment was changed.
 - Quiz remains Coming Soon. No feature branch was created.
 - Next step: owner review of the specification and remaining choices. Only then create the Quiz implementation branch from current \`main\`.
+
+
+### Frontend integration refinement
+
+The technical specification was refined to recommend a dedicated \`quiz.js\` module with a narrow explicit bridge to the current inline application state. The browser receives only sanitised question/session data; all scoring, answer-key handling and allowance decisions remain server-side. This avoids further expanding the large \`index.html\` while retaining the existing static GitHub Pages architecture.
