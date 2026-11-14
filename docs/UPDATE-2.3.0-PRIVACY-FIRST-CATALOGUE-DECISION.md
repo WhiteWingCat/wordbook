@@ -21,15 +21,15 @@ The new review migration `docs/UPDATE-2.3.0-CONTENT-CATALOG-MIGRATION-DRAFT.sql`
 - Learning language code.
 - Active/inactive status.
 
-The current snapshot contains 95 approved English content entries:
+The current snapshot contains 161 approved English content entries:
 
 | Type | Entries |
 |---|---:|
 | Daily Topic | 28 |
 | Daily Application | 25 |
-| Daily Discovery | 27 |
+| Daily Discovery | 93 |
 | Permanent lessons | 15 |
-| **Total** | **95** |
+| **Total** | **161** |
 
 No question text, answer options, correct answers or learner responses are copied into the catalogue.
 
