@@ -27,6 +27,15 @@ const curated = {
   applications: readCuratedArray("dailyApplications"),
   discoveries: readDailyDiscoveryVocabulary()
 };
+const materialStart = dailyScript.indexOf("  const dailyApplicationExamples = {");
+const materialEnd = dailyScript.indexOf("  const dailyDiscoveryCoreVocabulary = [",materialStart);
+if (materialStart < 0 || materialEnd < 0) throw new Error("Daily Application and Revision content materials could not be isolated.");
+const materialSource = dailyScript.slice(materialStart,materialEnd);
+const activityMaterials = vm.runInNewContext(
+  `(() => { const dailyApplications = ${JSON.stringify(curated.applications)}; ${materialSource}; return {dailyApplicationExamples,dailyRevisionMaterials}; })()`
+);
+for (const item of curated.applications) item.examples = activityMaterials.dailyApplicationExamples[item.id] || [];
+
 for (const [name, items, minimum] of [
   ["Daily Topic", curated.topics, 20],
   ["Daily Application", curated.applications, 20],
@@ -42,8 +51,11 @@ for (const item of curated.topics) {
   }
 }
 for (const item of curated.applications) {
-  if (!item.topicId || !item.questions?.length) {
-    throw new Error(`Daily Application is missing topic, questions or translation: ${item.id}`);
+  if (!item.topicId || !item.questions?.length || item.examples.length < 2) {
+    throw new Error(`Daily Application is missing topic, independent examples or questions: ${item.id}`);
+  }
+  if (item.examples.some(example => typeof example !== "string" || !example.trim() || example.trim().endsWith("?"))) {
+    throw new Error(`Daily Application contains a question instead of an example: ${item.id}`);
   }
   for (const question of item.questions) {
     if (!question.q || !question.explanation || !question.zh
@@ -51,6 +63,35 @@ for (const item of curated.applications) {
         || !Number.isInteger(question.answer) || question.answer < 0
         || question.answer >= question.options.length) {
       throw new Error(`Invalid Daily Application question in ${item.id}`);
+    }
+  }
+}
+const revisionTopicIds = [
+  "sentence-basics","verb-tenses","nouns-and-articles","everyday-vocabulary",
+  "nouns-and-quantity","phrasal-verbs","collocations","word-formation",
+  "conditional-sentences","advanced-grammar","idioms-fixed-expressions",
+  "academic-professional-english","precise-vocabulary"
+];
+for (const topicId of revisionTopicIds) {
+  const revision = activityMaterials.dailyRevisionMaterials[topicId];
+  const applications = curated.applications.filter(item => item.topicId === topicId);
+  if (!revision || revision.examples?.length < 2 || revision.questions?.length < 2 || !applications.length) {
+    throw new Error(`Daily Revision is missing independent examples or questions for ${topicId}`);
+  }
+  const applicationQuestions = new Set(applications.flatMap(item => item.questions.map(question => question.q.trim())));
+  const applicationExamples = new Set(applications.flatMap(item => item.examples.map(example => example.trim())));
+  if (revision.questions.some(question => applicationQuestions.has(question.q.trim()))) {
+    throw new Error(`Daily Revision reuses a Daily Application question for ${topicId}`);
+  }
+  if (revision.examples.some(example => applicationExamples.has(example.trim()) || example.trim().endsWith("?"))) {
+    throw new Error(`Daily Revision reuses an Application example or contains a question for ${topicId}`);
+  }
+  for (const question of revision.questions) {
+    if (!question.q || !question.explanation || !question.zh
+        || !Array.isArray(question.options) || question.options.length < 2
+        || !Number.isInteger(question.answer) || question.answer < 0
+        || question.answer >= question.options.length) {
+      throw new Error(`Invalid Daily Revision question for ${topicId}`);
     }
   }
 }
@@ -93,17 +134,7 @@ if (new Set([...Array.from({length:31},(_,day)=>scheduleRunner(new Date(Date.par
   throw new Error("Daily Discovery's first 31-day rotation must use all 93 entries exactly once.");
 }
 
-const revisionTopicIds = [
-  "sentence-basics","verb-tenses","nouns-and-articles","everyday-vocabulary",
-  "nouns-and-quantity","phrasal-verbs","collocations","word-formation",
-  "conditional-sentences","advanced-grammar","idioms-fixed-expressions",
-  "academic-professional-english","precise-vocabulary"
-];
-for (const topicId of revisionTopicIds) {
-  if (!curated.applications.some(item => item.topicId === topicId)) {
-    throw new Error(`Adaptive revision has no application content for topic ${topicId}`);
-  }
-}
+
 
 const revisionStart = dailyScript.indexOf("  function revisionCandidates(");
 const revisionEnd = dailyScript.indexOf("\n  function chooseContent(", revisionStart);
@@ -395,6 +426,18 @@ for (const fragment of ["dailyTopics","dailyApplications","dailyDiscoveryVocabul
 if (dailyScript.includes('.from("daily_activity_sessions").insert(')
     || dailyScript.includes('.from("learning_activity_log").insert(')) {
   throw new Error("Daily Learning frontend must use server RPCs, not direct activity-log/session INSERTs.");
+}
+if (!dailyScript.includes("const disabled = !!disabledReason || exhausted;")
+    || !dailyScript.includes("const completedRows = (snapshot.completedToday || [])")
+    || !dailyScript.includes("renderCard(type,completedContent,null,true)")
+    || dailyScript.includes("const practiceExamples =")) {
+  throw new Error("Daily activity allowance lock, completed-content review, or example/Q&A separation regressed.");
+}
+if (!html.includes("allowanceRemaining<=0")
+    || !html.includes("get_my_learning_allowance_usage")
+    || !html.includes("if(!allowance.known||(!allowance.unlimited&&allowance.remaining<=0))")
+    || !html.includes("b.disabled=blocked")) {
+  throw new Error("Permanent lesson start gating or allowance-aware review access regressed.");
 }
 
 
