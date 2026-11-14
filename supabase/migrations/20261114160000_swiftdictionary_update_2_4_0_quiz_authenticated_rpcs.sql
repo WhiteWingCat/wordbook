@@ -8,6 +8,65 @@
 
 begin;
 
+-- Preserve curriculum mappings in each issued snapshot so later bank edits
+-- cannot rewrite the topic evidence used by Dashboard and Daily Revision.
+alter table private.quiz_session_questions
+  add column if not exists source_lesson_id text,
+  add column if not exists topic_id text,
+  add column if not exists source_difficulty text;
+
+update private.quiz_session_questions sq
+set source_lesson_id = qb.source_lesson_id,
+    topic_id = qb.topic_id,
+    source_difficulty = qb.difficulty
+from private.quiz_question_bank qb
+where qb.question_id = sq.question_id
+  and qb.revision = sq.question_revision
+  and (sq.source_lesson_id is null or sq.topic_id is null or sq.source_difficulty is null);
+
+alter table private.quiz_session_questions
+  alter column source_lesson_id set not null,
+  alter column topic_id set not null,
+  alter column source_difficulty set not null;
+
+do $constraints$
+begin
+  if not exists (
+    select 1 from pg_catalog.pg_constraint
+    where conrelid='private.quiz_session_questions'::regclass
+      and conname='quiz_session_questions_source_difficulty_check'
+  ) then
+    alter table private.quiz_session_questions
+      add constraint quiz_session_questions_source_difficulty_check
+      check (source_difficulty in ('beginner','intermediate','advanced'));
+  end if;
+end;
+$constraints$;
+
+create or replace function private.guard_quiz_session_question_metadata()
+returns trigger
+language plpgsql
+set search_path = ''
+as $function$
+begin
+  if new.source_lesson_id is distinct from old.source_lesson_id
+     or new.topic_id is distinct from old.topic_id
+     or new.source_difficulty is distinct from old.source_difficulty then
+    raise exception 'Quiz curriculum snapshot metadata is immutable'
+      using errcode = '42501';
+  end if;
+  return new;
+end;
+$function$;
+
+revoke all on function private.guard_quiz_session_question_metadata()
+  from public, anon, authenticated;
+drop trigger if exists guard_quiz_session_question_metadata
+  on private.quiz_session_questions;
+create trigger guard_quiz_session_question_metadata
+before update on private.quiz_session_questions
+for each row execute function private.guard_quiz_session_question_metadata();
+
 -- Resolve the caller's server-owned plan, timezone, allowance and local day.
 create or replace function private.quiz_request_context()
 returns jsonb
@@ -128,6 +187,9 @@ begin
         pg_catalog.jsonb_agg(
           pg_catalog.jsonb_build_object(
             'question_id', q.question_id,
+            'source_lesson_id', q.source_lesson_id,
+            'topic_id', q.topic_id,
+            'source_difficulty', q.source_difficulty,
             'position', q.position,
             'prompt_learning', q.prompt_learning_snapshot,
             'prompt_translation', q.prompt_translation_snapshot,
@@ -542,13 +604,15 @@ begin
   )
   insert into private.quiz_session_questions(
     session_id,user_id,local_date,question_id,question_revision,position,
-    option_order,prompt_learning_snapshot,prompt_translation_snapshot,
+    source_lesson_id,topic_id,source_difficulty,option_order,
+    prompt_learning_snapshot,prompt_translation_snapshot,
     options_snapshot,correct_option_id_snapshot,
     explanation_learning_snapshot,explanation_translation_snapshot
   )
   select
     v_session,v_user,v_day,s.question_id,s.revision,s.new_position,
-    s.shuffled_options,s.prompt_learning,s.prompt_translation,s.options,
+    s.source_lesson_id,s.topic_id,s.difficulty,s.shuffled_options,
+    s.prompt_learning,s.prompt_translation,s.options,
     s.correct_option_id,s.explanation_learning,s.explanation_translation
   from selected s;
 
