@@ -95,6 +95,26 @@ for (const topicId of revisionTopicIds) {
     }
   }
 }
+const makeRevisionStart = dailyScript.indexOf("  function makeRevisionContent(");
+const makeRevisionEnd = dailyScript.indexOf("\n\n  function revisionCandidates(",makeRevisionStart);
+if (makeRevisionStart < 0 || makeRevisionEnd < 0) throw new Error("Daily Revision content generator could not be isolated.");
+const makeRevisionContent = vm.runInNewContext(
+  `const dailyApplications = ${JSON.stringify(curated.applications)};
+   const dailyRevisionMaterials = ${JSON.stringify(activityMaterials.dailyRevisionMaterials)};
+   ${dailyScript.slice(makeRevisionStart,makeRevisionEnd)}
+   makeRevisionContent;`
+);
+const revisionSample = makeRevisionContent("verb-tenses","revision:verb-tenses:application-verb-patterns-01:2026-11-14:1","Test review");
+const applicationSample = curated.applications.find(item => item.topicId === "verb-tenses");
+if (!revisionSample || revisionSample.questions[0].q === applicationSample.questions[0].q
+    || revisionSample.examples.some(example => applicationSample.examples.includes(example))
+    || revisionSample.examples.some(example => example.trim().endsWith("?"))) {
+  throw new Error("Daily Revision must generate its own examples and Q&A rather than reusing Daily Application content.");
+}
+if (dailyScript.includes("const practiceExamples =")) {
+  throw new Error("Practice prompts must not be converted into example sentences.");
+}
+
 for (const item of curated.discoveries) {
   if (!item.id || !item.word || !item.part || !item.definition || !item.definitionZh
       || !item.body || !item.examples?.length || !item.phonetic) {
