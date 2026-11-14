@@ -105,10 +105,41 @@ test("mock identities represent separate Free and Premium plans",async()=>{
     p_activity_type:"daily_discovery",p_content_id:"mock-discovery-4:2026-11-14",
     p_topic_id:null,p_difficulty:null,p_source:"daily"
   });
-  const rejected=await client.rpc("complete_daily_activity_session",{
-    p_session_id:fourth.data.id,p_correct_count:null,p_question_count:null
+  assert.equal(fourth.error.code,"P0001");
+
+  const replay=await client.rpc("start_daily_activity_session",{
+    p_activity_type:"daily_discovery",p_content_id:"mock-discovery-1:2026-11-14",
+    p_topic_id:null,p_difficulty:null,p_source:"daily"
   });
-  assert.equal(rejected.error.code,"P0001");
+  assert.equal(replay.data.status,"completed");
+  const afterReplay=await client.rpc("get_my_learning_allowance_usage");
+  assert.equal(afterReplay.data.find(row=>row.activity_type==="daily_discovery").used_count,3);
+});
+
+test("Free users cannot start a new daily activity after one completion but can review it",async()=>{
+  const env=makeContext("feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev");
+  const client=env.window.supabase.createClient();
+  const first=await client.rpc("start_daily_activity_session",{
+    p_activity_type:"daily_application",p_content_id:"application-one",
+    p_topic_id:"verb-tenses",p_difficulty:"intermediate",p_source:"daily"
+  });
+  assert.equal(first.data.status,"in_progress");
+  const done=await client.rpc("complete_daily_activity_session",{
+    p_session_id:first.data.id,p_correct_count:2,p_question_count:2
+  });
+  assert.equal(done.data.status,"completed");
+  const blocked=await client.rpc("start_daily_activity_session",{
+    p_activity_type:"daily_application",p_content_id:"application-two",
+    p_topic_id:"verb-tenses",p_difficulty:"intermediate",p_source:"daily"
+  });
+  assert.equal(blocked.error.code,"P0001");
+  const replay=await client.rpc("start_daily_activity_session",{
+    p_activity_type:"daily_application",p_content_id:"application-one",
+    p_topic_id:"verb-tenses",p_difficulty:"intermediate",p_source:"daily"
+  });
+  assert.equal(replay.data.status,"completed");
+  const usage=await client.rpc("get_my_learning_allowance_usage");
+  assert.equal(usage.data.find(row=>row.activity_type==="daily_application").used_count,1);
 });
 
 test("daily activity RPCs simulate completion and allowance use without cloud access",async()=>{
