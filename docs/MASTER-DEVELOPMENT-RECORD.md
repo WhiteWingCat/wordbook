@@ -3,7 +3,7 @@
 > Durable project handover and source-of-truth summary for future development conversations.
 >
 > **Repository:** https://github.com/WhiteWingCat/wordbook  
-> **Last consolidated:** 2026-11-13  
+> **Last consolidated:** 2026-11-14  
 > **Current baseline:** Update 2.3.0 merged to main on 2026-11-13  
 > **Current work:** Update 2.3.1 bug fixes and dashboard/navigation improvements on feature/update-2-3-1-bug-fix-and-changes  
 > **Record status:** Updated after the 2.3.0 merge and live-site owner testing; re-check repository, Supabase and deployment state before further changes.
@@ -498,3 +498,59 @@ The 13 November legal review was refined to clarify the PDPA personal/household 
 - CI status for these new commits has not yet been confirmed. The earlier passing run #456 predates this hostname correction and is not evidence for these changes.
 - Next step: wait for/check the latest branch CI, then the owner can open `https://feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev/?swiftMock=1` (or add `&swiftMock=1` if the URL already contains another query parameter). Confirm the mock warning panel appears. Do not sign in with a real account or use the preview for real data changes.
 - The Cloudflare preview still shares the production Supabase project configuration. While mock mode is active, verify no Supabase requests are made; do not run real-account/data-changing tests until backend isolation is confirmed.
+
+
+## 15. Update 2.3.1 — owner feedback and dashboard / Daily Learning refinements (2026-11-14)
+
+### Owner-approved requirements from the latest live preview review
+
+1. Active learning course recency must use relative elapsed time (for example, “Last active 3 days ago”) rather than a full date/time string.
+2. Dashboard Activity overview must become a visual summary rather than a text-only list of counts.
+3. When a daily activity allowance is exhausted, do not reveal the next activity's content preview during the cooldown period.
+4. Daily Discovery is a globally shared daily subject: every user sees the same word on the same global day. Daily Topic, Daily Application and Daily Revision remain account-personalised.
+5. Daily Discovery should focus on dictionary-style recognition of less-common English vocabulary. The previous mixed grammar/facts discovery collection is retained in source as a future backlog candidate, not used by the new selector.
+6. Daily activity readers should open in a left-side slide-in panel following the Dictionary detail-panel interaction pattern.
+7. Add more examples across relevant daily activity readers.
+
+### Implementation now on the feature branch
+
+- **Feature branch:** `feature/update-2-3-1-bug-fix-and-changes`.
+- **PR:** [#5](https://github.com/WhiteWingCat/wordbook/pull/5), still intended to target `main`; no merge or production deployment authorised.
+- **Latest recorded feature commit:** `562f9ad6c594083ddef064d3764d791681341170`.
+- **Files changed:** `index.html` and `daily-learning.js`.
+- Dashboard course recency now displays relative elapsed time in minutes, hours, days, weeks or months.
+- Activity overview now displays a bar for each tracked activity category, with accessible text labels and completion counts. Bars are scaled against the largest category in the current account history; they are comparative counts, not a percentage-of-goal measure.
+- Daily activity cards replace the next-content preview with a cooldown message when the next slot is blocked by an exhausted allowance. The already-completed content remains reviewable according to the existing free-replay rule.
+- Daily Discovery now selects a deterministic vocabulary entry by UTC calendar date, so users see the same word regardless of account, preference or allowance timezone. The daily session remains per-user and existing per-user allowance enforcement is retained.
+- The new shared-word pilot currently uses a curated set of 12 less-common words with original explanations/examples, translation text, part of speech and pronunciation. The UI explicitly says the frequency classification is curated, not a live conversational-corpus ranking. **Statistical spoken-frequency ranking is not yet implemented** and must not be claimed as complete.
+- The prior mixed Daily Discovery array remains unused by the current selector and should be considered backlog material for possible future reuse in another activity.
+- Daily activity readers now use a modal backdrop and left slide-in panel with back, close and backdrop-dismiss controls. The reader includes dictionary-style definition/part-of-speech/pronunciation presentation for Daily Discovery.
+- Existing examples are expanded into individual examples where available; practice question blanks are also shown as completed example sentences. More authored examples can be added during content QA.
+- Existing allowance semantics, adaptive revision, account preferences, aggregate-only practice summaries and daily local-time reset rules are intended to remain unchanged.
+
+### Validation evidence and current limitation
+
+- JavaScript syntax validation passed for `daily-learning.js` and the inline application script in `index.html` after the final JavaScript changes.
+- Static assertions passed for relative timestamps, activity bars, UTC-shared discovery selection, cooldown preview suppression, drawer open/close controls, additional examples and dictionary-style discovery definition.
+- An early syntax check caught an unescaped apostrophe in the cooldown message. It was corrected and syntax validation passed afterward.
+- Latest GitHub Actions run observed: [run #486](https://github.com/WhiteWingCat/wordbook/actions/runs/43549929803), triggered from the latest feature commit and still queued at the time of this record update. It contains Chromium browser regression, PostgreSQL 17 migration/allowance and disposable local Supabase Auth compatibility jobs. Do not claim CI passed until all three finish successfully.
+- Owner has not yet tested these new changes. Do not mark Update 2.3.1 complete until owner preview testing and CI both pass.
+
+### Frequency-data research and legal/content notes
+
+- A candidate source for a future statistical spoken-frequency ranking is the OANC-derived spoken frequency list published by Lingevo. Lingevo states that its spoken list is counted from about 3.1 million words of Switchboard and Charlotte telephone/face-to-face conversation transcripts, and offers the derived lists for unrestricted use including commercial use, with credit to Lingevo and the Open American National Corpus.
+- Source references: [Lingevo English word lists and licensing](https://lingevo.com/resources/), [Open American National Corpus](https://anc.org/data/oanc/), [OANC spoken corpus composition](https://anc.org/OANC/index.html).
+- The OANC spoken data is a limited American-English conversation sample, not a universal measure of all spoken English. Any future label should explain the corpus and avoid implying a globally representative ranking.
+- The current 12-word pilot is curated, not derived from those frequency counts. Before claiming statistical selection, obtain the frequency file, validate its fields and counts, select a defensible frequency band, document attribution and add source notices. Do not redistribute any data until its actual terms and attribution are checked.
+- No new personal-data category or table was introduced for global discovery. The shared word is selected client-side by UTC date; each user's session, completion and allowance remain private and account-scoped.
+- Malaysia PDPA and global privacy review remains required for the wider project, but this change does not add new learner profiling or raw-answer collection. Preserve RLS, aggregate-only practice data and the existing account isolation. This is planning, not legal advice or a compliance certification.
+
+### Exact recovery point
+
+1. Continue from `feature/update-2-3-1-bug-fix-and-changes`; do not recreate it.
+2. Latest application commit recorded here: `562f9ad6c594083ddef064d3764d791681341170`.
+3. Check the latest run #486 and inspect any failed job logs before proceeding.
+4. Verify Cloudflare has rebuilt the preview for the latest branch commit. The owner-confirmed preview host remains `feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev`; use `?swiftMock=1` and fictional Test User A/B only.
+5. Test relative active timestamps, activity overview bars, free and Premium cooldown states, same global Daily Discovery word across mock identities, personalised Topic/Application/Revision, drawer open/close/backdrop behavior, translation, examples, completion, replay and abandon.
+6. The statistical frequency ranking remains an explicit content-quality follow-up; do not describe the curated pilot as corpus-ranked.
+7. Wait for the owner's testing feedback before further application changes. Do not merge PR #5, apply production migrations, change production data/settings or deploy without explicit approval.
