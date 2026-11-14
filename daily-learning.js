@@ -126,7 +126,7 @@
     ["discovery-word-ambiguous-01","ambiguous","adjective","/æmˈbɪɡjuəs/","Having more than one possible meaning, so the intended meaning is unclear.","模棱两可的；有歧义的","An ambiguous sentence can be understood in different ways because it lacks enough context.","The final instruction was ambiguous.","Try to avoid ambiguous wording in the form.","an ambiguous statement; ambiguous wording; remain ambiguous","an ambiguous statement（含义不明的陈述）；ambiguous wording（有歧义的措辞）；remain ambiguous（仍有歧义）"],
     ["discovery-word-arbitrary-01","arbitrary","adjective","/ˈɑːbɪtrəri/","Based on personal choice or chance rather than a clear reason or system.","任意的；武断的","Arbitrary describes a decision that seems unsupported by consistent rules or evidence.","The deadline felt arbitrary to the team.","The samples were assigned arbitrary numbers.","an arbitrary decision; an arbitrary rule; seem arbitrary","an arbitrary decision（武断的决定）；an arbitrary rule（随意制定的规则）；seem arbitrary（显得任意）"],
     ["discovery-word-assertive-01","assertive","adjective","/əˈsɜːtɪv/","Confident in expressing needs or opinions while respecting others.","坚定自信的；果断表达的","Assertive communication is clear and confident without being aggressive.","She was assertive but remained respectful.","You can be assertive when asking for clarification.","an assertive manner; assertive communication; be assertive","an assertive manner（坚定自信的态度）；assertive communication（坚定而尊重他人的沟通）；be assertive（自信明确地表达）"],
-    ["discovery-word-authentic-01","authentic","adjective","/ɔːˈθentɪk/","Genuine and true to its origin, character or identity.","真实的； authentic；原汁原味的","Authentic can describe something genuine or a style that feels faithful to its source.","The restaurant serves authentic regional dishes.","Her writing has an authentic voice.","authentic experience; authentic food; an authentic voice","authentic experience（真实的体验）；authentic food（地道的食物）；an authentic voice（真实自然的表达风格）"],
+    ["discovery-word-authentic-01","authentic","adjective","/ɔːˈθentɪk/","Genuine and true to its origin, character or identity.","真实的；地道的；原汁原味的","Authentic can describe something genuine or a style that feels faithful to its source.","The restaurant serves authentic regional dishes.","Her writing has an authentic voice.","authentic experience; authentic food; an authentic voice","authentic experience（真实的体验）；authentic food（地道的食物）；an authentic voice（真实自然的表达风格）"],
     ["discovery-word-benevolent-01","benevolent","adjective","/bəˈnevələnt/","Kind and generous, especially when intending to help others.","仁慈的；乐善好施的","Benevolent is a relatively formal word for someone who wishes to do good for others.","The benevolent neighbour helped the family rebuild.","The organisation was founded by a benevolent donor.","a benevolent person; benevolent intentions; a benevolent fund","a benevolent person（仁慈的人）；benevolent intentions（善意）；a benevolent fund（慈善基金）"],
     ["discovery-word-conventional-01","conventional","adjective","/kənˈvenʃənəl/","Following ideas or methods that are usual, traditional or widely accepted.","传统的；常规的","Conventional describes what is normal or established, often in contrast with something experimental.","They chose a conventional layout for the report.","The artist prefers unconventional materials to conventional paint.","conventional approach; conventional wisdom; conventional methods","conventional approach（常规方法）；conventional wisdom（普遍认同的看法）；conventional methods（传统方法）"],
     ["discovery-word-credible-01","credible","adjective","/ˈkredəbəl/","Believable and supported by enough evidence to be trusted.","可信的；可靠的","A credible explanation or source gives people good reasons to believe it.","The witness gave a credible account.","Check whether the source is credible before sharing the claim.","a credible source; a credible explanation; highly credible","a credible source（可信的来源）；a credible explanation（可信的解释）；highly credible（非常可信）"],
@@ -424,14 +424,35 @@
     return (accountHash + mockGeneration) >>> 0;
   }
 
+  function dailyDiscoverySchedule(globalDay) {
+    const poolSize = dailyDiscoveryVocabulary.length;
+    if (poolSize < 90 || poolSize % 3 !== 0) {
+      throw new Error("Daily Discovery requires an approved vocabulary pool of at least 90 entries in groups of three.");
+    }
+    const dayOffset = dayOrdinal(globalDay) - dayOrdinal(DAILY_DISCOVERY_SCHEDULE_EPOCH);
+    const firstIndex = ((dayOffset * 3) % poolSize + poolSize) % poolSize;
+    return [0,1,2].map(slot => {
+      const word = dailyDiscoveryVocabulary[(firstIndex + slot) % poolSize];
+      return {
+        ...word,
+        id:word.id + ":" + globalDay,
+        title:word.word,
+        example:word.examples[0],
+        examples:word.examples.slice(1),
+        zh:word.definitionZh,
+        scheduleVersion:DAILY_DISCOVERY_SCHEDULE_VERSION,
+        scheduleSlot:slot + 1
+      };
+    });
+  }
+
   function chooseContent(activityType, slot) {
     const day = snapshot.day;
     const baseIndex = dayOrdinal(day);
     if (activityType === "daily_discovery") {
+      // Global UTC schedule: never use account ID, local timezone, completion count or mock offset.
       const globalDay = new Date().toISOString().slice(0,10);
-      const index = ((dayOrdinal(globalDay)%dailyDiscoveryVocabulary.length)+dailyDiscoveryVocabulary.length)%dailyDiscoveryVocabulary.length;
-      const word = dailyDiscoveryVocabulary[index];
-      return {...word,id:word.id+":"+globalDay,title:word.word,example:word.examples[0],examples:word.examples.slice(1),zh:word.definitionZh};
+      return dailyDiscoverySchedule(globalDay);
     }
     const accountOffset = accountContentOffset();
     const pools = {daily_topic:dailyTopics,daily_application:dailyApplications};
@@ -468,7 +489,6 @@
     const id = ["revision",candidate.topicId,source.id,day,String(slot+1)].join(":");
     return makeRevisionContent(candidate.topicId,id,candidate.reason);
   }
-
   function resolveSessionContent(activityType, session, fallback) {
     if (activityType === "daily_revision") {
       const candidate = revisionCandidates(snapshot.lessonResults, snapshot.dailyResults, snapshot.completedToday)
@@ -602,15 +622,15 @@
       grid.innerHTML = '<div class="coming-card"><h2>All daily activities are paused</h2><p>Enable at least one activity above whenever you are ready to continue.</p></div>';
       return;
     }
-    grid.innerHTML = enabledTypes.map(type => {
+
+    const renderCard = (type,content,discoveryIndex=null) => {
       const meta = activityMeta[type];
-      const fallback = snapshot.content[type] || chooseContent(type,snapshot.completed?.[type] || 0);
-      const activeSession = (snapshot.openSessions || []).find(row => row.activity_type === type);
-      const content = activeSession ? resolveSessionContent(type,activeSession,fallback) : fallback;
       const limitConfig = snapshot.limits[type];
       const limit = limitConfig?.limit;
       const used = snapshot.completed[type] || 0;
       const remaining = Number.isFinite(limit) ? Math.max(0,limit-used) : null;
+      const activeSession = (snapshot.openSessions || []).find(row =>
+        row.activity_type === type && (type !== "daily_discovery" || row.content_id === content.id));
       const alreadyCompleted = (snapshot.dailyResults || []).some(row =>
         row.activity_type === type && row.content_id === content.id && row.status === "completed");
       const allowanceUnavailable = !activeSession && !alreadyCompleted
@@ -630,34 +650,54 @@
       const reason = type === "daily_revision" ? '<p class="daily-activity-meta"><span class="daily-activity-tag">' + esc(translationLanguage === "zh" ? "根据你的学习记录选择" : content.body) + '</span></p>' : "";
       const preview = exhausted
         ? '<div class="daily-reader-example daily-cooldown-message"><strong>' + esc(dailyUi("Today’s activity is complete","今日活动已完成")) + '</strong><p>' + esc(dailyUi("Your next activity will be available after the daily allowance resets at midnight (" + (snapshot.timezone || "your timezone") + ").","下一次活动将在每日额度于午夜重置后开放（" + (snapshot.timezone || "你的时区") + "）。")) + '</p></div>'
-        : '<div class="daily-reader-example"><strong>' + esc(dailyTitle(content)) + '</strong></div>';
+        : '<div class="daily-reader-example"><strong>' + esc(type === "daily_discovery" ? content.word : dailyTitle(content)) + '</strong>' +
+          (type === "daily_discovery" ? '<p class="muted-note">' + esc(content.phonetic || "") + ' · ' + esc(content.part || "") + '</p>' : '') + '</div>';
       let disabledReason = "";
       if (!currentUser || !supabaseClient) disabledReason = dailyUi("Sign in to start and sync this activity.","登录后即可开始活动并同步进度。");
       else if (snapshot.learningLanguage !== "en" || (typeof course !== "undefined" && course !== "en")) disabledReason = dailyUi("Daily activities currently teach English. Select English in Learning course to begin.","每日活动目前以英语为学习内容。请将学习课程切换为 English 后开始。");
       else if (allowanceUnavailable) disabledReason = limitConfig?.enabled === false
         ? dailyUi("This activity is not available for your current plan.","当前方案暂不提供此活动。")
         : dailyUi("Your allowance could not be checked. Please refresh before starting this activity.","无法确认活动额度，请刷新页面后再试。");
-      // The cooldown preview already explains the midnight reset. Avoid repeating
-      // the same allowance message a second time beneath it.
       const disabled = !!disabledReason;
-      return '<article class="daily-activity-card" data-activity-card="' + type + '">'
-        + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(meta.label) + '</span><span class="daily-activity-tag">' + esc(remainingLabel) + '</span></div>'
-        + '<h2>' + esc(meta.title) + '</h2><p>' + esc(meta.description) + '</p>'
-        + preview
-        + reason
+      const indexAttribute = discoveryIndex === null ? "" : ' data-discovery-index="' + discoveryIndex + '"';
+      const discoveryHeading = discoveryIndex === null ? "" : '<span class="daily-activity-tag">' + esc(dailyUi("Discovery " + (discoveryIndex+1) + " of 3","每日发现 " + (discoveryIndex+1) + " / 3")) + '</span>';
+      return '<article class="daily-activity-card" data-activity-card="' + type + '"' + (discoveryIndex === null ? "" : ' data-discovery-card="' + (discoveryIndex+1) + '"') + '>'
+        + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(meta.label) + '</span>' + discoveryHeading + '<span class="daily-activity-tag">' + esc(remainingLabel) + '</span></div>'
+        + '<h2>' + esc(type === "daily_discovery" ? content.word : meta.title) + '</h2><p>' + esc(type === "daily_discovery" ? meta.description : meta.description) + '</p>'
+        + preview + reason
         + (disabledReason ? '<p class="daily-activity-status">' + esc(disabledReason) + '</p>' : "")
-        + '<button type="button" class="primary-button" data-label="' + esc(buttonLabel) + '" data-start-daily="' + type + '"' + (disabled ? " disabled" : "") + '>' + esc(buttonLabel) + '</button>'
+        + '<button type="button" class="primary-button" data-label="' + esc(buttonLabel) + '" data-start-daily="' + type + '"' + indexAttribute + (disabled ? " disabled" : "") + '>' + esc(buttonLabel) + '</button>'
         + '</article>';
+    };
+
+    grid.innerHTML = enabledTypes.flatMap(type => {
+      if (type === "daily_discovery") {
+        const scheduled = Array.isArray(snapshot.content.daily_discovery)
+          ? snapshot.content.daily_discovery : [];
+        const visibleCount = Math.min(3,Math.max(1,Number(snapshot.limits.daily_discovery?.limit) || 1));
+        return scheduled.slice(0,visibleCount).map((content,index) => renderCard(type,content,index));
+      }
+      const content = snapshot.content[type] || chooseContent(type,snapshot.completed?.[type] || 0);
+      return [renderCard(type,content)];
     }).join("");
+
     grid.querySelectorAll("[data-start-daily]").forEach(button => {
-      button.addEventListener("click",() => startDailyActivity(button.dataset.startDaily));
+      button.addEventListener("click",() => startDailyActivity(
+        button.dataset.startDaily,
+        button.dataset.discoveryIndex === undefined ? 0 : Number(button.dataset.discoveryIndex)
+      ));
     });
   }
-
-  async function startDailyActivity(activityType) {
+  async function startDailyActivity(activityType, discoveryIndex=0) {
     if (!currentUser || !supabaseClient) return;
-    const selected = snapshot.content[activityType] || chooseContent(activityType,snapshot.completed?.[activityType] || 0);
-    const button = document.querySelector('[data-start-daily="' + activityType + '"]');
+    const discoverySlots = snapshot.content.daily_discovery;
+    const selected = activityType === "daily_discovery"
+      ? (Array.isArray(discoverySlots) ? discoverySlots[discoveryIndex] : null)
+      : snapshot.content[activityType] || chooseContent(activityType,snapshot.completed?.[activityType] || 0);
+    if (!selected) return;
+    const button = activityType === "daily_discovery"
+      ? document.querySelector('[data-start-daily="daily_discovery"][data-discovery-index="' + discoveryIndex + '"]')
+      : document.querySelector('[data-start-daily="' + activityType + '"]');
     if (button) { button.disabled = true; button.textContent = dailyUi("Opening…","正在打开…"); }
     try {
       const {data,error} = await supabaseClient.rpc("start_daily_activity_session",{
