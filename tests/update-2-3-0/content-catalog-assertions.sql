@@ -53,30 +53,44 @@ values
   ('77777777-7777-4777-8777-777777777777','free','active'),
   ('88888888-8888-4888-8888-888888888888','premium','active');
 
+-- Precompute the test schedule with owner access, then expose only this synthetic
+-- schedule fixture to the authenticated role (never the private catalogue).
+create temporary table test_daily_discovery_schedule on commit drop as
+with params as (
+  select (pg_catalog.now() at time zone 'UTC')::date as utc_day,
+         pg_catalog.count(*)::integer as pool_size
+  from private.learning_content_catalog
+  where activity_type='daily_discovery' and is_active and rotation_order between 1 and 93
+), offsets as (
+  select utc_day,pool_size,
+    pg_catalog.mod(pg_catalog.mod((utc_day - date '2026-11-15') * 3,pool_size)+pool_size,pool_size)+1 as first_order
+  from params
+), scheduled as (
+  select o.utc_day,
+         pg_catalog.array_agg(c.content_id order by s.slot) as ids
+  from offsets o
+  cross join pg_catalog.generate_series(0,3) as s(slot)
+  join private.learning_content_catalog c
+    on c.rotation_order = pg_catalog.mod(o.first_order - 1 + s.slot,o.pool_size)+1
+  where c.activity_type='daily_discovery' and c.is_active
+  group by o.utc_day
+)
+select utc_day,pg_catalog.to_char(utc_day,'YYYY-MM-DD') as utc_day_text,ids
+from scheduled;
+grant select on test_daily_discovery_schedule to authenticated;
+
 select set_config('request.jwt.claim.sub','77777777-7777-4777-8777-777777777777',true);
 set local role authenticated;
 
 do $$
 declare
-  v_day date := (pg_catalog.now() at time zone 'UTC')::date;
-  v_day_text text := pg_catalog.to_char((pg_catalog.now() at time zone 'UTC')::date,'YYYY-MM-DD');
-  v_pool_size integer;
-  v_first_order integer;
+  v_day date;
+  v_day_text text;
   v_ids text[];
 begin
-  select pg_catalog.count(*) into v_pool_size
-  from private.learning_content_catalog
-  where activity_type='daily_discovery' and is_active and rotation_order is not null;
-
-  v_first_order :=
-    pg_catalog.mod(pg_catalog.mod((v_day - date '2026-11-15') * 3,v_pool_size)
-      + v_pool_size,v_pool_size) + 1;
-
-  select pg_catalog.array_agg(c.content_id order by s.slot) into v_ids
-  from pg_catalog.generate_series(0,3) as s(slot)
-  join private.learning_content_catalog c
-    on c.rotation_order = pg_catalog.mod(v_first_order - 1 + s.slot,v_pool_size) + 1
-  where c.activity_type='daily_discovery' and c.is_active;
+  select utc_day,utc_day_text,ids
+  into v_day,v_day_text,v_ids
+  from test_daily_discovery_schedule;
 
   if not private.is_approved_learning_content(
     'permanent_lesson','b-sentence','sentence-basics','beginner','en','daily'
