@@ -60,10 +60,18 @@ test("mock data is isolated by identity and scoped to session storage",async()=>
   assert.equal(env.localStorage.getItem("swiftdictionary-saved"),null);
   env.localStorage.setItem("unrelated-real-setting","keep");
   env.sessionStorage.setItem("unrelated-session-setting","keep");
+  assert.equal(env.window.__swiftDictionaryMock.selectionGeneration(),0);
   env.window.__swiftDictionaryMock.reset();
+  assert.equal(env.window.__swiftDictionaryMock.selectionGeneration(),1);
   assert.equal(env.localStorage.getItem("unrelated-real-setting"),"keep");
   assert.equal(env.sessionStorage.getItem("unrelated-session-setting"),"keep");
-  assert.equal([...env.sessionStorage.data.keys()].some(key=>key.startsWith("swiftDictionaryMock:v1:")),false);
+  assert.deepEqual([...env.sessionStorage.data.keys()],["swiftDictionaryMock:v1:selection-generation"]);
+  // Reset restores each identity's own fixture while advancing the daily-selection generation.
+  result=await client.from("saved_words").select("word").eq("user_id","mock-user-a");
+  assert.deepEqual(Array.from(result.data,row=>row.word).sort(),["hello","你"].sort());
+  env.window.__swiftDictionaryMock.setActiveUser("mock-user-b");
+  result=await client.from("saved_words").select("word").eq("user_id","mock-user-b");
+  assert.deepEqual(Array.from(result.data,row=>row.word).sort(),["thank","好"].sort());
 });
 
 test("daily activity RPCs simulate completion and allowance use without cloud access",async()=>{
