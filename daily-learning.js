@@ -90,6 +90,134 @@
   ];
 
 
+  const dailyApplicationExamples = {
+    "application-verb-patterns-01":["I look forward to hearing your ideas at the meeting.","They decided to take the earlier train after checking the timetable."],
+    "application-articles-01":["She gave us a useful suggestion during the workshop.","It was an unusual experience for everyone involved."],
+    "application-quantity-01":["We received fewer emails this morning than yesterday.","There is less information in this short note than in the full report."],
+    "application-say-tell-01":["Please tell me what happened after the meeting.","She said goodbye to her colleagues before leaving."],
+    "application-collocations-01":["We need to make a decision before Friday.","The town experienced heavy rain overnight."],
+    "application-present-routine-02":["My parents cook dinner at home most evenings.","The library opens at nine and closes at six."],
+    "application-present-continuous-02":["The baby is sleeping in the next room.","I am staying with my cousin while my flat is repaired."],
+    "application-past-continuous-02":["We were having dinner when the lights went out.","At nine last night, I was studying for my exam."],
+    "application-prepositions-time-01":["The appointment is on Friday morning.","The shop closes at nine o’clock."],
+    "application-pronouns-01":["They invited my brother and me to the event.","The teacher spoke to us after class."],
+    "application-articles-the-02":["I saw a dog outside. The dog was wearing a red collar.","Could you open the window next to you?"],
+    "application-many-much-02":["How much luggage can we take?","There are not many seats left."],
+    "application-everyday-vocabulary-02":["Please take a photo of the sign.","We need to make a plan before we leave."],
+    "application-frequency-01":["She usually arrives early for meetings.","They are often busy on Mondays."],
+    "application-phrasal-separable-02":["The music is too loud, so please turn it down.","Please pick your bag up before we leave."],
+    "application-phrasal-meaning-02":["We have run out of milk, so I’ll visit the shop.","She looks after her younger brother after school."],
+    "application-word-family-02":["Kindness can make a difficult day feel easier.","A careful review helped us avoid a mistake."],
+    "application-prefix-02":["The instructions were unclear, so I asked for help.","It is impossible to finish the whole project in one hour."],
+    "application-first-conditional-02":["If you leave now, you will catch the bus.","If the weather improves, we will eat outside."],
+    "application-second-conditional-02":["If I were fluent, I would apply for the role.","If we had a bigger kitchen, we would cook together more often."],
+    "application-modals-02":["The lights are on, so they must be home.","The meeting might be delayed because the organiser has not confirmed it."],
+    "application-inversion-02":["Rarely have I seen such a thoughtful design.","Never have we received so many helpful comments."],
+    "application-idioms-02":["A quick introduction helped break the ice at the workshop.","Finishing the first draft was a piece of cake for the experienced writer."],
+    "application-academic-02":["The results suggest that the change may improve access.","The sample was small; therefore, the findings are preliminary."],
+    "application-precise-02":["The witness said that the event began at six.","The report mentions three possible causes without explaining them in detail."]
+  };
+  dailyApplications.forEach(item => { item.examples = dailyApplicationExamples[item.id] || []; });
+
+  const dailyRevisionMaterials = {
+    "verb-tenses": {
+      title:"Choose the tense that fits the time", titleZh:"根据时间选择合适的时态",
+      examples:["I have known Mei since our first year at university.","We were walking home when the rain started."],
+      questions:[
+        {q:"Which sentence describes an experience without giving a finished time?",options:["I visited Seoul in 2022.","I have visited Seoul twice.","I visit Seoul last year."],answer:1,explanation:"The present perfect can describe life experience when no finished past time is stated.",zh:"没有说明已结束的过去时间时，现在完成时可以表达人生经历。"},
+        {q:"The phone rang while I _____ dinner.",options:["was preparing","prepare","am preparing"],answer:0,explanation:"The past continuous describes the action already in progress when the shorter event happened.",zh:"过去进行时描述另一件较短的事情发生时已经正在进行的动作。"}
+      ]
+    },
+    "sentence-basics": {
+      title:"Make the sentence easy to follow", titleZh:"让句子结构清晰易懂",
+      examples:["The new designer presented her ideas to the team.","Our neighbours invited us to their celebration."],
+      questions:[
+        {q:"In “The little boy opened the heavy door,” which phrase is the object?",options:["The little boy","opened","the heavy door"],answer:2,explanation:"The heavy door receives the action of the verb opened.",zh:"the heavy door 是 opened 这个动作的承受对象，因此是宾语。"},
+        {q:"Choose the sentence with a clear subject before its verb.",options:["After lunch the report finished.","The assistant checked the report after lunch.","Checked the assistant after lunch."],answer:1,explanation:"A standard statement normally places its subject before the verb.",zh:"英语陈述句通常把主语放在动词之前。"}
+      ]
+    },
+    "nouns-and-articles": {
+      title:"Refer to nouns clearly", titleZh:"清楚地指称名词",
+      examples:["A visitor left an umbrella by the entrance.","The umbrella was returned to its owner later."],
+      questions:[
+        {q:"Choose the natural phrase for a first mention: “We adopted _____ European rescue dog.”",options:["a","an","the"],answer:0,explanation:"European begins with the consonant sound /j/, so a is used.",zh:"European 以辅音音素 /j/ 开头，因此使用 a。"},
+        {q:"Which sentence refers to a specific item both speakers can identify?",options:["Please pass me a blue folder.","Please pass me the blue folder beside you.","Please pass me blue folder."],answer:1,explanation:"The identifies a particular folder that the listener can identify from the situation.",zh:"the 用于指称听者能从当前情境辨认出的特定文件夹。"}
+      ]
+    },
+    "nouns-and-quantity": {
+      title:"Measure amounts and individual items", titleZh:"表达数量与具体项目",
+      examples:["There are several pieces of equipment in the studio.","We have enough time to check each document."],
+      questions:[
+        {q:"Choose the standard expression.",options:["three advices","three pieces of advice","three advice"],answer:1,explanation:"Advice is uncountable; use a piece of advice to count individual suggestions.",zh:"advice 是不可数名词；要计数具体建议时使用 a piece of advice。"},
+        {q:"There were _____ applicants this year than last year.",options:["less","fewer","little"],answer:1,explanation:"Fewer is used with plural countable nouns such as applicants.",zh:"applicants 是可数复数名词，因此使用 fewer。"}
+      ]
+    },
+    "everyday-vocabulary": {
+      title:"Choose natural everyday combinations", titleZh:"选择自然的日常词语搭配",
+      examples:["I usually make breakfast before checking my messages.","Could you give me a hand with these boxes?"],
+      questions:[
+        {q:"Which verb completes the natural expression “_____ a promise”?",options:["do","make","take"],answer:1,explanation:"Make a promise is the established collocation.",zh:"make a promise 是固定且自然的词语搭配。"},
+        {q:"Choose the phrase that means to become ready.",options:["get ready","make ready up","take ready"],answer:0,explanation:"Get ready is the common expression meaning prepare yourself.",zh:"get ready 是表示做好准备的常见表达。"}
+      ]
+    },
+    "phrasal-verbs": {
+      title:"Understand phrasal verbs in context", titleZh:"在语境中理解短语动词",
+      examples:["Please put the meeting off until next week.","I came across an old photograph while cleaning the drawer."],
+      questions:[
+        {q:"If a person “looks into” a problem, what do they do?",options:["Ignore it","Investigate it","Describe it briefly"],answer:1,explanation:"Look into means to investigate or examine something.",zh:"look into 表示调查或仔细检查某事。"},
+        {q:"Choose the natural sentence.",options:["Please switch off it.","Please switch it off.","Please it switch off."],answer:1,explanation:"A pronoun object normally goes between the verb and particle in a separable phrasal verb.",zh:"可分短语动词后接代词宾语时，代词通常放在动词与小品词之间。"}
+      ]
+    },
+    "word-formation": {
+      title:"Recognise word families", titleZh:"识别词族与词形变化",
+      examples:["Her explanation was helpful to the new students.","The team discussed the possibility of a later start."],
+      questions:[
+        {q:"Which word is an adjective formed from “hope”?",options:["hopefully","hopeful","hopefulness"],answer:1,explanation:"The suffix -ful forms the adjective hopeful.",zh:"后缀 -ful 构成形容词 hopeful。"},
+        {q:"Choose the correct negative form of “regular”.",options:["irregular","unregular","disregular"],answer:0,explanation:"Irregular is the established negative form of regular.",zh:"irregular 是 regular 约定俗成的否定形式。"}
+      ]
+    },
+    "conditional-sentences": {
+      title:"Connect a condition with its result", titleZh:"连接条件与结果",
+      examples:["If the package arrives today, I will collect it after work.","If I had more space, I would keep a larger desk."],
+      questions:[
+        {q:"Choose the correct completion: “If she had checked the address, she _____ the wrong building.”",options:["would not have visited","will not visit","does not visit"],answer:0,explanation:"A third conditional describes an unreal past condition and its imagined past result.",zh:"第三条件句描述不真实的过去条件及其假设的过去结果。"},
+        {q:"Which clause normally uses the present simple in a first conditional?",options:["The if-clause","The result clause with will","Both clauses with will"],answer:0,explanation:"The first conditional normally uses the present simple after if.",zh:"第一条件句的 if 从句通常使用一般现在时。"}
+      ]
+    },
+    "advanced-grammar": {
+      title:"Use emphasis and certainty carefully", titleZh:"谨慎使用强调与确定性表达",
+      examples:["Only after the review did the team approve the design.","The delivery must have been delayed by the storm."],
+      questions:[
+        {q:"Choose the correct formal inversion.",options:["Not until noon the office opened.","Not until noon did the office open.","Not until noon opened the office did."],answer:1,explanation:"A fronted negative expression such as not until triggers subject–auxiliary inversion.",zh:"not until 等否定表达置于句首时，会触发主语与助动词倒装。"},
+        {q:"The lights are off and the door is locked. They _____ have left.",options:["must","can't","mustn't"],answer:0,explanation:"Must have + past participle expresses a strong deduction about the past.",zh:"must have + 过去分词可以表达对过去情况的强烈推断。"}
+      ]
+    },
+    "idioms-fixed-expressions": {
+      title:"Interpret expressions beyond their literal words", titleZh:"理解超越字面意思的固定表达",
+      examples:["After a few minutes of small talk, the conversation began to flow.","We are in the same boat while the office is being renovated."],
+      questions:[
+        {q:"If a plan is “up in the air”, what does that mean?",options:["It is undecided","It is flying","It is finished"],answer:0,explanation:"Up in the air means that a decision or plan has not yet been settled.",zh:"up in the air 表示决定或计划尚未确定。"},
+        {q:"What does “keep an eye on” something mean?",options:["Watch it carefully","Avoid looking at it","Change its appearance"],answer:0,explanation:"Keep an eye on means to watch or monitor something.",zh:"keep an eye on 表示留意或密切观察某事。"}
+      ]
+    },
+    "academic-professional-english": {
+      title:"Match claims to the strength of evidence", titleZh:"让观点的确定程度符合证据",
+      examples:["The survey indicates a gradual increase in online participation.","These findings may not apply to every age group."],
+      questions:[
+        {q:"Which wording avoids claiming more than the evidence shows?",options:["The data proves every user prefers this option.","The data appears to support this interpretation.","This result is unquestionably universal."],answer:1,explanation:"Appears to support communicates a cautious interpretation.",zh:"appears to support 表达较为谨慎的解释，不会夸大证据。"},
+        {q:"Choose the transition that introduces a contrast.",options:["Furthermore","However","Therefore"],answer:1,explanation:"However introduces a contrast with the previous point.",zh:"however 用于引出与前文相反或不同的观点。"}
+      ]
+    },
+    "precise-vocabulary": {
+      title:"Select words that express the intended meaning", titleZh:"选择准确表达意思的词语",
+      examples:["The editor inferred the missing detail from the surrounding paragraph.","The new timetable is economical because it reduces unnecessary travel."],
+      questions:[
+        {q:"Which verb means to make something clear by giving details?",options:["clarify","assume","avoid"],answer:0,explanation:"Clarify means to make an idea or statement easier to understand.",zh:"clarify 表示通过补充说明使想法或陈述更清楚。"},
+        {q:"Choose the adjective meaning “related to the economy”.",options:["economic","economical","economy"],answer:0,explanation:"Economic means related to the economy; economical means using money or resources carefully.",zh:"economic 表示与经济有关；economical 表示节省金钱或资源。"}
+      ]
+    }
+  };
+
   const dailyDiscoveryCoreVocabulary = [
     {id:"discovery-word-meticulous-01",word:"meticulous",part:"adjective",phonetic:"/məˈtɪkjələs/",definition:"Very careful and precise, paying attention to every small detail.",definitionZh:"一丝不苟的；非常细致的",body:"Meticulous describes someone who works carefully and checks details rather than rushing.",examples:["She kept meticulous notes during the experiment.","The designer made a meticulous review of every page.","He is meticulous about checking the figures before sending a report."],tip:"Common patterns: meticulous attention to detail; meticulous planning; meticulous work.",tipZh:"常见搭配：meticulous attention to detail（注重细节）、meticulous planning（周密计划）、meticulous work（细致的工作）。",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
     {id:"discovery-word-reluctant-01",word:"reluctant",part:"adjective",phonetic:"/rɪˈlʌktənt/",definition:"Unwilling or hesitant to do something.",definitionZh:"不情愿的；勉强的",body:"Reluctant describes hesitation or unwillingness. It is useful when someone agrees to do something but does not really want to.",examples:["She was reluctant to speak in front of the crowd.","He reluctantly accepted the offer.","I am reluctant to decide without more information."],tip:"Common patterns: reluctant to do something; a reluctant decision; reluctantly agree.",tipZh:"常见搭配：reluctant to do something（不情愿做某事）、a reluctant decision（勉强作出的决定）、reluctantly agree（勉强同意）。",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
@@ -318,19 +446,18 @@
   }
 
   function makeRevisionContent(topicId, contentId, reason) {
-    const source = dailyApplications.find(item =>
-      item.topicId === topicId && contentId.includes(":" + item.id + ":"))
-      || dailyApplications.find(item => item.topicId === topicId)
-      || dailyApplications[0];
+    const material = dailyRevisionMaterials[topicId] || dailyRevisionMaterials["sentence-basics"];
+    const source = dailyApplications.find(item => item.topicId === topicId) || dailyApplications[0];
     return {
       id: contentId,
       topicId: topicId || source.topicId,
       difficulty: source.difficulty,
-      title: "Review: " + source.title,
-      titleZh: "复习：" + (dailyChineseTitles[source.id] || source.title),
+      title: "Review: " + material.title,
+      titleZh: "复习：" + material.titleZh,
       body: reason || "A short adaptive review selected from your learning history.",
       zh: "根据你的学习记录安排的简短复习。",
-      questions: source.questions
+      examples: material.examples.slice(),
+      questions: material.questions.map(question => ({...question,options:question.options.slice()}))
     };
   }
 
@@ -628,15 +755,17 @@
       return;
     }
 
-    const renderCard = (type,content,discoveryIndex=null) => {
+    const contentByKey = new Map();
+    const renderCard = (type,content,discoveryIndex=null,reviewOnly=false) => {
+      contentByKey.set(type + "|" + content.id,content);
       const meta = activityMeta[type];
       const limitConfig = snapshot.limits[type];
       const limit = limitConfig?.limit;
       const used = snapshot.completed[type] || 0;
       const remaining = Number.isFinite(limit) ? Math.max(0,limit-used) : null;
-      const activeSession = (snapshot.openSessions || []).find(row =>
+      const activeSession = reviewOnly ? null : (snapshot.openSessions || []).find(row =>
         row.activity_type === type && (type !== "daily_discovery" || row.content_id === content.id));
-      const alreadyCompleted = (snapshot.dailyResults || []).some(row =>
+      const alreadyCompleted = reviewOnly || (snapshot.dailyResults || []).some(row =>
         row.activity_type === type && row.content_id === content.id && row.status === "completed");
       const allowanceUnavailable = !activeSession && !alreadyCompleted
         && (!limitConfig || limitConfig.enabled === false || remaining === null);
@@ -663,7 +792,7 @@
       else if (allowanceUnavailable) disabledReason = limitConfig?.enabled === false
         ? dailyUi("This activity is not available for your current plan.","当前方案暂不提供此活动。")
         : dailyUi("Your allowance could not be checked. Please refresh before starting this activity.","无法确认活动额度，请刷新页面后再试。");
-      const disabled = !!disabledReason;
+      const disabled = !!disabledReason || exhausted;
       const indexAttribute = discoveryIndex === null ? "" : ' data-discovery-index="' + discoveryIndex + '"';
       const discoveryHeading = discoveryIndex === null ? "" : '<span class="daily-activity-tag">' + esc(dailyUi("Discovery " + (discoveryIndex+1) + " of 3","每日发现 " + (discoveryIndex+1) + " / 3")) + '</span>';
       return '<article class="daily-activity-card" data-activity-card="' + type + '"' + (discoveryIndex === null ? "" : ' data-discovery-card="' + (discoveryIndex+1) + '"') + '>'
@@ -682,23 +811,43 @@
         const visibleCount = Math.min(3,Math.max(1,Number(snapshot.limits.daily_discovery?.limit) || 1));
         return scheduled.slice(0,visibleCount).map((content,index) => renderCard(type,content,index));
       }
-      const content = snapshot.content[type] || chooseContent(type,snapshot.completed?.[type] || 0);
-      return [renderCard(type,content)];
+      const completedRows = (snapshot.completedToday || [])
+        .filter(row => row.activity_type === type && row.content_id)
+        .sort((a,b) => Date.parse(b.completed_at || 0) - Date.parse(a.completed_at || 0));
+      const reviewCards = [];
+      const seen = new Set();
+      for (const row of completedRows) {
+        if (seen.has(row.content_id)) continue;
+        seen.add(row.content_id);
+        const completedContent = resolveSessionContent(type,row,snapshot.content[type]);
+        if (completedContent) reviewCards.push(renderCard(type,completedContent,null,true));
+      }
+      const active = (snapshot.openSessions || []).find(row => row.activity_type === type);
+      const nextContent = active
+        ? resolveSessionContent(type,active,snapshot.content[type])
+        : snapshot.content[type] || chooseContent(type,snapshot.completed?.[type] || 0);
+      if (nextContent && !seen.has(nextContent.id)) reviewCards.unshift(renderCard(type,nextContent));
+      else if (!nextContent && !reviewCards.length) {
+        const fallback = chooseContent(type,snapshot.completed?.[type] || 0);
+        if (fallback) reviewCards.push(renderCard(type,fallback));
+      }
+      return reviewCards;
     }).join("");
 
     grid.querySelectorAll("[data-start-daily]").forEach(button => {
       button.addEventListener("click",() => startDailyActivity(
         button.dataset.startDaily,
-        button.dataset.discoveryIndex === undefined ? 0 : Number(button.dataset.discoveryIndex)
+        button.dataset.discoveryIndex === undefined ? 0 : Number(button.dataset.discoveryIndex),
+        contentByKey.get(button.dataset.startDaily + "|" + button.dataset.contentId) || null
       ));
     });
   }
-  async function startDailyActivity(activityType, discoveryIndex=0) {
+  async function startDailyActivity(activityType, discoveryIndex=0, contentOverride=null) {
     if (!currentUser || !supabaseClient) return;
     const discoverySlots = snapshot.content.daily_discovery;
-    const selected = activityType === "daily_discovery"
+    const selected = contentOverride || (activityType === "daily_discovery"
       ? (Array.isArray(discoverySlots) ? discoverySlots[discoveryIndex] : null)
-      : snapshot.content[activityType] || chooseContent(activityType,snapshot.completed?.[activityType] || 0);
+      : snapshot.content[activityType] || chooseContent(activityType,snapshot.completed?.[activityType] || 0));
     if (!selected) return;
     const button = activityType === "daily_discovery"
       ? document.querySelector('[data-start-daily="daily_discovery"][data-discovery-index="' + discoveryIndex + '"]')
@@ -755,14 +904,10 @@
         + '</div><h2>' + esc(dailyTitle(content)) + '</h2>';
       if (content.body) html += '<p>' + esc(content.body) + '</p>';
       html += selectedTranslation(content);
-      const practiceExamples = isQuiz && Array.isArray(content.questions)
-        ? content.questions.map(question => String(question.q || "").replace(/_{2,}/g,question.options?.[question.answer] || "…"))
-        : [];
       const examples = [
         ...(content.example ? String(content.example).split(/\s+\/\s+/) : []),
-        ...(Array.isArray(content.examples) ? content.examples : []),
-        ...practiceExamples
-      ].filter(Boolean);
+        ...(Array.isArray(content.examples) ? content.examples : [])
+      ].filter(example => typeof example === "string" && example.trim());
       if (examples.length) html += '<section class="daily-reader-example daily-examples-box"><strong>' + esc(dailyUi("Examples","例句")) + '</strong><ul>' + examples.map(example=>'<li>' + esc(example) + '</li>').join("") + '</ul></section>';
       if (content.tip) html += '<div class="daily-reader-example"><strong>' + esc(dailyUi("Usage note","用法提示")) + '</strong><p>' + esc(content.tip) + '</p></div>';
       if (isQuiz) {
