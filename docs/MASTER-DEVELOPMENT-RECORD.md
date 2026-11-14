@@ -880,3 +880,69 @@ Use the existing feature preview only after confirming Cloudflare Pages has rebu
 - Refresh/reopen on the same UTC date and confirm the three scheduled words remain unchanged.
 
 No owner preview test has yet been recorded. PR #5 remains open/unmerged; no production database migration, production data operation or deployment was performed. Do not merge or deploy without explicit owner approval.
+
+## 22. Update 2.3.1 — activity content quality, allowance enforcement and completed reviews (2026-11-14)
+
+### Owner feedback and scope
+
+The owner reported four issues during mock-preview testing:
+1. Daily Application and Daily Revision reused the same examples and Q&A.
+2. Users could still open new lessons after exhausting their daily allowance on either Free or Premium.
+3. Completed content should remain available for review after the allowance is used.
+4. Some strings displayed as examples were actually questions.
+
+These corrections preserve the previously approved allowance values:
+- Free: 5 permanent lesson completions per local day; 1 completion per day for each Daily Topic, Daily Application, Daily Discovery and Daily Revision category.
+- Premium: 15 permanent lesson completions per local day; 3 completions per day for each daily category.
+- Only successful completion consumes allowance. Reviewing completed content does not consume another completion. Existing in-progress sessions retain the existing free-resume behavior; their eventual completion remains subject to the server-side allowance.
+
+### Implementation on the existing feature branch
+
+**Content quality**
+- Added two explicit, authored example sentences for each of the 25 Daily Application items.
+- Added independent, topic-specific Daily Revision materials for all 13 revision topics, with separate examples and Q&A. Revision no longer borrows the Application question set.
+- Updated `makeRevisionContent` to use the dedicated Revision material.
+- Removed the renderer's conversion of practice prompts into examples. Only explicitly supplied example strings are rendered in the Examples section.
+- Added checks for question-style examples, exact reuse between Application and Revision, and invalid question structures.
+
+**Allowance enforcement**
+- Daily activity start buttons are disabled when the current plan's category allowance is exhausted. Existing plan-specific visibility remains unchanged: Free sees only Discovery slot one; Premium sees slots one through three.
+- Permanent Lessons now reads current usage from the server-side `get_my_learning_allowance_usage` RPC, disables unstarted lessons at zero remaining, and rechecks the allowance before creating a new progress row.
+- Completed lesson progress remains accessible for free review. Existing in-progress lessons remain resumable under the established policy.
+- The mock adapter now rejects new daily activity sessions after the plan allowance is exhausted, matching the server behavior.
+
+**Completed-content review**
+- Daily Topic, Daily Application and Daily Revision show completed items from the current local allowance day as review cards.
+- Daily Discovery preserves completed review cards across a UTC schedule change that occurs before the user's local allowance day ends. These review cards do not count as additional scheduled entries or consume another allowance.
+- `start_daily_activity_session` checks for an exact completed session before applying the current approved-content schedule/plan validator. A previously completed item can therefore be reopened after allowance exhaustion, UTC schedule rollover or a plan change. New sessions still pass the private approved-catalogue and plan-slot validator.
+- The private catalogue, RLS boundaries, account-scoped completion state and aggregate-only practice-result design are unchanged.
+
+### Validation
+
+GitHub Actions run **#705** passed against code/test commit **8fb19e183f524277fc9b5c133e8860d79a4a975b**:
+https://github.com/WhiteWingCat/wordbook/actions/runs/43565545461
+
+All three jobs passed:
+- **Chromium browser regression:** 21 tests passed. New coverage includes Free and Premium lesson limits, free completed-lesson review, distinct Application/Revision examples and Q&A, completed Daily Topic review after exhaustion, and Discovery review across UTC rollover. Existing translation, Daily Learning, Dashboard, sign-in and account-switching regressions also passed.
+- **PostgreSQL 17 migration and allowance tests:** passed, including a new assertion that reopening an exact completed Daily Topic session after the Free allowance is exhausted returns the saved completed session without increasing usage. Existing catalogue, direct-RPC, ledger, concurrency and history-deletion assertions passed.
+- **Supabase CLI local Auth compatibility:** passed against disposable local services, including Auth schema/roles/JWT helpers and security-advisor checks.
+
+Intermediate test failures were corrected before run #705. They included question-form and duplicated examples, locale-specific test expectations, and a rollover fixture using a display word instead of the approved stable Discovery ID. An earlier Supabase CLI setup attempt hit a GitHub release API rate limit; the complete final run #705 succeeded.
+
+### Legal, privacy and release boundaries
+
+- New examples and Revision questions were authored for SwiftDictionary. No third-party dictionary corpus, question bank or external frequency dataset was imported.
+- No new personal-data fields, tracking, answer-level telemetry or global learner-completion records were added.
+- Completed and reviewable progress remains account-scoped; the content catalogue remains private and RLS-protected.
+- The standing Malaysia PDPA and general privacy planning remains applicable. No new data-source or personal-data processing category was introduced. If Premium is commercialised later, subscription pricing, renewal, cancellation/refund and consumer disclosures still require separate review. This is not a legal-compliance certification.
+- Dashboard remains frozen. The SQL migration is still a draft. No production Supabase migration, production data operation, merge or deployment was performed.
+
+### Current recovery point and next actions
+
+1. Continue on `feature/update-2-3-1-bug-fix-and-changes`; PR #5 remains open and unmerged.
+2. Latest code/test commit validated by CI: `8fb19e183f524277fc9b5c133e8860d79a4a975b`. Subsequent commits on the feature branch update only the development record and archive.
+3. Confirm Cloudflare Pages has rebuilt the latest feature head before owner retesting. Use only the mock preview with fictional Test User A (Free) and Test User B (Premium):
+   `https://feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev/?swiftMock=1`
+4. Retest the four reported issues: distinct Application/Revision examples and Q&A; examples are actual examples; new lessons/daily activities are blocked at exhausted Free/Premium limits; completed content remains reviewable without consuming allowance.
+5. Specifically verify Discovery review across UTC rollover while the local allowance day remains active, and verify Chinese translation refresh still updates the reader in place.
+6. Do not merge PR #5, apply production migrations, or deploy without explicit owner approval.
