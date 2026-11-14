@@ -262,7 +262,7 @@ if (!dailyScript.includes("function effectiveAllowanceTimezone(")
 }
 
 const dailyZoneStart = dailyScript.indexOf("  function effectiveAllowanceTimezone(");
-const dailyZoneEnd = dailyScript.indexOf("\n\n  function selectedTranslation(", dailyZoneStart);
+const dailyZoneEnd = dailyScript.indexOf("\n\n  const dailyChineseTitles = {", dailyZoneStart);
 if (dailyZoneStart < 0 || dailyZoneEnd < 0) {
   throw new Error("Daily Learning effective timezone helper could not be isolated.");
 }
