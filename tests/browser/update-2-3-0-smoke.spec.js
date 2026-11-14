@@ -133,6 +133,13 @@ test("signed-in Daily Application submits only aggregate first-try results", asy
   await start.click();
   await expect(page.locator("#dailyActivityReader #dailyQuestions .daily-question").first()).toBeVisible();
 
+  const examples = page.locator("#dailyActivityReader .daily-examples-box li");
+  await expect(examples).toHaveCount(2);
+  const exampleTexts = await examples.allTextContents();
+  const questionPrompts = await page.locator("#dailyActivityReader #dailyQuestions .daily-question strong").allTextContents();
+  expect(exampleTexts.every(text => !text.trim().endsWith("?"))).toBeTruthy();
+  expect(exampleTexts.some(example => questionPrompts.includes(example))).toBeFalsy();
+
   const questions = page.locator("#dailyActivityReader #dailyQuestions .daily-question");
   const count = await questions.count();
   expect(count).toBeGreaterThan(0);
