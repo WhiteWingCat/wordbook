@@ -88,6 +88,27 @@ test("mock identities represent separate Free and Premium plans",async()=>{
   assert.equal(entitlement.data.plan_code,"premium");
   limit=await client.from("learning_plan_limits").select("daily_limit").eq("plan_code","premium").eq("activity_type","daily_discovery").single();
   assert.equal(limit.data.daily_limit,3);
+
+  for (let i=1;i<=3;i++) {
+    const started=await client.rpc("start_daily_activity_session",{
+      p_activity_type:"daily_discovery",p_content_id:"mock-discovery-"+i+":2026-11-14",
+      p_topic_id:null,p_difficulty:null,p_source:"daily"
+    });
+    const completed=await client.rpc("complete_daily_activity_session",{
+      p_session_id:started.data.id,p_correct_count:null,p_question_count:null
+    });
+    assert.equal(completed.data.status,"completed");
+  }
+  const usage=await client.rpc("get_my_learning_allowance_usage");
+  assert.equal(usage.data.find(row=>row.activity_type==="daily_discovery").used_count,3);
+  const fourth=await client.rpc("start_daily_activity_session",{
+    p_activity_type:"daily_discovery",p_content_id:"mock-discovery-4:2026-11-14",
+    p_topic_id:null,p_difficulty:null,p_source:"daily"
+  });
+  const rejected=await client.rpc("complete_daily_activity_session",{
+    p_session_id:fourth.data.id,p_correct_count:null,p_question_count:null
+  });
+  assert.equal(rejected.error.code,"P0001");
 });
 
 test("daily activity RPCs simulate completion and allowance use without cloud access",async()=>{
