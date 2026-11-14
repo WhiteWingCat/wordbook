@@ -805,10 +805,10 @@
       const discoveryHeading = discoveryIndex === null ? "" : '<span class="daily-activity-tag">' + esc(dailyUi("Discovery " + (discoveryIndex+1) + " of 3","每日发现 " + (discoveryIndex+1) + " / 3")) + '</span>';
       return '<article class="daily-activity-card" data-activity-card="' + type + '"' + (discoveryIndex === null ? "" : ' data-discovery-card="' + (discoveryIndex+1) + '"') + '>'
         + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(meta.label) + '</span>' + discoveryHeading + '<span class="daily-activity-tag">' + esc(remainingLabel) + '</span></div>'
-        + '<h2>' + esc(type === "daily_discovery" ? content.word : meta.title) + '</h2><p>' + esc(type === "daily_discovery" ? meta.description : meta.description) + '</p>'
+        + '<h2>' + esc(type === "daily_discovery" ? content.word : (reviewOnly ? dailyTitle(content) : meta.title)) + '</h2><p>' + esc(type === "daily_discovery" ? meta.description : meta.description) + '</p>'
         + preview + reason
         + (disabledReason ? '<p class="daily-activity-status">' + esc(disabledReason) + '</p>' : "")
-        + '<button type="button" class="primary-button" data-label="' + esc(buttonLabel) + '" data-start-daily="' + type + '"' + indexAttribute + (disabled ? " disabled" : "") + '>' + esc(buttonLabel) + '</button>'
+        + '<button type="button" class="primary-button" data-label="' + esc(buttonLabel) + '" data-start-daily="' + type + '" data-content-id="' + esc(content.id) + '"' + indexAttribute + (disabled ? " disabled" : "") + '>' + esc(buttonLabel) + '</button>'
         + '</article>';
     };
 
