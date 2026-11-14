@@ -4,9 +4,9 @@
 >
 > **Repository:** https://github.com/WhiteWingCat/wordbook  
 > **Last consolidated:** 2026-11-14  
-> **Current baseline:** Update 2.3.2 merged to main on 2026-11-14; production Daily Learning database schema remains pending  
-> **Current work:** Verify main-branch deployment and prepare the missing Update 2.3.0 Supabase production migrations; then proceed to Update 2.4.0 Quiz  
-> **Record status:** Updated after Update 2.3.2 PR #6 merge and read-only production database inspection; no production migration or bulk data operation was performed.
+> **Current baseline:** Update 2.3.2 merged to main; six 2.3.0 Supabase migrations applied to production on 2026-11-14; Update 2.3.3 Dashboard Favorite Words detail change is in PR #7  
+> **Current work:** Validate the Update 2.3.3 Dashboard Favorite Words detail change in PR #7; production Daily Learning schema is now installed. Next roadmap feature remains Update 2.4.0 Quiz  
+> **Record status:** Updated after the six approved production migrations were applied and verified, and Update 2.3.3 PR #7 was opened. No production user-content bulk operation was performed.
 
 This record combines confirmed owner decisions, repository evidence and the latest development handover. It is not proof that the live application or production database matches a draft branch.
 
@@ -1178,3 +1178,86 @@ The Update 2.3.2 hotfix:
 4. Before applying production migrations, present the exact migration list, data backfill effects, security/RLS changes and rollback/backup plan, then obtain explicit owner approval.
 5. Verify production migration history and schema after approval; then retest Daily Learning start, resume, completion, review, timezone reset and Free/Premium allowance behavior.
 6. Update 2.4.0 Quiz remains planned after the 2.3.0 server database rollout is complete.
+
+## 27. Update 2.3.3 — production Daily Learning database rollout and Dashboard Favorite Words details (2026-11-14)
+
+### Owner request and release scope
+
+The owner authorised preparing and applying the reviewed 2.3.0 database migrations to the live Supabase project and requested that the combined work be tracked as **Update 2.3.3**. The additional interface change is that selecting a saved Favorite Word from the Dashboard must open its expanded details without navigating to Dictionary.
+
+### Production Supabase migration rollout
+
+All six reviewed migrations were applied successfully to the live SwiftDictionary Supabase project on 2026-11-14 using the connected Supabase integration, in this dependency order:
+
+| Migration version | Migration |
+|---|---|
+| 20261114082303 | `swiftdictionary_update_2_3_0_saved_words_privilege_hardening` |
+| 20261114082311 | `swiftdictionary_update_2_3_0_learning_content_catalog` |
+| 20261114082324 | `swiftdictionary_update_2_3_0_completion_based_allowance` |
+| 20261114082328 | `swiftdictionary_update_2_3_0_daily_activity_sessions` |
+| 20261114082332 | `swiftdictionary_update_2_3_0_current_window_allowance_ledger` |
+| 20261114082335 | `swiftdictionary_update_2_3_0_learning_history_deletion` |
+
+The exact SQL bodies are now recorded under `supabase/migrations/` with the same timestamp versions as the live migration history. Their statements match the reviewed drafts applied to production; migration-file headers identify them as applied source, not pending drafts. The six original review drafts remain in `docs/` as historical review artifacts.
+
+### Preflight and post-migration verification
+
+Before applying the migrations, read-only checks confirmed:
+- Historical `lesson_progress` and lesson `learning_activity_log` rows reconciled one-to-one (13 rows in each project-wide relation at the time of preflight).
+- No per-user historical count mismatches.
+- No historical start-timestamp mismatches beyond the five-second tolerance.
+- No duplicate practice-summary groups that would block the new uniqueness/summary rules.
+- Required Supabase Auth session columns were present.
+
+After applying the migrations, the production migration history listed all six versions. Schema verification confirmed:
+- `public.daily_activity_sessions`, `private.learning_content_catalog` and `private.learning_allowance_usage` exist.
+- Daily start, complete, allowance-usage and learning-history-deletion RPCs exist.
+- Free permanent lessons = 5/day; proposed Premium permanent lessons = 15/day.
+- Free daily Topic/Application/Discovery/Revision = 1 each/day; proposed Premium = 3 each/day.
+- 161 approved catalogue rows are active.
+- Historical completion reconciliation remains represented as 13 completed events.
+- The migrations themselves created no daily sessions or current-window ledger rows.
+
+Security/grant verification confirmed:
+- `public.saved_words` retains RLS and its three existing owner-scoped policies.
+- Anonymous SELECT is denied; authenticated SELECT/INSERT/DELETE are allowed; authenticated UPDATE is denied.
+- Authenticated users cannot directly SELECT the private catalogue or allowance ledger.
+- Authenticated users can execute the intended Daily Activity, allowance read and own-history deletion RPCs.
+
+The post-migration Security Advisor reported INFO findings for private tables with RLS enabled and no policies (intentional deny-by-default private tables), WARN findings for authenticated execution of two SECURITY DEFINER RPCs (including the new authenticated practice-summary RPC, which checks `auth.uid()` and is intentionally exposed to signed-in callers), and the existing Auth leaked-password-protection setting. These notices were not silently expanded into unrelated changes. Review the advisor again if the security model changes.
+
+No production test account, synthetic user, or test session was inserted. No personal saved-word contents were copied into the development record. The current-window ledger remains private and stores category-level counts, not per-word or answer-level telemetry.
+
+### Update 2.3.3 Dashboard Favorite Words detail behavior
+
+- Branch: `feature/update-2-3-3-dashboard-favorite-details`.
+- PR #7: https://github.com/WhiteWingCat/wordbook/pull/7.
+- Current recorded feature head at archive time: `b09f10aa1fa22ea3ba4209408758cb2325eba4ae`.
+- Selecting an English or Chinese saved word opens the existing expanded detail drawer while the Dashboard page remains visible.
+- Previous/next dictionary navigation controls and arrow-key navigation are suppressed while a Dashboard favorite is open; normal dictionary modal behavior is restored after closing.
+- Closing the drawer returns focus to the originating Dashboard favorite when it remains in the document.
+- A legacy saved row absent from the current dictionary catalogue remains on the Dashboard and receives a status message; it is not silently redirected to Dictionary or guessed.
+- A new Chromium browser regression covers both English and Simplified Chinese favorites and verifies Dashboard remains visible.
+
+### Validation and deployment state
+
+- GitHub Actions run #775 passed PostgreSQL 17 migration/allowance tests, Chromium browser regression tests (including the new Dashboard favorite detail test), and disposable local Supabase Auth compatibility.
+- A follow-up run #780 was queued/in progress for the final branch head after migration-source header cleanup; verify its final conclusion before merge.
+- Cloudflare Pages reported a successful branch preview build for an intermediate commit. The final PR head still needs its current CI/preview result checked.
+- PR #7 is open and mergeable. **The frontend change has not been merged to `main` or deployed to the live site.** The six database migrations are already live. The production Daily Learning schema blocker is therefore resolved; the owner should refresh the live site and test Daily Learning start/resume/completion/allowance behavior.
+- Do not claim Update 2.3.3's Dashboard detail interface is live until the owner approves merge and the main deployment succeeds.
+
+### Privacy and legal-risk review
+
+The rollout uses the already reviewed data model: stable approved content identifiers, completion event metadata, per-category allowance counts and user-owned daily sessions. The catalogue does not store question text or answers; the allowance ledger does not store word IDs or answer-level events. No new tracking, third-party content or payment functionality was introduced. Saved-word least-privilege grants were tightened without removing owner-scoped RLS.
+
+Malaysia PDPA and general international privacy obligations remain relevant to account-linked preferences and learning records. The current change does not add new personal-data categories. Review privacy notices and cross-border processing disclosures before future monetisation or broader analytics. This is planning guidance, not legal advice or a compliance certification.
+
+### Recovery point and next actions
+
+1. Verify GitHub Actions run #780 and the latest Cloudflare branch preview result for PR #7.
+2. Let the owner test the live Daily Learning experience now that the production schema is installed.
+3. Obtain explicit owner approval before merging PR #7 and triggering the main frontend deployment.
+4. After merge, verify the main deployment and ask the owner to test English/Chinese Dashboard favorite detail panels on desktop and mobile.
+5. Continue to Update 2.4.0 Quiz only after the 2.3.3 rollout is accepted.
+
