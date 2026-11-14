@@ -817,7 +817,17 @@
         const scheduled = Array.isArray(snapshot.content.daily_discovery)
           ? snapshot.content.daily_discovery : chooseContent("daily_discovery",0);
         const visibleCount = Math.min(3,Math.max(1,Number(snapshot.limits.daily_discovery?.limit) || 1));
-        return scheduled.slice(0,visibleCount).map((content,index) => renderCard(type,content,index));
+        const visible = scheduled.slice(0,visibleCount);
+        const seen = new Set(visible.map(content => content.id));
+        const reviewCards = (snapshot.completedToday || [])
+          .filter(row => row.activity_type === type && row.content_id && !seen.has(row.content_id))
+          .sort((a,b) => Date.parse(b.completed_at || 0) - Date.parse(a.completed_at || 0))
+          .map(row => {
+            seen.add(row.content_id);
+            const completedContent = resolveSessionContent(type,row,null);
+            return completedContent ? renderCard(type,completedContent,null,true) : "";
+          }).filter(Boolean);
+        return [...visible.map((content,index) => renderCard(type,content,index)),...reviewCards];
       }
       const completedRows = (snapshot.completedToday || [])
         .filter(row => row.activity_type === type && row.content_id)
