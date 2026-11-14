@@ -366,6 +366,8 @@ test("Daily activity translation refreshes in place while preserving English lea
   await installDailyLearningMock(page, "daily-translation-user");
   await page.goto("/");
   await page.locator('[data-page="lessons"]').click();
+  await expect(page.locator("#dailyLearningHeading")).toHaveText("每日学习");
+  await expect(page.locator('[data-daily-pref-label="daily_topic"]')).toHaveText("每日主题");
   await page.locator('#dailyActivityGrid [data-start-daily="daily_application"]').click();
   await expect(page.locator("#dailyActivityReader")).toBeVisible();
   await expect(page.locator("#dailyActivityReader [data-daily-back]")).toHaveText("← 返回课程");
@@ -376,12 +378,16 @@ test("Daily activity translation refreshes in place while preserving English lea
 
   await page.locator("#translationSelect").evaluate(el => { el.value="en"; el.dispatchEvent(new Event("change",{bubbles:true})); });
   await expect(page.locator("#dailyActivityReader [data-daily-back]")).toHaveText("← Back to Lessons");
+  await expect(page.locator("#dailyLearningHeading")).toHaveText("Daily Learning");
+  await expect(page.locator('[data-daily-pref-label="daily_topic"]')).toHaveText("Daily Topic");
   await expect(page.locator("#dailyActivityReader #dailyQuestions .daily-question strong").first()).toContainText(/[A-Za-z]/);
   await expect(page.locator("#dailyActivityReader .daily-question-feedback").first()).not.toBeEmpty();
   await expect(page.locator("#dailyActivityReader .daily-question-feedback").first()).not.toContainText("中文说明");
 
   await page.locator("#translationSelect").evaluate(el => { el.value="zh"; el.dispatchEvent(new Event("change",{bubbles:true})); });
   await expect(page.locator("#dailyActivityReader [data-daily-back]")).toHaveText("← 返回课程");
+  await expect(page.locator("#dailyLearningHeading")).toHaveText("每日学习");
+  await expect(page.locator('[data-daily-pref-label="daily_topic"]')).toHaveText("每日主题");
   await expect(page.locator("#dailyActivityReader .daily-question-feedback").first()).toContainText("中文说明");
 });
 
