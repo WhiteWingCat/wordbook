@@ -1,11 +1,5 @@
--- DRAFT ONLY — not an applied Supabase migration.
--- Apply after:
---   1. UPDATE-2.3.0-ALLOWANCE-MIGRATION-DRAFT.sql
---   2. UPDATE-2.3.0-DAILY-ACTIVITY-MIGRATION-DRAFT.sql
---   3. UPDATE-2.3.0-ALLOWANCE-LEDGER-MIGRATION-DRAFT.sql
--- The privileged implementation stays in the non-exposed private schema.
--- The public RPC is only a SECURITY INVOKER wrapper.
-
+-- SwiftDictionary Update 2.3.0 — learning-history deletion support.
+-- Applied to the live SwiftDictionary Supabase project as migration 20261114082335.
 begin;
 
 create or replace function private.delete_my_learning_history_impl()
