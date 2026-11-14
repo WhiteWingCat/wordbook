@@ -487,7 +487,7 @@ test("completed Discovery content remains reviewable across UTC rollover within 
     const previousUtc = new Date(Date.parse(todayUtc + "T00:00:00.000Z") - 86400000).toISOString().slice(0,10);
     const completed = {
       id:"discovery-rollover-completed",user_id:"discovery-rollover-review-user",
-      activity_type:"daily_discovery",content_id:"meticulous:" + previousUtc,
+      activity_type:"daily_discovery",content_id:"discovery-word-meticulous-01:" + previousUtc,
       topic_id:null,difficulty:null,source:"daily",status:"completed",
       started_at:new Date().toISOString(),completed_at:new Date().toISOString(),
       correct_count:null,question_count:null
