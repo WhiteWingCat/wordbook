@@ -477,6 +477,37 @@ test("Daily Revision presents real examples separately from its practice questio
   expect(exampleTexts.some(example => questionTexts.some(question => question.includes(example)))).toBeFalsy();
 });
 
+test("completed Discovery content remains reviewable across UTC rollover within the local allowance day", async ({ page }) => {
+  await installDailyLearningMock(page,"discovery-rollover-review-user","free");
+  await page.goto("/");
+  await expect.poll(() => page.evaluate(() => window.__swiftDailyMock?.user?.id)).toBe("discovery-rollover-review-user");
+  await page.evaluate(() => {
+    const state = window.__swiftDailyMock;
+    const todayUtc = new Date().toISOString().slice(0,10);
+    const previousUtc = new Date(Date.parse(todayUtc + "T00:00:00.000Z") - 86400000).toISOString().slice(0,10);
+    const completed = {
+      id:"discovery-rollover-completed",user_id:"discovery-rollover-review-user",
+      activity_type:"daily_discovery",content_id:"meticulous:" + previousUtc,
+      topic_id:null,difficulty:null,source:"daily",status:"completed",
+      started_at:new Date().toISOString(),completed_at:new Date().toISOString(),
+      correct_count:null,question_count:null
+    };
+    state.sessions = [completed];
+    state.tables.daily_activity_sessions = state.sessions;
+    state.allowanceUsage.find(row => row.activity_type === "daily_discovery").used_count = 1;
+  });
+  await page.locator('[data-page="lessons"]').click();
+  await expect(page.locator('#dailyActivityGrid [data-discovery-card]')).toHaveCount(1);
+  const discoveryCards = page.locator('#dailyActivityGrid [data-activity-card="daily_discovery"]');
+  await expect(discoveryCards).toHaveCount(2);
+  await expect(discoveryCards.first()).toContainText("重温已完成内容");
+  await expect(discoveryCards.first().locator("[data-start-daily]")).toBeEnabled();
+  await expect(discoveryCards.last().locator("[data-start-daily]")).toBeDisabled();
+  await discoveryCards.first().locator("[data-start-daily]").click();
+  await expect(page.locator("#dailyActivityReader")).toBeVisible();
+  await expect(page.locator("#dailyActivityReader")).toContainText("meticulous");
+});
+
 test("Daily Discovery shows one Free entry and three identical Premium entries globally", async ({ browser }) => {
   const freePage = await browser.newPage();
   const premiumPageA = await browser.newPage();
