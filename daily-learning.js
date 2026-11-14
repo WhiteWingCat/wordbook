@@ -11,7 +11,7 @@
   const activityMeta = {
     daily_topic: { title: "Daily Topic", label: "Learn one focused idea", description: "A short guided explanation with examples." },
     daily_application: { title: "Daily Application", label: "Use what you know", description: "Apply grammar and vocabulary in practical contexts." },
-    daily_discovery: { title: "Daily Discovery", label: "Explore something new", description: "A mixed collection of language facts, expressions and common mistakes." },
+    daily_discovery: { title: "Daily Discovery", label: "A word shared worldwide", description: "One less-common English word, selected for everyone each day and explored like a dictionary entry." },
     daily_revision: { title: "Daily Revision", label: "Strengthen your memory", description: "An adaptive review chosen from your learning history." }
   };
 
@@ -87,6 +87,22 @@
     {"id":"application-idioms-02","topicId":"idioms-fixed-expressions","difficulty":"intermediate","title":"Interpret common expressions","questions":[{"q":"If someone says “Could you give me a hand?”, they are asking you to _____.","options":["help them","shake their hand only","leave them alone"],"answer":0,"explanation":"Give someone a hand is an informal expression meaning help.","zh":"give someone a hand 是表示帮助某人的非正式表达。"},{"q":"If a task is “a piece of cake”, it is _____.","options":["very difficult","very easy","unfinished"],"answer":1,"explanation":"A piece of cake is an idiom meaning something is very easy.","zh":"a piece of cake 是表示某事很容易的习语。"}]},
     {"id":"application-academic-02","topicId":"academic-professional-english","difficulty":"advanced","title":"Use cautious academic language","questions":[{"q":"Which sentence makes a cautious claim?","options":["This proves the method always works.","The results suggest the method may help.","Everyone knows the method works."],"answer":1,"explanation":"Suggest and may signal a measured interpretation rather than certainty.","zh":"suggest 和 may 表达较为谨慎的解释，而不是绝对确定。"},{"q":"Choose the best transition: The sample was small; _____, the results are preliminary.","options":["therefore","although","meanwhile"],"answer":0,"explanation":"Therefore introduces a consequence or conclusion.","zh":"therefore 用于引出结果或结论。"}]},
     {"id":"application-precise-02","topicId":"precise-vocabulary","difficulty":"advanced","title":"Choose a precise reporting verb","questions":[{"q":"The speaker _____ that the event would begin at six.","options":["said","told","mentioned to"],"answer":0,"explanation":"Say can introduce the words or message; tell normally needs a listener object.","zh":"say 可以引出说话内容；tell 通常需要接听话的人作宾语。"},{"q":"The report _____ three possible causes but does not explain them in detail.","options":["mentions","tells","says to"],"answer":0,"explanation":"Mention means refer to something briefly.","zh":"mention 表示简短地提及某事。"}]}
+  ];
+
+
+  const dailyDiscoveryVocabulary = [
+    {word:"meticulous",part:"adjective",phonetic:"/məˈtɪkjələs/",definition:"Very careful and precise, paying attention to every small detail.",definitionZh:"一丝不苟的；非常细致的",body:"Meticulous describes someone who works carefully and checks details rather than rushing.",examples:["She kept meticulous notes during the experiment.","The designer made a meticulous review of every page.","He is meticulous about checking the figures before sending a report."],tip:"Common patterns: meticulous attention to detail; meticulous planning; meticulous work.",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {word:"reluctant",part:"adjective",phonetic:"/rɪˈlʌktənt/",definition:"Unwilling or hesitant to do something.",definitionZh:"不情愿的；勉强的",body:"Reluctant describes hesitation or unwillingness. It is useful when someone agrees to do something but does not really want to.",examples:["She was reluctant to speak in front of the crowd.","He reluctantly accepted the offer.","I am reluctant to decide without more information."],tip:"Common patterns: reluctant to do something; a reluctant decision; reluctantly agree.",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {word:"plausible",part:"adjective",phonetic:"/ˈplɔːzəbəl/",definition:"Seeming reasonable or likely to be true, although it has not been proved.",definitionZh:"看似合理的；貌似可信的",body:"Plausible describes an explanation or suggestion that sounds believable, without proving it is true.",examples:["That is a plausible explanation for the delay.","The team offered two plausible reasons for the change.","Her story sounded plausible, but we checked the details."],tip:"Common patterns: a plausible explanation; a plausible reason; seem plausible.",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {word:"fleeting",part:"adjective",phonetic:"/ˈfliːtɪŋ/",definition:"Lasting for only a very short time.",definitionZh:"短暂的；转瞬即逝的",body:"Fleeting describes something that passes quickly, such as a moment, glance, feeling or opportunity.",examples:["We caught a fleeting glimpse of the bird.","The excitement was fleeting, but the memory stayed.","She gave him a fleeting smile before leaving."],tip:"Common combinations: a fleeting moment; a fleeting glance; a fleeting feeling.",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {word:"cumbersome",part:"adjective",phonetic:"/ˈkʌmbəsəm/",definition:"Large, heavy, complicated or difficult to handle.",definitionZh:"笨重的；繁琐难处理的",body:"Cumbersome can describe a physical object that is awkward to carry or a process that is unnecessarily complicated.",examples:["The old equipment was cumbersome to move.","The approval process became cumbersome.","A smaller bag is easier to carry than that cumbersome case."],tip:"Often used with process, system, equipment, procedure or paperwork.",topicId:"daily-discovery-vocabulary",difficulty:"advanced"},
+    {word:"quaint",part:"adjective",phonetic:"/kweɪnt/",definition:"Attractively unusual or old-fashioned.",definitionZh:"古雅的；别致的；古色古香的",body:"Quaint often describes a small place, building or custom that feels charming because it is old-fashioned or unusual.",examples:["We stayed in a quaint little village.","The café occupies a quaint old building.","The street is known for its quaint shops."],tip:"Usually positive when describing places, buildings or details.",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {word:"weary",part:"adjective",phonetic:"/ˈwɪəri/",definition:"Very tired, especially after a long period of effort or difficulty.",definitionZh:"疲倦的；疲惫的",body:"Weary is a more expressive alternative to tired. It can describe physical exhaustion or feeling worn down by a repeated situation.",examples:["The weary travellers finally reached the hotel.","I grew weary of having the same argument.","She gave a weary sigh and sat down."],tip:"Common patterns: feel weary; weary of something; a weary expression.",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {word:"subtle",part:"adjective",phonetic:"/ˈsʌtəl/",definition:"Not obvious or easy to notice; expressed in a delicate or indirect way.",definitionZh:"微妙的；不易察觉的；含蓄的",body:"Subtle describes a small difference, hint, change or effect that is easy to miss.",examples:["There is a subtle difference between the two versions.","The painting uses subtle shades of blue.","She gave a subtle hint that she wanted to leave."],tip:"Common combinations: subtle difference; subtle change; subtle hint; subtle effect.",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {word:"obsolete",part:"adjective",phonetic:"/ˈɒbsəliːt/",definition:"No longer used because something newer or better has replaced it.",definitionZh:"过时的；废弃的",body:"Obsolete describes technology, methods or systems that are no longer in practical use.",examples:["Many people consider fax machines obsolete.","The update replaced several obsolete features.","The old rule became obsolete after the policy changed."],tip:"Common patterns: become obsolete; obsolete technology; render something obsolete.",topicId:"daily-discovery-vocabulary",difficulty:"advanced"},
+    {word:"resilient",part:"adjective",phonetic:"/rɪˈzɪliənt/",definition:"Able to recover after difficulty, damage or change.",definitionZh:"有韧性的；能迅速恢复的",body:"Resilient describes people, communities or systems that can adapt and recover after setbacks.",examples:["Children can be remarkably resilient.","The team remained resilient after the defeat.","A resilient system can recover from unexpected problems."],tip:"Common patterns: remain resilient; resilient community; resilient to change.",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {word:"bewildered",part:"adjective",phonetic:"/bɪˈwɪldəd/",definition:"Very confused and unsure what is happening or what to do.",definitionZh:"困惑的；不知所措的",body:"Bewildered is stronger than confused and often describes someone who cannot understand an unexpected situation.",examples:["He looked bewildered by the sudden change.","I was completely bewildered by the instructions.","The visitors seemed bewildered when the train was cancelled."],tip:"Common patterns: look bewildered; feel bewildered; a bewildered expression.",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {word:"scarce",part:"adjective",phonetic:"/skeəs/",definition:"Not available in large amounts; difficult to find or obtain.",definitionZh:"稀少的；不足的；难以获得的",body:"Scarce describes something that is in short supply. It is often used for resources, time, opportunities or supplies.",examples:["Clean water became scarce during the drought.","Affordable housing is scarce in the city centre.","Time was scarce, so we focused on the essentials."],tip:"Common patterns: become scarce; scarce resources; in scarce supply.",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"}
   ];
 
   const dailyDiscoveries = [
@@ -251,11 +267,13 @@
   function chooseContent(activityType, slot) {
     const day = snapshot.day;
     const baseIndex = dayOrdinal(day);
-    const pools = {
-      daily_topic:dailyTopics,
-      daily_application:dailyApplications,
-      daily_discovery:dailyDiscoveries
-    };
+    if (activityType === "daily_discovery") {
+      const globalDay = new Date().toISOString().slice(0,10);
+      const index = ((dayOrdinal(globalDay)%dailyDiscoveryVocabulary.length)+dailyDiscoveryVocabulary.length)%dailyDiscoveryVocabulary.length;
+      const word = dailyDiscoveryVocabulary[index];
+      return {...word,id:"daily-discovery:"+globalDay+":"+word.word,title:word.word,example:word.examples[0],examples:word.examples.slice(1),zh:word.definitionZh};
+    }
+    const pools = {daily_topic:dailyTopics,daily_application:dailyApplications};
     if (pools[activityType]) {
       const pool = pools[activityType];
       const completedIds = new Set((snapshot.dailyResults || [])
@@ -290,11 +308,11 @@
         .find(item => item.topicId === session.topic_id);
       return makeRevisionContent(session.topic_id,session.content_id,candidate?.reason || "Resume your adaptive review.");
     }
-    const pools = {
-      daily_topic:dailyTopics,
-      daily_application:dailyApplications,
-      daily_discovery:dailyDiscoveries
-    };
+    if (activityType === "daily_discovery") {
+      const word=dailyDiscoveryVocabulary.find(item=>session.content_id.endsWith(":"+item.word));
+      return word?{...word,id:session.content_id,title:word.word,example:word.examples[0],examples:word.examples.slice(1),zh:word.definitionZh}:fallback;
+    }
+    const pools={daily_topic:dailyTopics,daily_application:dailyApplications};
     return (pools[activityType] || []).find(item => item.id === session.content_id) || fallback;
   }
 
@@ -429,6 +447,9 @@
         : allowanceUnavailable ? "Unavailable"
         : exhausted ? "Daily limit reached" : "Start activity";
       const reason = type === "daily_revision" ? '<p class="daily-activity-meta"><span class="daily-activity-tag">' + esc(content.body) + '</span></p>' : "";
+      const preview = exhausted
+        ? '<div class="daily-reader-example daily-cooldown-message"><strong>Today's activity is complete</strong><p>Your next activity will be available after the daily allowance resets at midnight (' + esc(snapshot.timezone || "your timezone") + ').</p></div>'
+        : '<div class="daily-reader-example"><strong>' + esc(content.title) + '</strong></div>';
       let disabledReason = "";
       if (!currentUser || !supabaseClient) disabledReason = "Sign in to start and sync this activity.";
       else if (snapshot.learningLanguage !== "en" || (typeof course !== "undefined" && course !== "en")) disabledReason = "Daily activities currently teach English. Select English in Learning course to begin.";
@@ -440,7 +461,7 @@
       return '<article class="daily-activity-card" data-activity-card="' + type + '">'
         + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(meta.label) + '</span><span class="daily-activity-tag">' + esc(remainingLabel) + '</span></div>'
         + '<h2>' + esc(meta.title) + '</h2><p>' + esc(meta.description) + '</p>'
-        + '<div class="daily-reader-example"><strong>' + esc(content.title) + '</strong></div>'
+        + preview
         + reason
         + (disabledReason ? '<p class="daily-activity-status">' + esc(disabledReason) + '</p>' : "")
         + '<button type="button" class="primary-button" data-label="' + esc(buttonLabel) + '" data-start-daily="' + type + '"' + (disabled ? " disabled" : "") + '>' + esc(buttonLabel) + '</button>'
@@ -481,13 +502,17 @@
     const completed = session.status === "completed";
     const isQuiz = activityType === "daily_application" || activityType === "daily_revision";
     reader.hidden = false;
+    reader.classList.add("open");
+    document.body.style.overflow = "hidden";
     readerState = { activityType,content,session,firstTry:(content.questions || []).map(() => null),passed:(content.questions || []).map(() => false) };
     let html = '<button type="button" class="secondary-button" data-daily-back>← Back to Lessons</button>'
       + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(activityMeta[activityType].title) + '</span>'
       + (completed ? '<span class="daily-activity-tag">Completed · replay is free</span>' : '<span class="daily-activity-tag">In progress · no allowance used yet</span>')
       + '</div><h2>' + esc(content.title) + '</h2>';
     if (content.body) html += '<p>' + esc(content.body) + '</p>';
-    if (content.example) html += '<div class="daily-reader-example"><strong>Example</strong><p>' + esc(content.example) + '</p></div>';
+    if (content.example) html += '<div class="daily-reader-example"><strong>Example 1</strong><p>' + esc(content.example) + '</p></div>';
+    if (Array.isArray(content.examples) && content.examples.length) html += '<section class="daily-extra-examples"><h3>More examples</h3>' + content.examples.map((example,index)=>'<div class="daily-reader-example"><strong>Example '+(index+2)+'</strong><p>'+esc(example)+'</p></div>').join("") + '</section>';
+    if (content.tip) html += '<div class="daily-reader-example"><strong>Usage note</strong><p>' + esc(content.tip) + '</p></div>';
     html += selectedTranslation(content);
     if (content.zhExample && typeof translationLanguage !== "undefined" && translationLanguage === "zh") {
       html += '<div class="daily-reader-example"><strong>例句</strong><p>' + esc(content.zhExample) + '</p></div>';
@@ -512,8 +537,9 @@
     if (!completed) html += '<button type="button" class="secondary-button" data-abandon-daily>Abandon session</button>';
     if (!completed && isQuiz) html += '<button type="button" class="primary-button" data-complete-daily hidden>Complete activity</button>';
     if (completed) html += '<p class="page-intro">This content is already completed. You can revisit it without using another daily allowance.</p>';
-    reader.innerHTML = html;
-    reader.querySelector("[data-daily-back]").addEventListener("click",() => { reader.hidden = true; reader.innerHTML = ""; readerState = null; });
+    reader.innerHTML = '<article class="modal daily-activity-modal">' + html + '</article>';
+    reader.querySelector("[data-daily-back]").addEventListener("click",closeDailyReader);
+    reader.addEventListener("click",event=>{if(event.target===reader)closeDailyReader();},{once:true});
     const checkButton = reader.querySelector("[data-check-daily]");
     if (checkButton) checkButton.addEventListener("click",checkDailyAnswers);
     reader.querySelectorAll('input[type="radio"]').forEach(input => input.addEventListener("change",() => {
@@ -528,7 +554,15 @@
     if (completeButton) completeButton.addEventListener("click",completeDailyActivity);
     const abandonButton = reader.querySelector("[data-abandon-daily]");
     if (abandonButton) abandonButton.addEventListener("click",abandonDailyActivity);
-    reader.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+
+  function closeDailyReader() {
+    const reader=byId("dailyActivityReader");
+    reader.classList.remove("open");
+    reader.hidden=true;
+    reader.innerHTML="";
+    readerState=null;
+    document.body.style.overflow="";
   }
 
   function checkDailyAnswers() {
@@ -569,9 +603,7 @@
       if (error) throw error;
       const saved = Array.isArray(data) ? data[0] : data;
       if (!saved || saved.status !== "abandoned") throw new Error("The session could not be abandoned.");
-      byId("dailyActivityReader").hidden = true;
-      byId("dailyActivityReader").innerHTML = "";
-      readerState = null;
+      closeDailyReader();
       try {
         await loadDailyData();
         byId("dailyLearningStatus").textContent = "Session abandoned. No daily allowance was used. " + byId("dailyLearningStatus").textContent;
