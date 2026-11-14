@@ -508,13 +508,13 @@
     if (!currentUser || !supabaseClient) return;
     const selected = snapshot.content[activityType] || chooseContent(activityType,snapshot.completed?.[activityType] || 0);
     const button = document.querySelector('[data-start-daily="' + activityType + '"]');
-    if (button) { button.disabled = true; button.textContent = "Opening…"; }
+    if (button) { button.disabled = true; button.textContent = dailyUi("Opening…","正在打开…"); }
     try {
       const {data,error} = await supabaseClient.rpc("start_daily_activity_session",{
         p_activity_type:activityType,
         p_content_id:selected.id,
-        p_topic_id:selected.topicId || null,
-        p_difficulty:selected.difficulty || null,
+        p_topic_id:activityType === "daily_discovery" ? null : selected.topicId || null,
+        p_difficulty:activityType === "daily_discovery" ? null : selected.difficulty || null,
         p_source:activityType === "daily_revision" ? "adaptive_revision" : "daily"
       });
       if (error) throw error;
@@ -614,7 +614,12 @@
         if(previous) previous.checked=true;
         if(existingState.firstTry[index]!==null){
           const feedback=byId("daily-feedback-"+index);
-          if(feedback) feedback.textContent=dailyUi(passed?"Correct. Review the English explanation above.":"Not quite. Review the English explanation above.","已记录此题的检查结果。请结合上方英语语境复习。");
+          if(feedback) {
+            const question=state.content.questions[index];
+            const explanation=question.explanation || "";
+            const zhExplanation=translationLanguage === "zh" && question.zh ? " 中文说明：" + question.zh : "";
+            feedback.textContent=dailyUi(passed?"Correct. ":"Not quite. Try again. ",passed?"正确。":"还不正确，请再试一次。")+explanation+zhExplanation;
+          }
         }
       });
       const complete=reader.querySelector("[data-complete-daily]");
@@ -679,7 +684,7 @@
     if (!readerState || !currentUser || !supabaseClient) return;
     const sessionId = readerState.session.id;
     const button = byId("dailyActivityReader").querySelector("[data-abandon-daily]");
-    if (button) { button.disabled = true; button.textContent = "Abandoning…"; }
+    if (button) { button.disabled = true; button.textContent = dailyUi("Abandoning…","正在放弃…"); }
     try {
       const {data,error} = await supabaseClient.rpc("abandon_daily_activity_session",{p_session_id:sessionId});
       if (error) throw error;
@@ -694,7 +699,7 @@
       }
     } catch (error) {
       byId("dailyLearningStatus").textContent = error.message || "The session could not be abandoned.";
-      if (button) { button.disabled = false; button.textContent = "Abandon session"; }
+      if (button) { button.disabled = false; button.textContent = dailyUi("Abandon session","放弃本次活动"); }
     }
   }
 
@@ -706,11 +711,11 @@
       return;
     }
     const button = byId("dailyActivityReader").querySelector("[data-complete-daily]");
-    if (button) { button.disabled = true; button.textContent = "Saving…"; }
+    if (button) { button.disabled = true; button.textContent = dailyUi("Saving…","正在保存…"); }
     const args = { p_session_id:session.id, p_correct_count:null, p_question_count:null };
     if (activityType === "daily_application" || activityType === "daily_revision") {
       if (firstTry.some(value => value === null)) {
-        if (button) { button.disabled = false; button.textContent = "Complete activity"; }
+        if (button) { button.disabled = false; button.textContent = dailyUi("Complete activity","完成活动"); }
         byId("dailyPracticeStatus").textContent = "Check every question before completing this activity.";
         return;
       }
@@ -727,7 +732,7 @@
       renderReader(activityType,content,saved);
     } catch (error) {
       byId("dailyLearningStatus").textContent = error.message || "Completion could not be saved. Your session remains in progress.";
-      if (button) { button.disabled = false; button.textContent = "Complete activity"; }
+      if (button) { button.disabled = false; button.textContent = dailyUi("Complete activity","完成活动"); }
       return;
     }
     try {
