@@ -40,6 +40,28 @@ test("lesson library renders and difficulty tabs switch independently", async ({
   await expect(page.locator("#lessonReader")).toBeHidden();
 });
 
+test("exhausted lesson allowance blocks new lessons but preserves completed lesson review", async ({ page }) => {
+  await installDailyLearningMock(page,"lesson-limit-user","free");
+  await page.goto("/");
+  await page.evaluate(() => {
+    const state = window.__swiftDailyMock;
+    state.allowanceUsage.find(row => row.activity_type === "lesson").used_count = 5;
+    state.tables.lesson_progress = [{
+      user_id:state.user.id,difficulty:"beginner",lesson_id:"b-sentence",status:"completed",
+      started_at:new Date().toISOString(),completed_at:new Date().toISOString(),updated_at:new Date().toISOString()
+    }];
+  });
+  await page.locator('[data-page="lessons"]').click();
+  await expect(page.locator("#lessonAllowanceCount")).toHaveText("0 / 5");
+  const completed = page.locator("#lessonCards .lesson-card").filter({hasText:"Build a clear basic sentence"});
+  const notStarted = page.locator("#lessonCards .lesson-card").filter({hasText:"Use the present simple"});
+  await expect(completed).toBeEnabled();
+  await expect(notStarted).toBeDisabled();
+  await completed.click();
+  await expect(page.locator("#lessonReader")).toBeVisible();
+  await expect(page.locator("#lessonStatus")).toContainText("Completed lesson reopened — free revisit.");
+});
+
 test("Daily Learning is integrated into Lessons and does not expose account progress while signed out", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('[data-page="daily-learning"]')).toHaveCount(0);
