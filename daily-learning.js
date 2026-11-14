@@ -190,6 +190,10 @@
     ["discovery-word-compatible-01","compatible","adjective","/kəmˈpætəbəl/","Able to exist, work or be used together without problems.","兼容的；相容的","Compatible is common in technology, relationships and systems that can function together.","Check that the software is compatible with your device.","The new schedule is compatible with my classes.","compatible with; fully compatible; compatible devices","compatible with（与……兼容）；fully compatible（完全兼容）；compatible devices（兼容设备）"],
     ["discovery-word-comprehensive-01","comprehensive","adjective","/ˌkɒmprɪˈhensɪv/","Including nearly all important details or aspects of a subject.","全面的；综合性的","Comprehensive describes coverage that is broad and detailed rather than limited to one part.","The guide provides a comprehensive introduction to the topic.","We need a comprehensive review before release.","a comprehensive guide; comprehensive review; comprehensive coverage","a comprehensive guide（全面的指南）；comprehensive review（全面审查）；comprehensive coverage（全面涵盖）"]
 
+
+    ["discovery-word-astounding-01","astounding","adjective","/əˈstaʊndɪŋ/","Extremely surprising or impressive.","令人震惊的；惊人的","Astounding describes something so surprising or impressive that it is difficult to believe.","The team made astounding progress in a few months.","The view from the mountain was astounding.","astounding progress; an astounding result; truly astounding","astounding progress（惊人的进展）；an astounding result（令人惊叹的结果）；truly astounding（确实令人震撼）"],
+    ["discovery-word-intriguing-01","intriguing","adjective","/ɪnˈtriːɡɪŋ/","Interesting because it is unusual or makes you want to know more.","有趣的；引人好奇的","Intriguing describes something that creates curiosity because it is unusual or not fully explained.","The article raises an intriguing question.","We noticed an intriguing detail in the old photograph.","an intriguing idea; an intriguing question; find something intriguing","an intriguing idea（耐人寻味的想法）；an intriguing question（引人深思的问题）；find something intriguing（觉得某事很有趣）"]
+
   ];
   const dailyDiscoveryVocabulary = [
     ...dailyDiscoveryCoreVocabulary,
