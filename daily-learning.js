@@ -838,20 +838,21 @@
       button.addEventListener("click",() => startDailyActivity(
         button.dataset.startDaily,
         button.dataset.discoveryIndex === undefined ? 0 : Number(button.dataset.discoveryIndex),
-        contentByKey.get(button.dataset.startDaily + "|" + button.dataset.contentId) || null
+        contentByKey.get(button.dataset.startDaily + "|" + button.dataset.contentId) || null,
+        button
       ));
     });
   }
-  async function startDailyActivity(activityType, discoveryIndex=0, contentOverride=null) {
+  async function startDailyActivity(activityType, discoveryIndex=0, contentOverride=null, buttonElement=null) {
     if (!currentUser || !supabaseClient) return;
     const discoverySlots = snapshot.content.daily_discovery;
     const selected = contentOverride || (activityType === "daily_discovery"
       ? (Array.isArray(discoverySlots) ? discoverySlots[discoveryIndex] : null)
       : snapshot.content[activityType] || chooseContent(activityType,snapshot.completed?.[activityType] || 0));
     if (!selected) return;
-    const button = activityType === "daily_discovery"
+    const button = buttonElement || (activityType === "daily_discovery"
       ? document.querySelector('[data-start-daily="daily_discovery"][data-discovery-index="' + discoveryIndex + '"]')
-      : document.querySelector('[data-start-daily="' + activityType + '"]');
+      : document.querySelector('[data-start-daily="' + activityType + '"]'));
     if (button) { button.disabled = true; button.textContent = dailyUi("Opening…","正在打开…"); }
     try {
       const {data,error} = await supabaseClient.rpc("start_daily_activity_session",{
