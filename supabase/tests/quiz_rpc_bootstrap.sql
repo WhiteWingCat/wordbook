@@ -205,15 +205,21 @@ before insert on public.learning_activity_log
 for each row execute function public.enforce_learning_daily_limit();
 
 create table private.learning_content_catalog (
-  activity_type text not null,
+  activity_type text not null check(activity_type in ('daily_topic','daily_application','daily_discovery','permanent_lesson')),
   content_id text not null,
-  language_code text not null,
+  rotation_order integer,
+  topic_id text,
+  difficulty text check(difficulty is null or difficulty in ('beginner','intermediate','advanced')),
+  language_code text not null check(language_code='en'),
   is_active boolean not null default true,
-  primary key(activity_type,content_id,language_code)
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key(activity_type,content_id,language_code),
+  constraint learning_content_catalog_topic_shape check(
+    (activity_type='daily_discovery' and topic_id is null and difficulty is null)
+    or (activity_type<>'daily_discovery' and topic_id is not null and difficulty is not null)
+  )
 );
-insert into private.learning_content_catalog(activity_type,content_id,language_code)
-select 'permanent_lesson','lesson-'||n,'en'
-from generate_series(1,5) n;
 
 create table public.daily_activity_sessions(user_id uuid not null);
 create table public.lesson_practice_results(user_id uuid not null);
