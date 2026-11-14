@@ -74,6 +74,7 @@ do $$
 declare
   v_used integer;
   v_rejected boolean := false;
+  v_replay public.daily_activity_sessions%rowtype;
 begin
   select private.current_learning_allowance_usage(auth.uid(),'lesson','UTC')
   into v_used;
@@ -109,6 +110,21 @@ begin
   into v_used;
   if v_used <> 1 then
     raise exception 'Daily Topic ledger did not record exactly one completion';
+  end if;
+
+  -- Reopening the exact completed item must return the saved session for free,
+  -- even though the Free daily allowance is now exhausted.
+  select * into v_replay
+  from public.start_daily_activity_session(
+    'daily_topic','topic-present-perfect-01','verb-tenses','intermediate','daily'
+  );
+  if v_replay.status <> 'completed' then
+    raise exception 'Completed Daily Topic content was not available for free review';
+  end if;
+  select private.current_learning_allowance_usage(auth.uid(),'daily_topic','UTC')
+  into v_used;
+  if v_used <> 1 then
+    raise exception 'Reviewing completed Daily Topic content consumed another allowance';
   end if;
 
   select usage.used_count into v_used
