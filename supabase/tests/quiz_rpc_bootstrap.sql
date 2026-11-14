@@ -220,7 +220,7 @@ create table public.lesson_practice_results(user_id uuid not null);
 create table public.lesson_progress(user_id uuid not null);
 
 grant usage on schema public to anon,authenticated;
-grant update on public.user_preferences to authenticated;
+grant select,update on public.user_preferences to authenticated;
 
 
 -- Test-only SECURITY DEFINER observers. They expose only the current fixture
