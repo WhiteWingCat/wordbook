@@ -610,9 +610,17 @@
         : pool[(baseIndex + slot + accountOffset) % pool.length];
     }
     const candidates = revisionCandidates(snapshot.lessonResults, snapshot.dailyResults, snapshot.completedToday);
-    const candidate = candidates.length
-      ? candidates[(accountOffset + slot) % candidates.length]
-      : { topicId:dailyApplications[0].topicId, reason:"A short review to keep your knowledge active." };
+    const best = candidates[0];
+    const equallyRanked = best && best.accuracy === null
+      ? candidates.filter(item=>item.priority===best.priority && item.accuracy===null)
+      : best && candidates.filter(item=>item.priority===best.priority && item.accuracy===best.accuracy);
+    const preferred = (equallyRanked?.length
+      ? equallyRanked[accountOffset % equallyRanked.length]
+      : best) || { topicId:dailyApplications[0].topicId, reason:"A short review to keep your knowledge active." };
+    const alternatives = candidates.filter(item => item.topicId !== preferred.topicId);
+    const candidate = slot === 0 || !alternatives.length
+      ? preferred
+      : alternatives[(accountOffset + slot - 1) % alternatives.length];
     const topicPool = dailyApplications.filter(item => item.topicId === candidate.topicId);
     const previouslyUsedSources = new Set((snapshot.dailyResults || [])
       .filter(row => row.activity_type === "daily_revision" && row.topic_id === candidate.topicId)
