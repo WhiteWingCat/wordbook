@@ -201,7 +201,7 @@ begin
       using errcode = '23514';
   end if;
 
-  select pg_catalog.array_agg(x.option_id order by x.ordinality)
+  select pg_catalog.array_agg(x.option_id order by e.ordinality)
   into v_option_ids
   from pg_catalog.jsonb_array_elements(new.options)
        with ordinality as e(value, ordinality)
