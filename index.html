@@ -17241,7 +17241,20 @@
     const nextPage = document.getElementById("nextPage");
     const pageStatus = document.getElementById("pageStatus");
     const backdrop = document.getElementById("modalBackdrop");
-    const saved = new Set(readSaved());
+    function savedKey(targetCourse,word) { return targetCourse + String.fromCharCode(0) + String(word); }
+    function savedCourseCount(targetCourse) {
+      const prefix = targetCourse + String.fromCharCode(0);
+      return [...saved].filter(key => key.startsWith(prefix)).length;
+    }
+    const saved = new Set(readSaved().map(entry => {
+      // Legacy local saves were plain strings and belonged to the course active
+      // when they were stored. New entries retain their course explicitly.
+      if (typeof entry === "string") return savedKey(course,entry);
+      if (entry && (entry.course === "en" || entry.course === "zh") && typeof entry.word === "string") {
+        return savedKey(entry.course,entry.word);
+      }
+      return null;
+    }).filter(Boolean));
     let activeLetter = "";
     let activeCategory = "all";
     let currentPage = 1;
@@ -17261,7 +17274,10 @@
         if (typeof currentUser !== "undefined" && currentUser) {
           localStorage.removeItem("swiftdictionary-saved");
         } else {
-          localStorage.setItem("swiftdictionary-saved", JSON.stringify([...saved]));
+          localStorage.setItem("swiftdictionary-saved", JSON.stringify([...saved].map(key => {
+            const separator = key.indexOf(String.fromCharCode(0));
+            return { course:key.slice(0,separator), word:key.slice(separator+1) };
+          })));
         }
       } catch { /* The dictionary still works if browser storage is unavailable. */ }
     }
@@ -17308,7 +17324,7 @@
         const matchesLetter = course === "zh" || !activeLetter || item.word.toUpperCase().startsWith(activeLetter);
         const parts = item.part.toLowerCase().split(/\s*\/\s*/).map(part => part.trim());
         const matchesCategory = course === "zh" || activeCategory === "all" || (activeCategory === "other" ? parts.length > 1 || !["noun","verb","adjective","adverb"].includes(parts[0]) : parts.includes(activeCategory));
-        const matchesSaved = !onlySaved || saved.has(item.word);
+        const matchesSaved = !onlySaved || saved.has(savedKey(course,item.word));
         return matchesQuery && matchesLetter && matchesSaved && matchesCategory;
       }).sort((a,b) => a.word.localeCompare(b.word, course === "zh" ? "zh-CN" : "en"));
     }
@@ -17331,7 +17347,7 @@
       if (!pageWords.length) {
         const empty = document.createElement("div");
         empty.className = "empty";
-        empty.textContent = onlySaved && saved.size === 0 ? "You haven't saved any words yet. Open a word and select ☆ to save it." : "No matching words. Try a different search or filter.";
+        empty.textContent = onlySaved && savedCourseCount(course) === 0 ? "You haven't saved any words yet. Open a word and select ☆ to save it." : "No matching words. Try a different search or filter.";
         grid.appendChild(empty);
         return;
       }
@@ -17339,7 +17355,8 @@
         const button = document.createElement("button");
         button.type = "button"; button.className = "word-card";
         button.setAttribute("aria-label", `Learn ${item.word}`);
-        button.innerHTML = `<span class="word-name">${escapeHTML(item.word)}</span><span class="saved-mark" aria-label="${saved.has(item.word) ? "Saved" : ""}">${saved.has(item.word) ? "★" : ""}</span>`;
+        const isSaved = saved.has(savedKey(course,item.word));
+        button.innerHTML = `<span class="word-name">${escapeHTML(item.word)}</span><span class="saved-mark" aria-label="${isSaved ? "Saved" : ""}">${isSaved ? "★" : ""}</span>`;
         button.addEventListener("click", () => openWord(item, button));
         grid.appendChild(button);
       });
@@ -17657,7 +17674,7 @@
       if (lastFocused && typeof lastFocused.focus === "function") lastFocused.focus();
     }
     function updateSaveButton() {
-      const isSaved = saved.has(activeWord.word);
+      const isSaved = saved.has(savedKey(course,activeWord.word));
       const button = document.getElementById("saveButton");
       button.textContent = isSaved ? "★" : "☆";
       button.setAttribute("aria-label", isSaved ? "Remove saved word" : "Save word");
@@ -17734,8 +17751,9 @@
     document.getElementById("saveButton").addEventListener("click", async () => {
       if (!activeWord) return;
       const word = activeWord.word;
-      const wasSaved = saved.has(word);
-      wasSaved ? saved.delete(word) : saved.add(word);
+      const key = savedKey(course,word);
+      const wasSaved = saved.has(key);
+      wasSaved ? saved.delete(key) : saved.add(key);
       persistSaved(); updateSaveButton(); render();
       if (currentUser && supabaseClient) {
         const status = document.getElementById("accountStatus");
@@ -17778,7 +17796,9 @@
       const cloudWords = new Set((cloudRows || []).map(row => row.word));
       if (mergeLocal) {
         // Merge local saved words into the signed-in account rather than discarding them.
-        const rowsToUpload = [...saved].filter(word => !cloudWords.has(word)).map(word => ({ user_id: currentUser.id, course, word }));
+        const prefix = course + String.fromCharCode(0);
+        const localCourseWords = [...saved].filter(key => key.startsWith(prefix)).map(key => key.slice(prefix.length));
+        const rowsToUpload = localCourseWords.filter(word => !cloudWords.has(word)).map(word => ({ user_id: currentUser.id, course, word }));
         if (rowsToUpload.length) {
           const { error: uploadError } = await supabaseClient.from("saved_words").upsert(rowsToUpload, { onConflict: "user_id,course,word", ignoreDuplicates: true });
           if (uploadError) {
@@ -17786,12 +17806,12 @@
             return;
           }
         }
-        cloudWords.forEach(word => saved.add(word));
+        cloudWords.forEach(word => saved.add(savedKey(course,word)));
       } else {
         // Keep the local list for the other course while replacing only this course's words.
-        const currentCourseWords = new Set((course === "zh" ? chineseWords : englishWords).map(item => item.word));
-        currentCourseWords.forEach(word => saved.delete(word));
-        cloudWords.forEach(word => saved.add(word));
+        const prefix = course + String.fromCharCode(0);
+        for (const key of [...saved]) if (key.startsWith(prefix)) saved.delete(key);
+        cloudWords.forEach(word => saved.add(savedKey(course,word)));
       }
       persistSaved();
       if (activeWord) updateSaveButton();
@@ -18142,6 +18162,57 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
       if (prefResult.error) throw prefResult.error;
     }
 
+    function inferSavedWordCourse(word,storedCourse) {
+      const value = String(word || "");
+      // The Chinese dictionary is character-based. Han-script entries that
+      // were historically defaulted to English are safe to classify as Chinese.
+      const hasHan = [...value].some(character => {
+        const point = character.codePointAt(0);
+        return (point >= 0x3400 && point <= 0x4DBF)
+          || (point >= 0x4E00 && point <= 0x9FFF)
+          || (point >= 0xF900 && point <= 0xFAFF);
+      });
+      if (hasHan) return "zh";
+      if (englishWords.some(entry => entry.word === value)) return "en";
+      if (chineseWords.some(entry => entry.word === value)) return "zh";
+      // Unknown legacy entries are not guessed or moved.
+      return storedCourse;
+    }
+
+    async function normaliseSavedWordCourses(rows) {
+      const sourceRows = Array.isArray(rows) ? rows : [];
+      const corrected = [];
+      for (const row of sourceRows) {
+        if (!row || typeof row.word !== "string" || (row.course !== "en" && row.course !== "zh")) continue;
+        const targetCourse = inferSavedWordCourse(row.word,row.course);
+        if (targetCourse === row.course) {
+          corrected.push(row);
+          continue;
+        }
+        // saved_words intentionally uses INSERT/DELETE, not UPDATE. Insert the
+        // corrected course first, then delete only this user's old course row.
+        const { error:insertError } = await supabaseClient.from("saved_words").upsert(
+          { user_id:currentUser.id, course:targetCourse, word:row.word },
+          { onConflict:"user_id,course,word", ignoreDuplicates:true }
+        );
+        if (insertError) {
+          accountStatus.textContent = "Some saved words could not be moved to their correct course: " + insertError.message;
+          corrected.push(row);
+          continue;
+        }
+        const { error:deleteError } = await supabaseClient.from("saved_words").delete()
+          .eq("user_id",currentUser.id).eq("course",row.course).eq("word",row.word);
+        if (deleteError) {
+          accountStatus.textContent = "A saved word was copied to its correct course, but its old entry could not be removed: " + deleteError.message;
+          corrected.push(row);
+          corrected.push({ ...row, course:targetCourse });
+          continue;
+        }
+        corrected.push({ ...row, course:targetCourse });
+      }
+      return corrected;
+    }
+
     function renderFavoriteWords(rows) {
       const grouped = { en:[], zh:[] };
       (rows || []).forEach(row => {
@@ -18297,7 +18368,8 @@ function lessonPractice(x){const z=translationLanguage==="zh"?lessonZh[x.id]:nul
         if (courseChanged) { activeLetter=""; activeCategory="all"; onlySaved=false; savedFilter.setAttribute("aria-pressed","false"); savedFilter.textContent="☆ Saved words"; currentPage=1; makeAlphabet(); updateLetterButtons(); render(); }
         selectedAvatar = profileQ.data?.avatar_icon || selectedAvatar || "🐦";
         updateAvatarDisplay();
-        renderFavoriteWords(savedWordsQ.data || []);
+        const correctlyClassifiedSavedWords = await normaliseSavedWordCourses(savedWordsQ.data || []);
+        renderFavoriteWords(correctlyClassifiedSavedWords);
         document.getElementById("displayNameInput").value = profileQ.data?.display_name || "";
         document.getElementById("preferenceLearning").value = prefs.learning_language;
         document.getElementById("preferenceTranslation").value = prefs.translation_language;
