@@ -275,11 +275,8 @@ begin
       using errcode = '42501';
   end if;
 
-  if old.selected_option_id is not null
-     and new.selected_option_id is distinct from old.selected_option_id then
-    raise exception 'A saved Quiz answer cannot be changed through direct table access'
-      using errcode = '42501';
-  end if;
+  -- The authenticated answer-saving RPC may change a selection until the
+  -- session is submitted. Direct table writes remain blocked by privileges.
 
   if new.selected_option_id is not null
      and not (new.selected_option_id = any(new.option_order)) then
