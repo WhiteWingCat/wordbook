@@ -1,8 +1,5 @@
--- DRAFT ONLY — not an applied Supabase migration.
--- Apply only after the completion-based allowance foundation has been reviewed.
--- This migration draft is tested only in the free PostgreSQL compatibility harness.
--- SwiftDictionary Update 2.3.0 — daily activity session foundation
-
+-- SwiftDictionary Update 2.3.0 — Daily Learning session foundation.
+-- Applied to the live SwiftDictionary Supabase project as migration 20261114082328.
 -- 1) Account-synchronised activity preferences. Existing users default to all enabled.
 alter table public.user_preferences
   add column if not exists daily_topic_enabled boolean not null default true,
