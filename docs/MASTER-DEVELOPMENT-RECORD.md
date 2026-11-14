@@ -1592,3 +1592,28 @@ This no-cost workflow tests PostgreSQL DDL, constraints, triggers, role grants a
 ### Next implementation stage
 
 Proceed with authenticated, narrowly scoped Quiz RPCs and server-side selection/availability logic. They must enforce the approved source-difficulty ratios, question-bank minimum/target counts, account-local-day question reservation, one active session, session resume/abandon semantics, answer changes before submission, server scoring, completion-based allowance charging, and completed read-only review. Extend learning-history deletion for Quiz data without deleting the private allowance ledger. Keep production Quiz hidden until content minimums and all integration/security checks pass.
+
+
+
+## 35. Update 2.4.0 — authenticated Quiz RPC implementation (2026-11-14)
+
+The next backend stage has been implemented on feature/update-2-4-0-quiz. The new migration is supabase/migrations/20261114160000_swiftdictionary_update_2_4_0_quiz_authenticated_rpcs.sql. It adds authenticated-only availability, start/resume, answer-save, submit, abandon, history and review RPCs, and extends the existing learning-history deletion path to include Quiz sessions.
+
+The implementation enforces the approved difficulty composition rules, two-session minimum bank gates and three-session target gates; selects only approved questions mapped to active permanent lessons with matching topics; randomizes and snapshots question/option order; enforces at least three topics and a 40% per-topic cap; and excludes same-day reserved questions. Intermediate and Advanced compositions are selected only from ratios that the remaining unseen pool can satisfy.
+
+One unfinished session per account is enforced. Unfinished sessions persist without a timer until completion or explicit abandonment. Answers can be changed before submission. Submission requires all answers, calculates score and rounded percentage server-side, and charges the existing quiz completion allowance through the existing learning_activity_log trigger. Repeated submission is idempotent. Correct answers and explanations are hidden until completion.
+
+Security uses auth.uid()-derived ownership, non-exposed private SECURITY DEFINER implementations with fixed empty search_path, public SECURITY INVOKER wrappers, RLS, and revoked direct table access. No user ID is accepted from the client. A separate private.quiz_daily_question_reservations ledger preserves same-day no-repeat after history deletion; it stores only user ID, local date, question ID and reservation time, and is cleaned after a conservative 36-hour window. Learning-history deletion removes sessions, snapshots and completion events but retains the daily allowance ledger and temporary no-repeat reservations. This behaviour must be disclosed in the Privacy Notice before public release.
+
+Validation is implemented in .github/workflows/quiz-db-foundation.yml:
+- Disposable PostgreSQL 17 job applies both Quiz migrations and runs SQL assertions for constraints, availability, selection, answer handling, session lifecycle, scoring, allowances, deletion, ownership and privileges.
+- Disposable local Supabase job uses the real local Auth schema/JWT helpers, the existing synthetic SwiftDictionary baseline, the 2.3.x prerequisite migrations, both Quiz migrations, authenticated integration tests and Supabase security advisors.
+- Both Quiz validation jobs passed on workflow run 66 (2026-11-14). The companion 2.3.x PostgreSQL and Chromium regression checks also passed. A final extra access-control assertion for the reservation table was committed afterward and its follow-up workflow is pending at the time of this record update.
+
+No paid hosted Supabase branch was created. All local Supabase services ran in disposable GitHub Actions containers. No production migration, production allowance change, merge or deployment was performed.
+
+Current production Quiz allowance remains Free 5/day and Premium 12/day. The confirmed target remains Free 1/day and Premium 3/day; it is not applied to production. The question bank has no approved production questions, and the Quiz frontend is not implemented, so all difficulties remain unavailable. Draft PR #8 remains open and must not be merged without explicit approval.
+
+Preliminary Malaysia privacy review: Quiz stores account-linked answer selections, question/topic/lesson references, scores, timestamps and timezone. Adaptive weak-topic prioritisation may require assessment under the Commissioner's 2026 Automated Decision-Making and Profiling Guideline and the DPO regular/systematic-monitoring criterion. Before release, review Privacy Notice retention/deletion wording, DPO/DPIA requirements, 2026 data-controller registration classes, section 129 cross-border transfers, subprocessors and global age rules. The dedicated Terms and Legal update remains after Flashcards is released to main. See section 13.8 of the Quiz technical specification for official JPDP references and detail.
+
+Next implementation work: build the question-bank authoring/import/approval pipeline and populate sufficient reviewed content, then integrate the Quiz frontend and browser tests. Production migration and release remain separate approval gates.
