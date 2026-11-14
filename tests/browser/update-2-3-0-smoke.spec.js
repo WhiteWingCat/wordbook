@@ -200,7 +200,7 @@ window.__SWIFT_TEST_INITIAL_USER = ${JSON.stringify(initialUser)};`
   }));
 }
 
-async function installDailyLearningMock(page, userId = "daily-user-a") {
+async function installDailyLearningMock(page, userId = "daily-user-a", plan = "free") {
   await page.unroute("**/supabase-config.js");
   await page.route("**/supabase-config.js", route => route.fulfill({
     status: 200,
@@ -238,8 +238,8 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
             daily_discovery_enabled: true,
             daily_revision_enabled: true
           }],
-          user_entitlements: [{ user_id: ${JSON.stringify(userId)}, plan_code: "free", status: "active", valid_from: null, valid_until: null }],
-          learning_plan_limits: ["daily_topic","daily_application","daily_discovery","daily_revision"].map(activity_type => ({ plan_code: "free", activity_type, daily_limit: 1, is_enabled: true })),
+          user_entitlements: [{ user_id: ${JSON.stringify(userId)}, plan_code: ${JSON.stringify(plan)}, status: "active", valid_from: null, valid_until: null }],
+          learning_plan_limits: ["daily_topic","daily_application","daily_discovery","daily_revision"].map(activity_type => ({ plan_code: ${JSON.stringify(plan)}, activity_type, daily_limit: activity_type === "daily_discovery" && ${JSON.stringify(plan)} === "premium" ? 3 : 1, is_enabled: true })),
           learning_activity_log: [],
           lesson_practice_results: [],
           daily_activity_sessions: []
@@ -394,6 +394,31 @@ test("Daily activity translation refreshes in place while preserving English lea
   await expect(page.locator('[data-daily-pref-label="daily_topic"]')).toHaveText("每日主题");
   await expect(page.locator("#dailyLearningStatus")).toContainText("每日活动于午夜重置");
   await expect(page.locator("#dailyActivityReader .daily-question-feedback").first()).toContainText("中文说明");
+});
+
+test("Daily Discovery shows one Free entry and three identical Premium entries globally", async ({ browser }) => {
+  const freePage = await browser.newPage();
+  const premiumPageA = await browser.newPage();
+  const premiumPageB = await browser.newPage();
+  await installDailyLearningMock(freePage,"discovery-free-account","free");
+  await installDailyLearningMock(premiumPageA,"discovery-premium-account-a","premium");
+  await installDailyLearningMock(premiumPageB,"discovery-premium-account-b","premium");
+  for (const page of [freePage,premiumPageA,premiumPageB]) {
+    await page.goto("/");
+    await page.locator('[data-page="lessons"]').click();
+    await expect(page.locator('#dailyActivityGrid [data-discovery-card]')).toHaveCount(page === freePage ? 1 : 3);
+  }
+  const freeWords = await freePage.locator('#dailyActivityGrid [data-discovery-card] h2').allTextContents();
+  const premiumWordsA = await premiumPageA.locator('#dailyActivityGrid [data-discovery-card] h2').allTextContents();
+  const premiumWordsB = await premiumPageB.locator('#dailyActivityGrid [data-discovery-card] h2').allTextContents();
+  expect(freeWords).toHaveLength(1);
+  expect(premiumWordsA).toHaveLength(3);
+  expect(new Set(premiumWordsA).size).toBe(3);
+  expect(premiumWordsA).toEqual(premiumWordsB);
+  expect(freeWords[0]).toBe(premiumWordsA[0]);
+  await freePage.close();
+  await premiumPageA.close();
+  await premiumPageB.close();
 });
 
 test("Daily Discovery uses dictionary layout and the approved global catalogue metadata", async ({ page }) => {
