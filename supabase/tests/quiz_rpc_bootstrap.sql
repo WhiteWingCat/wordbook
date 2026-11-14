@@ -220,3 +220,44 @@ create table public.lesson_practice_results(user_id uuid not null);
 create table public.lesson_progress(user_id uuid not null);
 
 grant usage on schema public to anon,authenticated;
+
+
+-- Test-only SECURITY DEFINER observers. They expose only the current fixture
+-- user's aggregate assertions and are never installed by a production migration.
+create or replace function public.test_current_quiz_usage()
+returns integer
+language sql
+security definer
+set search_path=''
+as $$
+  select coalesce((
+    select u.used_count from private.learning_allowance_usage u
+    where u.user_id=auth.uid() and u.activity_type='quiz'
+  ),0)
+$$;
+
+create or replace function public.test_my_quiz_session_count()
+returns integer
+language sql
+security definer
+set search_path=''
+as $$
+  select count(*)::integer from private.quiz_sessions s where s.user_id=auth.uid()
+$$;
+
+create or replace function public.test_my_quiz_completed_event_count()
+returns integer
+language sql
+security definer
+set search_path=''
+as $$
+  select count(*)::integer from public.learning_activity_log l
+  where l.user_id=auth.uid() and l.activity_type='quiz' and l.event_type='completed'
+$$;
+
+revoke all on function public.test_current_quiz_usage() from public,anon;
+revoke all on function public.test_my_quiz_session_count() from public,anon;
+revoke all on function public.test_my_quiz_completed_event_count() from public,anon;
+grant execute on function public.test_current_quiz_usage() to authenticated;
+grant execute on function public.test_my_quiz_session_count() to authenticated;
+grant execute on function public.test_my_quiz_completed_event_count() to authenticated;
