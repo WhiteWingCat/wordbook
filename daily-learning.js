@@ -187,6 +187,7 @@
       topicId: topicId || source.topicId,
       difficulty: source.difficulty,
       title: "Review: " + source.title,
+      titleZh: "复习：" + (dailyChineseTitles[source.id] || source.title),
       body: reason || "A short adaptive review selected from your learning history.",
       zh: "根据你的学习记录安排的简短复习。",
       questions: source.questions
@@ -628,7 +629,7 @@
   }
 
   window.refreshDailyLearningTranslation = function() {
-    if (typeof renderCards === "function" && snapshot.content) renderCards();
+    if (typeof renderCards === "function" && snapshot.content && Object.keys(snapshot.content).length) renderCards();
     if (readerState) {
       const state=readerState;
       const selected=state.content.questions ? state.content.questions.map((_,index)=>document.querySelector('input[name="daily-question-'+index+'"]:checked')?.value ?? null) : [];
