@@ -426,6 +426,9 @@ declare
   v_b integer := 0;
   v_i integer := 0;
   v_a integer := 0;
+  v_unseen_b integer := 0;
+  v_unseen_i integer := 0;
+  v_unseen_a integer := 0;
   v_comp jsonb;
   v_topic_counts jsonb := '{}'::jsonb;
   v_selected_ids text[] := '{}'::text[];
@@ -503,11 +506,35 @@ begin
     and q.learning_language_code='en'
     and q.translation_language_code=v_translation;
 
+  select
+    count(*) filter (where q.difficulty='beginner')::integer,
+    count(*) filter (where q.difficulty='intermediate')::integer,
+    count(*) filter (where q.difficulty='advanced')::integer
+  into v_unseen_b,v_unseen_i,v_unseen_a
+  from private.quiz_question_bank q
+  join private.learning_content_catalog c
+    on c.activity_type='permanent_lesson'
+   and c.content_id=q.source_lesson_id
+   and c.language_code=q.learning_language_code
+   and c.is_active
+  where q.status='approved'
+    and q.learning_language_code='en'
+    and q.translation_language_code=v_translation
+    and not exists (
+      select 1 from private.quiz_session_questions issued
+      where issued.user_id=v_user and issued.local_date=v_day
+        and issued.question_id=q.question_id
+    );
+
   if p_difficulty='beginner' then
     v_question_count := 10;
     if v_b < 20 then
       raise exception 'Beginner Quiz question bank is below the two-session minimum'
         using errcode='P0001', detail='question_bank_below_minimum';
+    end if;
+    if v_unseen_b < 10 then
+      raise exception 'Not enough unseen Beginner questions remain for a complete Quiz'
+        using errcode='P0001',detail='fresh_questions_unavailable_today';
     end if;
     v_comp := '{"beginner":10}'::jsonb;
   elsif p_difficulty='intermediate' then
@@ -516,22 +543,41 @@ begin
       raise exception 'Intermediate Quiz question bank is below the two-session minimum'
         using errcode='P0001', detail='question_bank_below_minimum';
     end if;
-    case floor(pg_catalog.random()*3)::integer
-      when 0 then v_comp := '{"beginner":3,"intermediate":12}'::jsonb;
-      when 1 then v_comp := '{"beginner":7,"intermediate":8}'::jsonb;
-      else v_comp := '{"beginner":8,"intermediate":7}'::jsonb;
-    end case;
+    select choice.composition into v_comp
+    from (
+      values
+        ('{"beginner":3,"intermediate":12}'::jsonb,v_unseen_i>=12 and v_unseen_b>=3),
+        ('{"beginner":7,"intermediate":8}'::jsonb,v_unseen_i>=8 and v_unseen_b>=7),
+        ('{"beginner":8,"intermediate":7}'::jsonb,v_unseen_i>=7 and v_unseen_b>=8)
+    ) as choice(composition,is_feasible)
+    where choice.is_feasible
+    order by pg_catalog.random()
+    limit 1;
+    if v_comp is null then
+      raise exception 'Not enough unseen questions remain for an approved Intermediate composition'
+        using errcode='P0001',detail='fresh_questions_unavailable_today';
+    end if;
   else
     v_question_count := 20;
     if v_a < 32 or v_i < 8 or v_b < 8 then
       raise exception 'Advanced Quiz question bank is below the two-session minimum'
         using errcode='P0001', detail='question_bank_below_minimum';
     end if;
-    v_b := floor(pg_catalog.random()*5)::integer;
-    v_a := 16-v_b;
-    v_comp := pg_catalog.jsonb_build_object(
-      'beginner',v_b,'intermediate',4,'advanced',v_a
-    );
+    select pg_catalog.jsonb_build_object(
+      'beginner',choices.beginner_count,
+      'intermediate',4,
+      'advanced',16-choices.beginner_count
+    ) into v_comp
+    from pg_catalog.generate_series(0,4) as choices(beginner_count)
+    where v_unseen_b>=choices.beginner_count
+      and v_unseen_i>=4
+      and v_unseen_a>=16-choices.beginner_count
+    order by pg_catalog.random()
+    limit 1;
+    if v_comp is null then
+      raise exception 'Not enough unseen questions remain for an approved Advanced composition'
+        using errcode='P0001',detail='fresh_questions_unavailable_today';
+    end if;
   end if;
 
   -- Count currently unseen inventory for the exact selected composition.
