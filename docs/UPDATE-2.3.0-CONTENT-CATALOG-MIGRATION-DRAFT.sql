@@ -43,6 +43,13 @@ grant usage on schema private to authenticated;
 comment on table private.learning_content_catalog is
   'Server-only allowlist of stable SwiftDictionary learning content IDs and topic mappings. No answer-level data is stored.';
 
+-- Deactivate any retired/legacy Discovery rows before publishing the ordered rotation.
+update private.learning_content_catalog
+set is_active = false,
+    rotation_order = null,
+    updated_at = pg_catalog.now()
+where activity_type = 'daily_discovery';
+
 insert into private.learning_content_catalog
   (activity_type, content_id, rotation_order, topic_id, difficulty, language_code, is_active)
 values
@@ -213,6 +220,26 @@ set rotation_order = excluded.rotation_order,
     difficulty = excluded.difficulty,
     is_active = excluded.is_active,
     updated_at = pg_catalog.now();
+
+do $constraint$
+begin
+  if not exists (
+    select 1 from pg_catalog.pg_constraint
+    where conname = 'learning_content_catalog_rotation_order_shape'
+      and conrelid = 'private.learning_content_catalog'::regclass
+  ) then
+    alter table private.learning_content_catalog
+      add constraint learning_content_catalog_rotation_order_shape
+      check (
+        (activity_type = 'daily_discovery' and (
+          (is_active and rotation_order between 1 and 93)
+          or (not is_active and rotation_order is null)
+        ))
+        or (activity_type <> 'daily_discovery' and rotation_order is null)
+      );
+  end if;
+end;
+$constraint$;
 
 create or replace function private.is_approved_learning_content(
   p_activity_type text,
