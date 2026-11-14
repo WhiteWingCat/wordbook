@@ -509,7 +509,7 @@
     reader.classList.add("open");
     document.body.style.overflow = "hidden";
     readerState = { activityType,content,session,firstTry:(content.questions || []).map(() => null),passed:(content.questions || []).map(() => false) };
-    let html = '<button type="button" class="secondary-button" data-daily-back>← Back to Lessons</button>'
+    let html = '<div class="daily-drawer-actions"><button type="button" class="secondary-button" data-daily-back>← Back to Lessons</button><button type="button" class="icon-button" data-daily-close aria-label="Close activity">×</button></div>'
       + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(activityMeta[activityType].title) + '</span>'
       + (completed ? '<span class="daily-activity-tag">Completed · replay is free</span>' : '<span class="daily-activity-tag">In progress · no allowance used yet</span>')
       + '</div><h2>' + esc(content.title) + '</h2>';
@@ -556,7 +556,8 @@
     if (completed) html += '<p class="page-intro">This content is already completed. You can revisit it without using another daily allowance.</p>';
     reader.innerHTML = '<article class="modal daily-activity-modal">' + html + '</article>';
     reader.querySelector("[data-daily-back]").addEventListener("click",closeDailyReader);
-    reader.addEventListener("click",event=>{if(event.target===reader)closeDailyReader();},{once:true});
+    reader.querySelector("[data-daily-close]").addEventListener("click",closeDailyReader);
+    reader.onclick = event => { if(event.target===reader) closeDailyReader(); };
     const checkButton = reader.querySelector("[data-check-daily]");
     if (checkButton) checkButton.addEventListener("click",checkDailyAnswers);
     reader.querySelectorAll('input[type="radio"]').forEach(input => input.addEventListener("change",() => {
