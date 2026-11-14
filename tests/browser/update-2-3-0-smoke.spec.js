@@ -87,8 +87,19 @@ test("signed-in Daily Topic completes through the server RPC without answer-leve
     p_question_count: null
   });
   expect(JSON.stringify(calls)).not.toMatch(/selectedAnswer|answerIndex|questionAnswer/i);
-  await expect(page.locator('#dailyActivityGrid [data-activity-card="daily_topic"]'))
-    .toContainText("剩余 0 / 1 次完成额度");
+  const topicCards = page.locator('#dailyActivityGrid [data-activity-card="daily_topic"]');
+  await expect(topicCards).toHaveCount(2);
+  await expect(topicCards.first()).toContainText("Review completed content");
+  await expect(topicCards.first().locator("[data-start-daily]")).toBeEnabled();
+  await expect(topicCards.last()).toContainText("Daily limit reached");
+  await expect(topicCards.last().locator("[data-start-daily]")).toBeDisabled();
+
+  // Reviewing the completed item reopens the saved content without charging again.
+  await topicCards.first().locator("[data-start-daily]").click();
+  await expect(page.locator("#dailyActivityReader")).toBeVisible();
+  await expect(page.locator("#dailyActivityReader")).toContainText("Completed · replay is free");
+  await expect(page.locator("#dailyActivityReader [data-complete-daily]")).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => window.__swiftDailyMock.allowanceUsage.find(row => row.activity_type === "daily_topic").used_count)).toBe(1);
 });
 
 test("signed-in Daily Application submits only aggregate first-try results", async ({ page }) => {
@@ -239,7 +250,8 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
             daily_revision_enabled: true
           }],
           user_entitlements: [{ user_id: ${JSON.stringify(userId)}, plan_code: ${JSON.stringify(plan)}, status: "active", valid_from: null, valid_until: null }],
-          learning_plan_limits: ["daily_topic","daily_application","daily_discovery","daily_revision"].map(activity_type => ({ plan_code: ${JSON.stringify(plan)}, activity_type, daily_limit: activity_type === "daily_discovery" && ${JSON.stringify(plan)} === "premium" ? 3 : 1, is_enabled: true })),
+          learning_plan_limits: [{ plan_code: ${JSON.stringify(plan)}, activity_type:"lesson", daily_limit:${JSON.stringify(plan)} === "premium" ? 15 : 5, is_enabled:true }, ...["daily_topic","daily_application","daily_discovery","daily_revision"].map(activity_type => ({ plan_code: ${JSON.stringify(plan)}, activity_type, daily_limit: activity_type === "daily_discovery" && ${JSON.stringify(plan)} === "premium" ? 3 : 1, is_enabled: true }))],
+          lesson_progress: [],
           learning_activity_log: [],
           lesson_practice_results: [],
           daily_activity_sessions: []
@@ -309,8 +321,13 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
             : { data: state.allowanceUsage, error: null };
           if (name === "is_personal_learning_test_access") return { data: false, error: null };
           if (name === "start_daily_activity_session") {
+            const completed = state.sessions.find(row => row.activity_type === args.p_activity_type && row.content_id === args.p_content_id && row.status === "completed");
+            if (completed) return { data: completed, error: null };
             const existing = state.sessions.find(row => row.activity_type === args.p_activity_type && row.status === "in_progress");
             if (existing) return { data: existing, error: null };
+            const limit = state.tables.learning_plan_limits.find(row => row.plan_code === ${JSON.stringify(plan)} && row.activity_type === args.p_activity_type);
+            const used = state.allowanceUsage.find(row => row.activity_type === args.p_activity_type)?.used_count || 0;
+            if (!limit?.is_enabled || used >= (limit?.daily_limit ?? 1)) return { data:null, error:{code:"P0001",message:"Daily learning completion limit reached"} };
             const session = {
               id: "daily-session-" + (state.sessions.length + 1),
               user_id: state.user.id,
