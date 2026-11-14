@@ -297,7 +297,8 @@ begin
       and c.topic_id is null
       and c.difficulty is null
       and c.language_code = p_language_code
-      and c.is_active;
+      and c.is_active
+      and c.rotation_order between 1 and 93;
 
     if v_discovery_order is null then
       return false;
@@ -308,9 +309,9 @@ begin
     where c.activity_type = 'daily_discovery'
       and c.language_code = p_language_code
       and c.is_active
-      and c.rotation_order is not null;
+      and c.rotation_order between 1 and 93;
 
-    if v_discovery_pool_size < 90 or pg_catalog.mod(v_discovery_pool_size,3) <> 0 then
+    if v_discovery_pool_size <> 93 or pg_catalog.mod(v_discovery_pool_size,3) <> 0 then
       return false;
     end if;
 
