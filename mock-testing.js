@@ -16,8 +16,8 @@
   const nativeSet = Storage.prototype.setItem;
   const nativeRemove = Storage.prototype.removeItem;
   const userDefs = [
-    { id:"mock-user-a", email:"test-user-a@swiftdictionary.invalid", label:"Test User A", avatar:"🌿" },
-    { id:"mock-user-b", email:"test-user-b@swiftdictionary.invalid", label:"Test User B", avatar:"🐈" }
+    { id:"mock-user-a", email:"test-user-a@swiftdictionary.invalid", label:"Test User A", avatar:"🌿", plan:"free" },
+    { id:"mock-user-b", email:"test-user-b@swiftdictionary.invalid", label:"Test User B", avatar:"🐈", plan:"premium" }
   ];
   let activeUser = userDefs[0];
   let client = null;
@@ -26,17 +26,24 @@
 
   function clone(value) { return value == null ? value : JSON.parse(JSON.stringify(value)); }
   function now() { return new Date().toISOString(); }
+  function planLimits(plan) {
+    const premium = plan === "premium";
+    const dailyLimit = premium ? 3 : 1;
+    const lessonLimit = premium ? 15 : 5;
+    return [
+      ["lesson",lessonLimit],["daily_topic",dailyLimit],["daily_application",dailyLimit],
+      ["daily_discovery",dailyLimit],["daily_revision",dailyLimit],["quiz",5],["flashcard",5]
+    ].map(([activity_type,daily_limit]) => ({plan_code:premium?"premium":"free",activity_type,daily_limit,is_enabled:true}));
+  }
   function key(userId) { return STORAGE_PREFIX + userId; }
   function emptyState(user) {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-    const planLimits = [
-      ["lesson",5],["daily_topic",1],["daily_application",1],["daily_discovery",1],["daily_revision",1],["quiz",5],["flashcard",5]
-    ].map(([activity_type,daily_limit]) => ({plan_code:"free",activity_type,daily_limit,is_enabled:true}));
+    const limits = planLimits(user.plan || "free");
     return {
       profiles:[{user_id:user.id,display_name:user.label,avatar_icon:user.avatar}],
       user_preferences:[{user_id:user.id,learning_language:"en",translation_language:"zh",timezone,allowance_timezone:timezone,allowance_timezone_until:null,daily_topic_enabled:true,daily_application_enabled:true,daily_discovery_enabled:true,daily_revision_enabled:true}],
-      user_entitlements:[],
-      learning_plan_limits:planLimits,
+      user_entitlements:[{user_id:user.id,plan_code:user.plan || "free",status:"active",valid_from:null,valid_until:null}],
+      learning_plan_limits:limits,
       saved_words:user.id === "mock-user-a"
         ? [{user_id:user.id,course:"en",word:"hello"},{user_id:user.id,course:"zh",word:"你"}]
         : [{user_id:user.id,course:"en",word:"thank"},{user_id:user.id,course:"zh",word:"好"}],
@@ -51,7 +58,12 @@
       const raw = nativeGet.call(sessionStorage,key(user.id));
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed && parsed.tables) return parsed;
+        if (parsed && parsed.tables) {
+          // Keep the mock entitlement fixture aligned with the fixed Test User A/B plan assignment.
+          parsed.tables.user_entitlements = [{user_id:user.id,plan_code:user.plan || "free",status:"active",valid_from:null,valid_until:null}];
+          parsed.tables.learning_plan_limits = planLimits(user.plan || "free");
+          return parsed;
+        }
       }
     } catch (error) {
       console.warn("[SwiftDictionary mock] Could not read session data; using fresh fixtures.",error);
@@ -209,8 +221,10 @@
       persist(db); return {data:!duplicate,error:null};
     }
     if (name==="complete_permanent_lesson") {
+      const plan=(tables.user_entitlements||[]).find(row=>row.user_id===user.id)?.plan_code || "free";
+      const lessonLimit=(tables.learning_plan_limits||[]).find(item=>item.plan_code===plan && item.activity_type==="lesson")?.daily_limit ?? 5;
       const used=usageRows(db).find(row=>row.activity_type==="lesson")?.used_count || 0;
-      if (used>=5) return {data:null,error:error("Daily learning completion limit reached.","P0001")};
+      if (used>=lessonLimit) return {data:null,error:error("Daily learning completion limit reached.","P0001")};
       const row=(tables.lesson_progress||[]).find(item=>item.difficulty===args.p_difficulty && item.lesson_id===args.p_lesson_id);
       if (!row) return {data:null,error:error("Mock lesson progress row was not found.")};
       Object.assign(row,{status:"completed",completed_at:now(),updated_at:now()});
@@ -236,7 +250,8 @@
       const row=(tables.daily_activity_sessions||[]).find(item=>item.id===args.p_session_id);
       if (!row) return {data:null,error:error("Mock session not found.")};
       if (row.status==="completed") return {data:clone(row),error:null};
-      const limit=(tables.learning_plan_limits||[]).find(item=>item.plan_code==="free" && item.activity_type===row.activity_type);
+      const plan=(tables.user_entitlements||[]).find(item=>item.user_id===user.id)?.plan_code || "free";
+      const limit=(tables.learning_plan_limits||[]).find(item=>item.plan_code===plan && item.activity_type===row.activity_type);
       if (dailyRows(db,row.activity_type).length >= (limit?.daily_limit ?? 1)) return {data:null,error:error("Daily activity allowance exhausted.","P0001")};
       Object.assign(row,{status:"completed",completed_at:now(),correct_count:args.p_correct_count,question_count:args.p_question_count});
       (tables.learning_activity_log ||= []).push({user_id:user.id,activity_type:row.activity_type,event_type:"completed",language_code:"en",created_at:now()});
@@ -298,14 +313,14 @@
     const select=panel.querySelector("select");
     if (select) select.value=activeUser?.id || "";
     const identity=panel.querySelector("[data-mock-identity]");
-    if (identity) identity.textContent=activeUser ? activeUser.label+" · "+activeUser.email : "Signed out in mock mode";
+    if (identity) identity.textContent=activeUser ? activeUser.label+" · "+(activeUser.plan||"free").toUpperCase()+" · "+activeUser.email : "Signed out in mock mode";
   }
   function installPanel() {
     if (document.getElementById("swiftMockPanel")) return;
     const panel=document.createElement("aside");
     panel.id="swiftMockPanel";
     panel.setAttribute("aria-label","Mock testing controls");
-    panel.innerHTML='<style>#swiftMockPanel{position:fixed;z-index:10000;right:14px;bottom:14px;width:min(340px,calc(100vw - 28px));padding:14px;border:2px solid #e2a94b;border-radius:12px;background:#171d25;color:#fff;box-shadow:0 8px 30px #0008;font:14px/1.4 system-ui,sans-serif}#swiftMockPanel strong{display:block;color:#ffd27a;font-size:13px;letter-spacing:.04em}#swiftMockPanel p{margin:6px 0 10px}#swiftMockPanel select,#swiftMockPanel button{font:inherit;border-radius:7px;padding:8px;border:1px solid #718096}#swiftMockPanel select{width:100%;background:#fff;color:#111;margin:5px 0 8px}#swiftMockPanel .mock-actions{display:flex;gap:7px;flex-wrap:wrap}#swiftMockPanel button{background:#293747;color:#fff;cursor:pointer}#swiftMockPanel button:hover{background:#3a4c60}#swiftMockPanel small{display:block;margin-top:8px;color:#c4cbd4}</style><strong>MOCK TEST MODE — NO REAL ACCOUNT / NO CLOUD SYNC</strong><p data-mock-identity></p><label for="swiftMockUser">Switch simulated user</label><select id="swiftMockUser"><option value="mock-user-a">Test User A</option><option value="mock-user-b">Test User B</option></select><div class="mock-actions"><button type="button" data-mock-reset>Reset mock data</button><button type="button" data-mock-exit>Exit mock mode</button></div><small>Fictional session-only data. Google sign-in and real Supabase services are disabled.</small>';
+    panel.innerHTML='<style>#swiftMockPanel{position:fixed;z-index:10000;right:14px;bottom:14px;width:min(340px,calc(100vw - 28px));padding:14px;border:2px solid #e2a94b;border-radius:12px;background:#171d25;color:#fff;box-shadow:0 8px 30px #0008;font:14px/1.4 system-ui,sans-serif}#swiftMockPanel strong{display:block;color:#ffd27a;font-size:13px;letter-spacing:.04em}#swiftMockPanel p{margin:6px 0 10px}#swiftMockPanel select,#swiftMockPanel button{font:inherit;border-radius:7px;padding:8px;border:1px solid #718096}#swiftMockPanel select{width:100%;background:#fff;color:#111;margin:5px 0 8px}#swiftMockPanel .mock-actions{display:flex;gap:7px;flex-wrap:wrap}#swiftMockPanel button{background:#293747;color:#fff;cursor:pointer}#swiftMockPanel button:hover{background:#3a4c60}#swiftMockPanel small{display:block;margin-top:8px;color:#c4cbd4}</style><strong>MOCK TEST MODE — NO REAL ACCOUNT / NO CLOUD SYNC</strong><p data-mock-identity></p><label for="swiftMockUser">Switch simulated user</label><select id="swiftMockUser"><option value="mock-user-a">Test User A — Free</option><option value="mock-user-b">Test User B — Premium</option></select><div class="mock-actions"><button type="button" data-mock-reset>Reset mock data</button><button type="button" data-mock-exit>Exit mock mode</button></div><small>Fictional session-only data. Google sign-in and real Supabase services are disabled.</small>';
     document.body.appendChild(panel);
     panel.querySelector("select").addEventListener("change",event=>setActiveUser(event.target.value));
     panel.querySelector("[data-mock-reset]").addEventListener("click",()=>{
