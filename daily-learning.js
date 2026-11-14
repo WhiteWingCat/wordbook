@@ -373,6 +373,7 @@
   ];
 
   let preferences = Object.fromEntries(preferenceKeys.map(key => [key, true]));
+  let selectedDailyTab = "daily_topic";
   let snapshot = { timezone:"UTC", day:"", plan:"free", limits:{}, completed:{}, openSessions:[], dailyResults:[], content:{} };
   let readerState = null;
   let loadSequence = 0;
@@ -609,13 +610,9 @@
         : pool[(baseIndex + slot + accountOffset) % pool.length];
     }
     const candidates = revisionCandidates(snapshot.lessonResults, snapshot.dailyResults, snapshot.completedToday);
-    const best = candidates[0];
-    const equallyRanked = best && best.accuracy === null
-      ? candidates.filter(item=>item.priority===best.priority && item.accuracy===null)
-      : best && candidates.filter(item=>item.priority===best.priority && item.accuracy===best.accuracy);
-    const candidate = (equallyRanked?.length
-      ? equallyRanked[accountOffset % equallyRanked.length]
-      : best) || { topicId:dailyApplications[0].topicId, reason:"A short review to keep your knowledge active." };
+    const candidate = candidates.length
+      ? candidates[(accountOffset + slot) % candidates.length]
+      : { topicId:dailyApplications[0].topicId, reason:"A short review to keep your knowledge active." };
     const topicPool = dailyApplications.filter(item => item.topicId === candidate.topicId);
     const previouslyUsedSources = new Set((snapshot.dailyResults || [])
       .filter(row => row.activity_type === "daily_revision" && row.topic_id === candidate.topicId)
@@ -757,109 +754,76 @@
   function renderCards() {
     renderDailyStaticLabels();
     const grid = byId("dailyActivityGrid");
-    const enabledTypes = Object.keys(activityMeta).filter(type => preferences[type + "_enabled"] !== false);
-    if (!enabledTypes.length) {
-      grid.innerHTML = '<div class="coming-card"><h2>All daily activities are paused</h2><p>Enable at least one activity above whenever you are ready to continue.</p></div>';
-      return;
-    }
-
+    const allTypes = Object.keys(activityMeta);
+    const type = allTypes.includes(selectedDailyTab) ? selectedDailyTab : "daily_topic";
+    selectedDailyTab = type;
+    const meta = activityMeta[type];
+    const limitConfig = snapshot.limits[type];
+    const limit = Number(limitConfig?.limit);
+    const used = Number(snapshot.completed[type] || 0);
+    const remaining = Number.isFinite(limit) ? Math.max(0,limit-used) : null;
+    const completedRows = (snapshot.completedToday || []).filter(row => row.activity_type === type && row.content_id).sort((a,b) => Date.parse(b.completed_at || 0) - Date.parse(a.completed_at || 0));
+    const activeRows = (snapshot.openSessions || []).filter(row => row.activity_type === type);
+    const isEnabled = preferences[type + "_enabled"] !== false;
+    const availableForPlan = !!limitConfig && limitConfig.enabled !== false && Number.isFinite(limit) && limit > 0;
+    const resetMessage = used >= limit && availableForPlan
+      ? dailyUi("You have completed all of today’s " + meta.title + " activities. Your allowance resets at midnight (" + (snapshot.timezone || "your timezone") + ").","今天的" + meta.titleZh + "活动已全部完成。每日额度将在午夜重置（" + (snapshot.timezone || "你的时区") + "）。")
+      : "";
+    const panelStatus = !currentUser || !supabaseClient
+      ? dailyUi("Sign in to start this activity and sync your progress.","登录后即可开始此活动并同步学习进度。")
+      : !isEnabled
+        ? dailyUi("This daily activity is paused. You can turn it back on in the preferences above.","此每日活动已暂停。你可以在上方偏好设置中重新启用。")
+        : !availableForPlan
+          ? dailyUi("This activity is not available for your current plan.","当前方案暂不提供此活动。")
+          : resetMessage;
     const contentByKey = new Map();
-    const renderCard = (type,content,discoveryIndex=null,reviewOnly=false) => {
+    const renderCard = (content,discoveryIndex=null,reviewOnly=false) => {
       contentByKey.set(type + "|" + content.id,content);
-      const meta = activityMeta[type];
-      const limitConfig = snapshot.limits[type];
-      const limit = limitConfig?.limit;
-      const used = snapshot.completed[type] || 0;
-      const remaining = Number.isFinite(limit) ? Math.max(0,limit-used) : null;
-      const activeSession = reviewOnly ? null : (snapshot.openSessions || []).find(row =>
-        row.activity_type === type && (type !== "daily_discovery" || row.content_id === content.id));
-      const alreadyCompleted = reviewOnly || (snapshot.dailyResults || []).some(row =>
-        row.activity_type === type && row.content_id === content.id && row.status === "completed");
-      const allowanceUnavailable = !activeSession && !alreadyCompleted
-        && (!limitConfig || limitConfig.enabled === false || remaining === null);
+      const activeSession = reviewOnly ? null : activeRows.find(row => row.content_id === content.id) || null;
+      const alreadyCompleted = reviewOnly || completedRows.some(row => row.content_id === content.id);
+      const allowanceUnavailable = !availableForPlan;
       const exhausted = !activeSession && !alreadyCompleted && !allowanceUnavailable && remaining <= 0;
-      const remainingLabel = activeSession
-        ? dailyUi("In progress · allowance is used only on completion","进行中 · 完成后才会扣除次数")
-        : alreadyCompleted
-          ? dailyUi("Completed · replay is free","已完成 · 可免费重温")
-          : allowanceUnavailable
-            ? (limitConfig?.enabled === false ? dailyUi("Unavailable for this plan","当前方案暂不提供") : dailyUi("Allowance unavailable","无法读取可用次数"))
-            : dailyUi(remaining + " / " + limit + " completions remaining","剩余 " + remaining + " / " + limit + " 次完成额度");
-      const buttonLabel = activeSession ? dailyUi("Resume activity","继续活动")
-        : alreadyCompleted ? dailyUi("Review completed content","重温已完成内容")
-        : allowanceUnavailable ? dailyUi("Unavailable","暂不可用")
-        : exhausted ? dailyUi("Daily limit reached","今日额度已用完") : dailyUi("Start activity","开始活动");
-      const reason = type === "daily_revision" ? '<p class="daily-activity-meta"><span class="daily-activity-tag">' + esc(translationLanguage === "zh" ? "根据你的学习记录选择" : content.body) + '</span></p>' : "";
-      const preview = exhausted
-        ? '<div class="daily-reader-example daily-cooldown-message"><strong>' + esc(dailyUi("Today’s activity is complete","今日活动已完成")) + '</strong><p>' + esc(dailyUi("Your next activity will be available after the daily allowance resets at midnight (" + (snapshot.timezone || "your timezone") + ").","下一次活动将在每日额度于午夜重置后开放（" + (snapshot.timezone || "你的时区") + "）。")) + '</p></div>'
-        : '<div class="daily-reader-example"><strong>' + esc(type === "daily_discovery" ? content.word : dailyTitle(content)) + '</strong>' +
-          (type === "daily_discovery" ? '<p class="muted-note">' + esc(content.phonetic || "") + ' · ' + esc(content.part || "") + '</p>' : '') + '</div>';
-      let disabledReason = "";
-      if (!currentUser || !supabaseClient) disabledReason = dailyUi("Sign in to start and sync this activity.","登录后即可开始活动并同步进度。");
-      else if (snapshot.learningLanguage !== "en" || (typeof course !== "undefined" && course !== "en")) disabledReason = dailyUi("Daily activities currently teach English. Select English in Learning course to begin.","每日活动目前以英语为学习内容。请将学习课程切换为 English 后开始。");
-      else if (allowanceUnavailable) disabledReason = limitConfig?.enabled === false
-        ? dailyUi("This activity is not available for your current plan.","当前方案暂不提供此活动。")
-        : dailyUi("Your allowance could not be checked. Please refresh before starting this activity.","无法确认活动额度，请刷新页面后再试。");
-      const disabled = !!disabledReason || exhausted;
+      const statusLabel = activeSession ? dailyUi("In progress","进行中") : alreadyCompleted ? dailyUi("Completed · review is free","已完成 · 可免费重温") : dailyUi(Math.max(0,remaining) + " / " + limit + " remaining","剩余 " + Math.max(0,remaining) + " / " + limit);
+      const buttonLabel = activeSession ? dailyUi("Resume activity","继续活动") : alreadyCompleted ? dailyUi("Review completed content","重温已完成内容") : allowanceUnavailable ? dailyUi("Unavailable","暂不可用") : exhausted ? dailyUi("Daily limit reached","今日额度已用完") : dailyUi("Start activity","开始活动");
+      const disabledReason = !currentUser || !supabaseClient ? dailyUi("Sign in to start and sync this activity.","登录后即可开始活动并同步进度。") : snapshot.learningLanguage !== "en" || (typeof course !== "undefined" && course !== "en") ? dailyUi("Daily activities currently teach English. Select English in Learning course to begin.","每日活动目前以英语为学习内容。请将学习课程切换为 English 后开始。") : allowanceUnavailable ? dailyUi("Your allowance could not be checked. Please refresh before starting this activity.","无法确认活动额度，请刷新页面后再试。") : "";
+      const disabled = !!disabledReason || (exhausted && !alreadyCompleted);
       const indexAttribute = discoveryIndex === null ? "" : ' data-discovery-index="' + discoveryIndex + '"';
-      const discoveryHeading = discoveryIndex === null ? "" : '<span class="daily-activity-tag">' + esc(dailyUi("Discovery " + (discoveryIndex+1) + " of 3","每日发现 " + (discoveryIndex+1) + " / 3")) + '</span>';
-      return '<article class="daily-activity-card" data-activity-card="' + type + '"' + (discoveryIndex === null ? "" : ' data-discovery-card="' + (discoveryIndex+1) + '"') + '>'
-        + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(meta.label) + '</span>' + discoveryHeading + '<span class="daily-activity-tag">' + esc(remainingLabel) + '</span></div>'
-        + '<h2>' + esc(type === "daily_discovery" ? content.word : (reviewOnly ? dailyTitle(content) : meta.title)) + '</h2><p>' + esc(type === "daily_discovery" ? meta.description : meta.description) + '</p>'
-        + preview + reason
-        + (disabledReason ? '<p class="daily-activity-status">' + esc(disabledReason) + '</p>' : "")
-        + '<button type="button" class="primary-button" data-label="' + esc(buttonLabel) + '" data-start-daily="' + type + '" data-content-id="' + esc(content.id) + '"' + indexAttribute + (disabled ? " disabled" : "") + '>' + esc(buttonLabel) + '</button>'
-        + '</article>';
+      const heading = type === "daily_discovery" ? content.word : dailyTitle(content);
+      const subheading = type === "daily_discovery" ? '<p class="muted-note">' + esc(content.phonetic || "") + " · " + esc(content.part || "") + "</p>" : '<p>' + esc(meta.description) + "</p>";
+      const reason = type === "daily_revision" ? '<p class="daily-activity-meta"><span class="daily-activity-tag">' + esc(translationLanguage === "zh" ? "根据你的学习记录选择" : content.body) + "</span></p>" : "";
+      const preview = type === "daily_discovery" ? '<p class="daily-card-preview">' + esc(content.definition || meta.description) + "</p>" : '<p class="daily-card-preview">' + esc(content.body || content.description || meta.description) + "</p>";
+      return '<article class="daily-activity-card" data-activity-card="' + type + '"' + (discoveryIndex === null ? "" : ' data-discovery-card="' + (discoveryIndex+1) + '"') + ">"
+        + '<div class="daily-activity-card-copy"><div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(statusLabel) + "</span>"
+        + (discoveryIndex === null ? "" : '<span class="daily-activity-tag">' + esc(dailyUi("Discovery " + (discoveryIndex+1) + " of " + limit,"每日发现 " + (discoveryIndex+1) + " / " + limit)) + "</span>")
+        + "</div><h3>" + esc(heading) + "</h3>" + subheading + preview + reason
+        + (disabledReason ? '<p class="daily-activity-status">' + esc(disabledReason) + "</p>" : "")
+        + '</div><div class="daily-activity-card-action"><button type="button" class="primary-button" data-label="' + esc(buttonLabel) + '" data-start-daily="' + type + '" data-content-id="' + esc(content.id) + '"' + indexAttribute + (disabled ? " disabled" : "") + ">" + esc(buttonLabel) + "</button></div></article>";
     };
-
-    grid.innerHTML = enabledTypes.flatMap(type => {
-      if (type === "daily_discovery") {
-        const scheduled = Array.isArray(snapshot.content.daily_discovery)
-          ? snapshot.content.daily_discovery : chooseContent("daily_discovery",0);
-        const visibleCount = Math.min(3,Math.max(1,Number(snapshot.limits.daily_discovery?.limit) || 1));
-        const visible = scheduled.slice(0,visibleCount);
-        const seen = new Set(visible.map(content => content.id));
-        const reviewCards = (snapshot.completedToday || [])
-          .filter(row => row.activity_type === type && row.content_id && !seen.has(row.content_id))
-          .sort((a,b) => Date.parse(b.completed_at || 0) - Date.parse(a.completed_at || 0))
-          .map(row => {
-            seen.add(row.content_id);
-            const completedContent = resolveSessionContent(type,row,null);
-            return completedContent ? renderCard(type,completedContent,null,true) : "";
-          }).filter(Boolean);
-        return [...visible.map((content,index) => renderCard(type,content,index)),...reviewCards];
-      }
-      const completedRows = (snapshot.completedToday || [])
-        .filter(row => row.activity_type === type && row.content_id)
-        .sort((a,b) => Date.parse(b.completed_at || 0) - Date.parse(a.completed_at || 0));
-      const reviewCards = [];
+    let cards = [];
+    if (isEnabled && type === "daily_discovery") {
+      const scheduled = Array.isArray(snapshot.content.daily_discovery) ? snapshot.content.daily_discovery : chooseContent("daily_discovery",0);
+      const visible = scheduled.slice(0,Math.min(3,Math.max(1,limit || 1)));
       const seen = new Set();
-      for (const row of completedRows) {
-        if (seen.has(row.content_id)) continue;
-        seen.add(row.content_id);
-        const completedContent = resolveSessionContent(type,row,snapshot.content[type]);
-        if (completedContent) reviewCards.push(renderCard(type,completedContent,null,true));
-      }
-      const active = (snapshot.openSessions || []).find(row => row.activity_type === type);
-      const nextContent = active
-        ? resolveSessionContent(type,active,snapshot.content[type])
-        : snapshot.content[type] || chooseContent(type,snapshot.completed?.[type] || 0);
-      if (nextContent && !seen.has(nextContent.id)) reviewCards.push(renderCard(type,nextContent));
-      else if (!nextContent && !reviewCards.length) {
-        const fallback = chooseContent(type,snapshot.completed?.[type] || 0);
-        if (fallback) reviewCards.push(renderCard(type,fallback));
-      }
-      return reviewCards;
+      visible.forEach((content,index) => { seen.add(content.id); cards.push(renderCard(content,index,false)); });
+      completedRows.forEach(row => { if (seen.has(row.content_id)) return; seen.add(row.content_id); const item=resolveSessionContent(type,row,null); if(item) cards.push(renderCard(item,null,true)); });
+      activeRows.forEach(row => { if (seen.has(row.content_id)) return; seen.add(row.content_id); const item=resolveSessionContent(type,row,null); if(item) cards.push(renderCard(item,null,false)); });
+    } else if (isEnabled) {
+      const seen = new Set();
+      completedRows.forEach(row => { if(seen.has(row.content_id)) return; seen.add(row.content_id); const item=resolveSessionContent(type,row,snapshot.content[type]); if(item) cards.push(renderCard(item,null,true)); });
+      activeRows.forEach(row => { if(seen.has(row.content_id)) return; seen.add(row.content_id); const item=resolveSessionContent(type,row,snapshot.content[type]); if(item) cards.push(renderCard(item,null,false)); });
+      const newSlots = Math.max(0,Math.min(3,limit || 1)-cards.length);
+      for(let index=0;index<newSlots;index++){ const item=chooseContent(type,used+index); if(!item || seen.has(item.id)) continue; seen.add(item.id); cards.push(renderCard(item,null,false)); }
+      if(!cards.length && availableForPlan){ const item=chooseContent(type,used); if(item) cards.push(renderCard(item,null,false)); }
+    }
+    const tabs = allTypes.map(tabType => {
+      const tabMeta=activityMeta[tabType],active=tabType===type,enabled=preferences[tabType+"_enabled"]!==false;
+      return '<button type="button" role="tab" class="daily-activity-tab' + (active ? " active" : "") + '" id="dailyTab-' + tabType + '" aria-selected="' + active + '" aria-controls="dailyActivityPanel" tabindex="' + (active?"0":"-1") + '" data-daily-tab="' + tabType + '">' + esc(translationLanguage==="zh"?tabMeta.titleZh:tabMeta.title) + (enabled?"":'<span class="daily-tab-paused">' + esc(dailyUi("Paused","已暂停")) + "</span>") + "</button>";
     }).join("");
-
-    grid.querySelectorAll("[data-start-daily]").forEach(button => {
-      button.addEventListener("click",() => startDailyActivity(
-        button.dataset.startDaily,
-        button.dataset.discoveryIndex === undefined ? 0 : Number(button.dataset.discoveryIndex),
-        contentByKey.get(button.dataset.startDaily + "|" + button.dataset.contentId) || null,
-        button
-      ));
-    });
+    const panelTitle=translationLanguage==="zh"?meta.titleZh:meta.title;
+    const columns=snapshot.plan==="premium"?3:1;
+    grid.innerHTML = '<div class="daily-activity-tabs" role="tablist" aria-label="' + esc(dailyUi("Daily activity categories","每日活动类别")) + '">' + tabs + '</div><section id="dailyActivityPanel" class="daily-activity-panel" role="tabpanel" aria-labelledby="dailyTab-' + type + '"><header class="daily-activity-heading"><div><h3>' + esc(panelTitle) + '</h3><p class="daily-activity-heading-note">' + esc(panelStatus) + '</p></div><span class="daily-activity-count">' + (isEnabled&&availableForPlan?esc(Math.max(0,limit-used)+" / "+limit+" "+dailyUi("completed today","今日已完成")):"") + '</span></header>' + (isEnabled ? '<div class="daily-activity-cards' + (columns===3?" premium":" free") + '">' + (cards.join("") || '<div class="coming-card"><p>' + esc(dailyUi("No activities are available in this category right now.","此类别目前没有可用活动。")) + "</p></div>") + "</div>" : '<div class="coming-card"><p>' + esc(panelStatus) + "</p></div>") + "</section>";
+    grid.querySelectorAll("[data-daily-tab]").forEach(button => button.addEventListener("click",() => { selectedDailyTab=button.dataset.dailyTab; renderCards(); }));
+    grid.querySelectorAll("[data-start-daily]").forEach(button => button.addEventListener("click",() => startDailyActivity(button.dataset.startDaily,button.dataset.discoveryIndex===undefined?0:Number(button.dataset.discoveryIndex),contentByKey.get(button.dataset.startDaily+"|"+button.dataset.contentId)||null,button)));
   }
   async function startDailyActivity(activityType, discoveryIndex=0, contentOverride=null, buttonElement=null) {
     if (!currentUser || !supabaseClient) return;
