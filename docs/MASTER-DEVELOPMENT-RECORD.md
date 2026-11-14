@@ -622,3 +622,28 @@ The owner selected **Option A**:
 4. Confirm Cloudflare Pages has rebuilt the current head. Use only ?swiftMock=1 and fictional Free/Premium Test User accounts; do not use real accounts or production data-changing tests.
 5. Verify Free sees exactly one Discovery card; Premium sees exactly three; both accounts share the same words for the UTC date; complete/abandon flows consume allowances correctly; translation switching updates definitions and usage notes; UTC rollover and local allowance reset remain understandable.
 6. Do not merge PR #5 or deploy without explicit owner approval.
+
+
+## 20. Update 2.3.1 — Daily Discovery implementation CI validation (2026-11-14)
+
+### Full CI result
+
+GitHub Actions run **#632** completed successfully against feature head **0531dfaea4903630eb147a75fdbbc122fbf8871d**:
+https://github.com/WhiteWingCat/wordbook/actions/runs/43561897142
+
+All three jobs passed:
+
+- **Chromium browser regression:** 17 tests passed. The new plan-visibility test confirmed Free sees exactly one Discovery entry, Premium sees three, and two separate Premium accounts receive the same three scheduled words. Existing Daily Learning, translation, lesson, Dashboard non-regression, sign-in and account-switching tests also passed.
+- **PostgreSQL 17 migration and allowance tests:** passed. This includes catalogue order and approved-ID validation, Free/Premium slot enforcement, direct-RPC bypass rejection, allowance-ledger assertions, learning-history deletion, and concurrency tests.
+- **Supabase CLI local Auth compatibility:** passed. The private catalogue, allowance and Daily Learning migrations/assertions ran against disposable local Supabase services; security-advisor checks passed.
+
+The CI run follows two corrected test-fixture issues: SQL exception-message quoting, then replacement of obsolete synthetic content IDs with approved catalogue entries. The final run #632 includes those corrections.
+
+### Release status
+
+1. PR #5 remains open, targets main and is not merged.
+2. Latest feature head: 0531dfaea4903630eb147a75fdbbc122fbf8871d.
+3. CI success does not replace owner preview testing. The latest Cloudflare preview build has not yet been independently confirmed or tested by the owner.
+4. Continue using only the explicit mock preview and fictional Free/Premium accounts. Do not use real accounts or production data-changing tests.
+5. No production Supabase migration, production data operation, merge or deployment was performed.
+6. The next gate is owner preview testing of the Free/Premium Discovery experience and the existing Update 2.3.1 regression checklist. Do not merge or deploy without explicit owner approval.
