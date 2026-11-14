@@ -223,8 +223,8 @@ begin
   loop
     if pg_catalog.jsonb_typeof(v_option) <> 'object'
        or nullif(pg_catalog.btrim(v_option ->> 'id'), '') is null
-       or pg_catalog.nullif(pg_catalog.btrim(v_option ->> 'learning_text'), '') is null
-       or pg_catalog.nullif(pg_catalog.btrim(v_option ->> 'translation_text'), '') is null then
+       or nullif(pg_catalog.btrim(v_option ->> 'learning_text'), '') is null
+       or nullif(pg_catalog.btrim(v_option ->> 'translation_text'), '') is null then
       raise exception 'Each Quiz option requires id, learning_text and translation_text'
         using errcode = '23514';
     end if;
