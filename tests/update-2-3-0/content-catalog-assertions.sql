@@ -9,8 +9,8 @@ begin
   if (select count(*) from private.learning_content_catalog where activity_type='daily_application' and is_active) <> 25 then
     raise exception 'Expected 25 approved Daily Application IDs';
   end if;
-  if (select count(*) from private.learning_content_catalog where activity_type='daily_discovery' and is_active) <> 12 then
-    raise exception 'Expected 12 approved Daily Discovery word IDs';
+  if (select count(*) from private.learning_content_catalog where activity_type='daily_discovery' and is_active) <> 93 then
+    raise exception 'Expected 93 approved Daily Discovery word IDs';
   end if;
   if (select count(*) from private.learning_content_catalog where activity_type='permanent_lesson' and is_active) <> 15 then
     raise exception 'Expected 15 approved permanent lesson IDs';
