@@ -438,3 +438,50 @@ The following previously approved requirements remain unchanged: Beginner 10 que
 - No application source, question bank, database schema, migration, live allowance setting, production data or deployment was changed during this preparation.
 - Documentation is maintained on \`docs/master-development-record\`.
 - The owner has approved the remaining product decisions. Implementation may proceed on a dedicated feature branch from current `main` after the final read-only baseline check.
+
+
+## 12. Database foundation implementation and validation (2026-11-14)
+
+### Implemented files
+
+- `supabase/migrations/20261114120000_swiftdictionary_update_2_4_0_quiz_question_bank_foundation.sql`
+- `supabase/tests/quiz_question_bank_foundation.sql`
+- `.github/workflows/quiz-db-foundation.yml`
+
+The migration creates three private tables:
+
+1. `private.quiz_question_bank` — versioned bilingual questions, four option records, correct option and explanations, approval lifecycle and eligibility indexes.
+2. `private.quiz_sessions` — account-scoped session state, selected difficulty, course/translation snapshot, exact question count, source composition, local date/timezone and completion result.
+3. `private.quiz_session_questions` — immutable prompt/option/explanation snapshots, shuffled option order, saved selection and same-day issued-question ledger.
+
+Database enforcement includes exactly four unique option IDs with required bilingual text, a valid correct option ID, one active approved revision per question ID, session question counts per difficulty, one active session per account, unique question positions, and a unique `(user_id, local_date, question_id)` constraint that prevents re-issuing a question after abandonment or across difficulty levels. All three tables have RLS enabled and direct `anon`/`authenticated` table privileges revoked. Correct answers and explanations remain in the private schema.
+
+### No-cost alternative to a Supabase development branch
+
+The owner declined the estimated hourly Supabase branch charge. Do not create a billable Supabase branch for this validation stage.
+
+Instead, GitHub Actions provisions an ephemeral PostgreSQL 17 service container for the job, bootstraps only the minimal Supabase-compatible roles and referenced schemas (`anon`, `authenticated`, `auth.users`, `public.languages`), applies the migration, runs the assertions, and destroys the container when the job ends. It does not connect to or alter the production Supabase project.
+
+This is a useful PostgreSQL migration/constraint/security test, but it is not a full Supabase Auth, PostgREST, JWT, RLS-policy or Supabase CLI integration test. A full local Supabase CLI stack can be used later if a workflow specifically needs to validate those platform behaviours; it does not require a paid hosted branch but does require container resources.
+
+### Validation result
+
+- GitHub Actions workflow: `Quiz database foundation`, run #7.
+- PostgreSQL service: PostgreSQL 17.12 (within the PostgreSQL 17 major line).
+- Migration application: **passed**.
+- Schema/table creation: **passed**.
+- RLS flags and direct table privilege checks: **passed**.
+- Four-option question approval and server-assigned approval timestamp: **passed**.
+- Rejection of three-option questions and duplicate option IDs: **passed**.
+- Persisted option permutation validation: **passed**.
+- Answer changes before submission: **passed**.
+- Same-day question reuse rejection after an abandoned session: **passed**.
+- All assertions completed successfully; test transaction rolled back.
+
+The first test run exposed an ordering-column defect in the question-bank validation trigger; it was corrected before the passing run. A subsequent test adjustment added the required synthetic `auth.users` row. The final run completed successfully.
+
+### Scope limitations and next foundation work
+
+This stage does not yet implement authenticated RPCs, question selection/random sampling, source-difficulty composition enforcement, session creation/resume/abandon/submit, server-side scoring, allowance charging, learning-history deletion integration or approved content ingestion. These are required before the feature can be used. No Quiz questions have been approved or inserted, and all difficulties remain unavailable.
+
+No production Supabase migration, allowance change, user data change, merge or deployment was performed.
