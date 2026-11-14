@@ -391,7 +391,7 @@ test("Daily Discovery uses dictionary layout and the approved global catalogue m
   await page.locator('#dailyActivityGrid [data-start-daily="daily_discovery"]').click();
   const reader = page.locator("#dailyActivityReader");
   await expect(reader.locator(".daily-discovery-modal .modal-head")).toBeVisible();
-  await expect(reader.locator(".daily-discovery-modal .detail-section h3").first()).toContainText("Definition");
+  await expect(reader.locator(".daily-discovery-modal .detail-section h3").first()).toContainText("释义");
   expect(await reader.locator(".daily-discovery-modal .example-list li").count()).toBeGreaterThan(1);
   await expect(reader.locator("[data-daily-back]")).toHaveCount(0);
   await expect(reader.locator("[data-previous],[data-next],#previousButton,#nextButton")).toHaveCount(0);
