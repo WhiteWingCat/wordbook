@@ -616,7 +616,7 @@
         if(existingState.firstTry[index]!==null){
           const feedback=byId("daily-feedback-"+index);
           if(feedback) {
-            const question=state.content.questions[index];
+            const question=existingState.content.questions[index];
             const explanation=question.explanation || "";
             const zhExplanation=translationLanguage === "zh" && question.zh ? " 中文说明：" + question.zh : "";
             feedback.textContent=dailyUi(passed?"Correct. ":"Not quite. Try again. ",passed?"正确。":"还不正确，请再试一次。")+explanation+zhExplanation;
