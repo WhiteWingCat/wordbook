@@ -1332,7 +1332,7 @@ Before implementation, settle:
 
 The owner confirmed the remaining interaction choices for the Quiz implementation plan:
 
-- **Lesson eligibility: curriculum.** The quiz may sample all approved lessons/content within the selected difficulty, whether or not the learner has personally completed each lesson. It must not include unapproved material or content outside the selected difficulty's curriculum. The exact cumulative relationship between Beginner, Intermediate and Advanced remains an implementation-design question.
+- **Lesson eligibility: curriculum.** The quiz may sample all approved lessons/content within the selected difficulty, whether or not the learner has personally completed each lesson. It must not include unapproved material or content outside the selected difficulty's curriculum. The owner-defined cross-level question ratios are recorded in Section 30.
 - **Timer: none.** There is no countdown or time limit.
 - **Answer navigation: change.** Learners may navigate between questions and change their selected answers until they submit the complete quiz. After submission, answers are locked and the completed result is read-only.
 
