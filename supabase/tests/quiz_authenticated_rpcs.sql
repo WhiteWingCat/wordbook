@@ -332,6 +332,37 @@ begin
 end;
 $advanced$;
 
+
+-- The Chinese course currently has no approved Quiz curriculum and must stay unavailable.
+update public.user_preferences
+set learning_language='zh'
+where user_id=auth.uid();
+
+do $unsupported_course$
+declare
+  v_availability jsonb;
+  v_failed boolean:=false;
+begin
+  v_availability:=public.get_my_quiz_availability();
+  if exists (
+    select 1 from jsonb_array_elements(v_availability->'difficulties') d
+    where coalesce((d->>'available')::boolean,false)
+       or d->>'reason'<>'learning_course_not_supported'
+  ) then
+    raise exception 'Unsupported Chinese learning course was incorrectly offered';
+  end if;
+
+  begin
+    perform public.start_my_quiz('beginner');
+  exception when insufficient_privilege then
+    v_failed:=true;
+  end;
+  if not v_failed then
+    raise exception 'Quiz start accepted an unsupported learning course';
+  end if;
+end;
+$unsupported_course$;
+
 -- Recent-authenticated history deletion removes Quiz sessions but preserves allowance usage.
 select set_config('request.jwt.claim.sub','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',true);
 select set_config('request.jwt.claims',
