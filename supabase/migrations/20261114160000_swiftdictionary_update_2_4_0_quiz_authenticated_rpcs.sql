@@ -285,6 +285,7 @@ begin
    and c.is_active
   where q.status = 'approved'
     and q.learning_language_code = 'en'
+    and v_learning = 'en'
     and q.translation_language_code = v_translation;
 
   select
@@ -300,6 +301,7 @@ begin
    and c.is_active
   where q.status = 'approved'
     and q.learning_language_code = 'en'
+    and v_learning = 'en'
     and q.translation_language_code = v_translation
     and not exists (
       select 1 from private.quiz_session_questions issued
@@ -355,6 +357,7 @@ begin
           when v_active is not null then 'active_session_exists'
           when v_learning is distinct from 'en' then 'learning_course_not_supported'
           when not coalesce((v_ctx ->> 'plan_enabled')::boolean,false) then 'plan_not_enabled'
+          when not coalesce((v_ctx ->> 'plan_enabled')::boolean,false) then 'plan_not_enabled'
           when (v_ctx ->> 'remaining_count')::integer < 1 then 'allowance_exhausted'
           when not v_beginner_min then 'question_bank_below_minimum'
           when not v_beginner_fresh then 'fresh_questions_unavailable_today'
@@ -371,6 +374,7 @@ begin
         'reason', case
           when v_active is not null then 'active_session_exists'
           when v_learning <> 'en' then 'learning_course_not_supported'
+          when not coalesce((v_ctx ->> 'plan_enabled')::boolean,false) then 'plan_not_enabled'
           when (v_ctx ->> 'remaining_count')::integer < 1 then 'allowance_exhausted'
           when not v_intermediate_min then 'question_bank_below_minimum'
           when not v_intermediate_fresh then 'fresh_questions_unavailable_today'
@@ -387,6 +391,7 @@ begin
         'reason', case
           when v_active is not null then 'active_session_exists'
           when v_learning <> 'en' then 'learning_course_not_supported'
+          when not coalesce((v_ctx ->> 'plan_enabled')::boolean,false) then 'plan_not_enabled'
           when (v_ctx ->> 'remaining_count')::integer < 1 then 'allowance_exhausted'
           when not v_advanced_min then 'question_bank_below_minimum'
           when not v_advanced_fresh then 'fresh_questions_unavailable_today'
