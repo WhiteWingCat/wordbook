@@ -788,10 +788,10 @@
     const renderCard = (content,discoveryIndex=null,reviewOnly=false) => {
       contentByKey.set(type + "|" + content.id,content);
       const activeSession = reviewOnly ? null : activeRows.find(row => row.content_id === content.id) || null;
-      const alreadyCompleted = reviewOnly || completedRows.some(row => row.content_id === content.id);
+      const alreadyCompleted = reviewOnly || (snapshot.dailyResults || []).some(row => row.activity_type === type && row.content_id === content.id && row.status === "completed");
       const allowanceUnavailable = !availableForPlan;
       const exhausted = !activeSession && !alreadyCompleted && !allowanceUnavailable && remaining <= 0;
-      const statusLabel = activeSession ? dailyUi("In progress","进行中") : alreadyCompleted ? dailyUi("Completed · review is free","已完成 · 可免费重温") : dailyUi(Math.max(0,remaining) + " / " + limit + " remaining","剩余 " + Math.max(0,remaining) + " / " + limit);
+      const statusLabel = activeSession ? dailyUi("In progress","进行中") : alreadyCompleted ? dailyUi("Completed · replay is free","已完成 · 可免费重温") : dailyUi(Math.max(0,remaining) + " / " + limit + " remaining","剩余 " + Math.max(0,remaining) + " / " + limit);
       const buttonLabel = activeSession ? dailyUi("Resume activity","继续活动") : alreadyCompleted ? dailyUi("Review completed content","重温已完成内容") : allowanceUnavailable ? dailyUi("Unavailable","暂不可用") : exhausted ? dailyUi("Daily limit reached","今日额度已用完") : dailyUi("Start activity","开始活动");
       const disabledReason = !currentUser || !supabaseClient ? dailyUi("Sign in to start and sync this activity.","登录后即可开始活动并同步进度。") : snapshot.learningLanguage !== "en" || (typeof course !== "undefined" && course !== "en") ? dailyUi("Daily activities currently teach English. Select English in Learning course to begin.","每日活动目前以英语为学习内容。请将学习课程切换为 English 后开始。") : allowanceUnavailable ? dailyUi("Your allowance could not be checked. Please refresh before starting this activity.","无法确认活动额度，请刷新页面后再试。") : "";
       const disabled = !!disabledReason || (exhausted && !alreadyCompleted);
