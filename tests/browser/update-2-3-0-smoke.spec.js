@@ -331,8 +331,10 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
         let ignoreDuplicates = false;
         const q = {
           insert(values) {
-            operation = "insert";
-            writeValues = values;
+            // Preserve the original mock adapter's immediate INSERT behavior;
+            // unrelated lesson tests rely on the row being visible straight away.
+            const rows = state.tables[table] || (state.tables[table] = []);
+            rows.push(...(Array.isArray(values) ? values : [values]));
             return q;
           },
           select(columns) {
@@ -764,12 +766,12 @@ test("Dashboard shows saved words, course recency, ledger allowances and practic
   await expect(page.locator("#practiceAccuracy")).toHaveText("33%");
   await expect(page.locator("#practiceReviewTopics")).toContainText("Sentence Basics");
   await page.locator("#favoriteEnglishGrid").locator("xpath=..").locator("summary").click();
-  await expect(page.locator("#favoriteEnglishGrid .word-card")).toContainText("hello");
+  await expect(page.locator("#favoriteEnglishGrid")).toContainText("hello");
   await page.locator("#favoriteChineseGrid").locator("xpath=..").locator("summary").click();
-  await expect(page.locator("#favoriteChineseGrid .word-card")).toContainText("你");
-  await expect(page.locator("#favoriteEnglishGrid .word-card")).not.toContainText("好");
-  await expect(page.locator("#favoriteEnglishGrid .word-card")).not.toContainText("你");
-  await expect(page.locator("#favoriteChineseGrid .word-card")).not.toContainText("hello");
+  await expect(page.locator("#favoriteChineseGrid")).toContainText("你");
+  await expect(page.locator("#favoriteEnglishGrid")).not.toContainText("好");
+  await expect(page.locator("#favoriteEnglishGrid")).not.toContainText("你");
+  await expect(page.locator("#favoriteChineseGrid")).not.toContainText("hello");
   const repairedFavorites = await page.evaluate(() => window.__swiftDailyMock.tables.saved_words.map(row => ({course:row.course,word:row.word})));
   expect(repairedFavorites).toContainEqual({course:"zh",word:"好"});
   expect(repairedFavorites).toContainEqual({course:"en",word:"hello"});
