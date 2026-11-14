@@ -14,15 +14,23 @@ function readCuratedArray(name) {
   const open = dailyScript.indexOf("[", start);
   return vm.runInNewContext(`(${dailyScript.slice(open, end + 4)})`);
 }
+
+function readDailyDiscoveryVocabulary() {
+  const start = dailyScript.indexOf("const dailyDiscoveryCoreVocabulary = [");
+  const end = dailyScript.indexOf("const DAILY_DISCOVERY_SCHEDULE_VERSION", start);
+  if (start < 0 || end < 0) throw new Error("Could not locate the complete Daily Discovery vocabulary source.");
+  const source = dailyScript.slice(start, end);
+  return vm.runInNewContext(`(() => { ${source}; return dailyDiscoveryVocabulary; })()`);
+}
 const curated = {
   topics: readCuratedArray("dailyTopics"),
   applications: readCuratedArray("dailyApplications"),
-  discoveries: readCuratedArray("dailyDiscoveryVocabulary")
+  discoveries: readDailyDiscoveryVocabulary()
 };
 for (const [name, items, minimum] of [
   ["Daily Topic", curated.topics, 20],
   ["Daily Application", curated.applications, 20],
-  ["Daily Discovery", curated.discoveries, 10]
+  ["Daily Discovery", curated.discoveries, 90]
 ]) {
   if (items.length < minimum) throw new Error(`${name} content pool too small: ${items.length}`);
   const ids = items.map(item => item.id);
@@ -52,6 +60,37 @@ for (const item of curated.discoveries) {
     throw new Error(`Daily Discovery vocabulary is missing dictionary metadata or translation: ${item.id}`);
   }
 }
+
+const discoveryScheduleStart = dailyScript.indexOf("  function dailyDiscoverySchedule(");
+const discoveryScheduleEnd = dailyScript.indexOf("\n\n  function chooseContent(", discoveryScheduleStart);
+if (discoveryScheduleStart < 0 || discoveryScheduleEnd < 0) throw new Error("Global Discovery schedule function could not be isolated.");
+const dayOrdinalSource = dailyScript.match(/const dayOrdinal = day => Math\.floor\(Date\.parse\(day \+ "T00:00:00Z"\) \/ 86400000\);/)?.[0];
+if (!dayOrdinalSource) throw new Error("UTC day ordinal helper could not be located.");
+const scheduleRunner = vm.runInNewContext(`
+  const dailyDiscoveryVocabulary = ${JSON.stringify(curated.discoveries)};
+  const DAILY_DISCOVERY_SCHEDULE_EPOCH = "2026-11-15";
+  ${dayOrdinalSource}
+  ${dailyScript.slice(discoveryScheduleStart,discoveryScheduleEnd)}
+  dailyDiscoverySchedule;
+`, {Date,Math});
+const scheduleA = scheduleRunner("2026-11-15");
+const scheduleARepeat = scheduleRunner("2026-11-15");
+const scheduleB = scheduleRunner("2026-11-16");
+const scheduleLast = scheduleRunner("2026-12-15");
+const scheduleNextCycle = scheduleRunner("2026-12-16");
+if (scheduleA.length !== 3 || scheduleARepeat.map(x=>x.id).join("|") !== scheduleA.map(x=>x.id).join("|")) {
+  throw new Error("Daily Discovery must return three stable entries for the same UTC date.");
+}
+if (scheduleA.some(x=>scheduleB.some(y=>y.id.split(":")[0]===x.id.split(":")[0]))) {
+  throw new Error("Daily Discovery repeated an entry on consecutive UTC dates.");
+}
+if (scheduleLast.some(x=>scheduleNextCycle.some(y=>y.id.split(":")[0]===x.id.split(":")[0]))) {
+  throw new Error("Daily Discovery repeated an entry across the rotation boundary.");
+}
+if (new Set([...Array.from({length:31},(_,day)=>scheduleRunner(new Date(Date.parse("2026-11-15T00:00:00Z")+day*86400000).toISOString().slice(0,10))).flat().map(x=>x.id.split(":")[0])]).size !== 93) {
+  throw new Error("Daily Discovery's first 31-day rotation must use all 93 entries exactly once.");
+}
+
 const revisionTopicIds = [
   "sentence-basics","verb-tenses","nouns-and-articles","everyday-vocabulary",
   "nouns-and-quantity","phrasal-verbs","collocations","word-formation",
