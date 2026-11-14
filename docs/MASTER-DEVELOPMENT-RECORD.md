@@ -1050,7 +1050,14 @@ Latest implementation commit: `d1c9be67b2d37578cd46bad6c4b123b644d75386`.
 
 GitHub Actions run #763: https://github.com/WhiteWingCat/wordbook/actions/runs/43570440623
 
-At the time of writing, Chromium browser regression and PostgreSQL 17 allowance/migration tests passed; Supabase CLI local Auth compatibility was still running. An earlier intermediate mock test failure was due to incorrectly expecting both plan rows to exist in one isolated mock fixture. The test was corrected to inspect each plan in its own mock identity; the Premium 15-completion RPC enforcement test passed.
+GitHub Actions run **#763** completed successfully against commit **`d1c9be67b2d37578cd46bad6c4b123b644d75386`**: https://github.com/WhiteWingCat/wordbook/actions/runs/43570440623
+
+All three jobs passed:
+- **Chromium browser regression smoke tests:** passed, including the isolated mock adapter and frontend regression checker.
+- **PostgreSQL 17 migration and allowance tests:** passed, including isolated mock allowance enforcement, frontend syntax/RPC integration, migration/policy/ledger assertions, concurrency and history-deletion checks.
+- **Supabase CLI local Auth compatibility:** passed against disposable local Supabase services, including Auth schema/roles/JWT helpers, migration/policy assertions and security-advisor checks.
+
+An earlier intermediate mock test failure was due to incorrectly expecting both plan rows to exist in one isolated mock fixture. The test was corrected to inspect each plan in its own mock identity. The final run #763 passed, including the Premium 15-completion RPC enforcement test.
 
 ### Privacy and release boundaries
 
@@ -1061,8 +1068,8 @@ At the time of writing, Chromium browser regression and PostgreSQL 17 allowance/
 ### Current recovery point and owner retest
 
 1. Continue on `feature/update-2-3-1-bug-fix-and-changes`; PR #5 remains open and unmerged.
-2. Latest code/test commit: `d1c9be67b2d37578cd46bad6c4b123b644d75386`.
-3. Wait for CI run #763 to complete and confirm Cloudflare Pages rebuilt the latest branch head.
+2. Latest code/test commit validated by CI: `d1c9be67b2d37578cd46bad6c4b123b644d75386`.
+3. CI run #763 passed all three jobs. Confirm Cloudflare Pages rebuilt the latest branch head before owner retesting.
 4. Retest Free/Premium category card stacking, title-side allowance indicator and colors, no card-level allowance count, tab size/white text, and Premium 15 vs Free 5 permanent lesson allowance after switching accounts while Lessons remains open.
 5. Verify 15 Premium mock lesson completions succeed and the 16th is blocked; completed lessons remain reviewable.
 6. Use only fictional Test User A (Free) and Test User B (Premium) in the explicit mock preview.

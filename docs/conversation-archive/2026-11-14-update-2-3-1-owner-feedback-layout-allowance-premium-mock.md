@@ -4,7 +4,7 @@
 **Implementation branch:** `feature/update-2-3-1-bug-fix-and-changes`  
 **Pull request:** [#5](https://github.com/WhiteWingCat/wordbook/pull/5)  
 **Latest implementation commit:** `d1c9be67b2d37578cd46bad6c4b123b644d75386`  
-**Validation run:** [GitHub Actions #763](https://github.com/WhiteWingCat/wordbook/actions/runs/43570440623) — in progress at archive preparation; Chromium and PostgreSQL jobs passed, Supabase CLI local Auth compatibility still running.
+**Validation run:** [GitHub Actions #763](https://github.com/WhiteWingCat/wordbook/actions/runs/43570440623) — completed successfully; all three jobs passed.
 
 ## Owner feedback
 
@@ -54,12 +54,12 @@ An intermediate CI run exposed a test-fixture assumption: the mock database expo
 
 ## Validation status
 
-At the time this archive was prepared, run #763 was still in progress:
-- Chromium browser regression smoke tests: passed.
-- PostgreSQL 17 migration and allowance tests: passed.
-- Supabase CLI local Auth compatibility: still running.
+GitHub Actions run **#763** completed successfully against commit **`d1c9be67b2d37578cd46bad6c4b123b644d75386`**. All three jobs passed:
+- **Chromium browser regression smoke tests:** passed, including the isolated mock adapter and frontend regression checker.
+- **PostgreSQL 17 migration and allowance tests:** passed, including allowance enforcement, frontend syntax/RPC integration, migration/policy/ledger assertions, concurrency and history-deletion checks.
+- **Supabase CLI local Auth compatibility:** passed against disposable local Supabase services, including Auth schema/roles/JWT helpers, migration/policy assertions and security-advisor checks.
 
-Do not mark the whole run successful until the final Supabase job completes. Earlier intermediate run failures were confined to the mock test's incorrect assumption about simultaneous plan rows; the fixture behavior was respected in the corrected test.
+An earlier intermediate mock test failure was due to incorrectly expecting both plan rows to exist in one isolated mock fixture. The test was corrected to inspect each plan in its own mock identity. Final run #763 passed, including the Premium 15-completion RPC enforcement test.
 
 ## Privacy, legal and release boundaries
 
