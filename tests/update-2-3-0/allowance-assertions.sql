@@ -720,7 +720,7 @@ begin
 
   begin
     perform public.start_daily_activity_session(
-      'daily_discovery','discovery-day-1',null,null,'daily'
+      'daily_discovery','discovery-day-1:2026-11-14',null,null,'daily'
     );
   exception when insufficient_privilege then
     v_rejected := true;
