@@ -1544,3 +1544,51 @@ The owner also raised a broader legal-documentation update. Record this as a **p
 4. Implement and test question-bank/session/allowance foundations in isolation. Do not apply production migrations, change live allowance values, merge or deploy without explicit owner approval.
 5. Keep Quiz difficulties unavailable until the independent question bank meets the hard two-session threshold and passes content review.
 6. Continue preserving the Coming Soon production state until the Quiz release is validated and explicitly approved.
+
+
+## 34. Update 2.4.0 — Quiz question-bank and database foundation (2026-11-14)
+
+### Implementation status
+
+The owner declined the estimated hourly cost of a hosted Supabase development branch. No paid branch was created. The database foundation was implemented on `feature/update-2-4-0-quiz` and validated using an ephemeral PostgreSQL 17 service container in GitHub Actions.
+
+Files added to the feature branch:
+
+- `supabase/migrations/20261114120000_swiftdictionary_update_2_4_0_quiz_question_bank_foundation.sql`
+- `supabase/tests/quiz_question_bank_foundation.sql`
+- `.github/workflows/quiz-db-foundation.yml`
+
+The migration adds three private tables: versioned bilingual question bank, account-scoped Quiz sessions, and issued-question/session snapshots. It enforces four unique answer-option IDs with bilingual text, a valid correct option, question revision approval lifecycle, difficulty-specific question counts, one active session per account, immutable issued question identity/snapshots, mutable answer selection before submission, and a unique account/local-day/question constraint that blocks same-day reuse across sessions and after abandonment. RLS is enabled and direct `anon`/`authenticated` table access is revoked.
+
+### Validation
+
+GitHub Actions workflow **Quiz database foundation**, run #7, completed successfully on PostgreSQL 17.12:
+
+- Migration applied successfully.
+- Private tables and RLS flags verified.
+- Direct table privilege revocation verified.
+- Valid bilingual four-option question approved and timestamp assigned.
+- Three-option and duplicate-option questions rejected.
+- Shuffled option-order permutation validation passed.
+- Answer changes before submission passed.
+- Re-issuing the same question to the same account on the same local day after an abandoned session was rejected.
+- Test transaction rolled back; the ephemeral database container was destroyed.
+
+The first CI attempt found an option-ordering bug in the question validation trigger. It was fixed, then the next run found the test fixture needed a synthetic `auth.users` row. Both were corrected; the final run passed. The existing 2.3.x PostgreSQL migration/allowance regression job also passed on the same branch push. Other concurrent regression jobs were still running at the time of this record.
+
+### Validation boundary
+
+This no-cost workflow tests PostgreSQL DDL, constraints, triggers, role grants and core same-day uniqueness. It bootstraps minimal Supabase-compatible `auth.users`, `public.languages`, `anon` and `authenticated` objects. It does not prove full Supabase Auth, PostgREST, JWT, RLS policy or platform RPC integration. Use a disposable local Supabase CLI stack (Docker) if those behaviours need platform-level validation; do not create a paid hosted branch unless the owner later explicitly approves the cost.
+
+### Current safety boundary
+
+- No production Supabase migration was applied.
+- Production Quiz allowance values remain unchanged (Free 5/day, Premium 12/day); confirmed Quiz targets remain Free 1/day and Premium 3/day.
+- No Quiz content has been approved or seeded. All difficulties remain unavailable.
+- No live user data changed.
+- No merge or deployment occurred.
+- Draft PR #8 is open for validation only: https://github.com/WhiteWingCat/wordbook/pull/8. Do not merge it yet.
+
+### Next implementation stage
+
+Proceed with authenticated, narrowly scoped Quiz RPCs and server-side selection/availability logic. They must enforce the approved source-difficulty ratios, question-bank minimum/target counts, account-local-day question reservation, one active session, session resume/abandon semantics, answer changes before submission, server scoring, completion-based allowance charging, and completed read-only review. Extend learning-history deletion for Quiz data without deleting the private allowance ledger. Keep production Quiz hidden until content minimums and all integration/security checks pass.
