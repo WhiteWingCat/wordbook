@@ -54,6 +54,9 @@ values (
  now()+interval '1 hour'
 );
 
+create temporary table quiz_test_refs(user_a_session_id uuid);
+grant select,insert on quiz_test_refs to authenticated;
+
 set local role authenticated;
 
 -- Test User A: Free plan, abandoned questions remain reserved, one completion/day.
@@ -122,8 +125,7 @@ begin
   end if;
 
   perform public.abandon_my_quiz(v_session_id);
-  if (select used_count from private.learning_allowance_usage
-      where user_id=auth.uid() and activity_type='quiz') is not null then
+  if public.test_current_quiz_usage()<>0 then
     raise exception 'Abandoning a Quiz must not consume allowance';
   end if;
 
@@ -155,6 +157,9 @@ begin
     );
   end loop;
 
+  insert into pg_temp.quiz_test_refs(user_a_session_id)
+  values ((v_second->>'session_id')::uuid);
+
   v_result:=public.submit_my_quiz((v_second->>'session_id')::uuid);
   if v_result->>'status'<>'completed'
      or v_result->>'correct_count'<>'10'
@@ -168,13 +173,11 @@ begin
 
   -- Duplicate submit is idempotent and must not charge a second completion.
   v_result:=public.submit_my_quiz((v_second->>'session_id')::uuid);
-  select count(*) into v_count from public.learning_activity_log
-  where user_id=auth.uid() and activity_type='quiz' and event_type='completed';
+  v_count:=public.test_my_quiz_completed_event_count();
   if v_count<>1 then
     raise exception 'Repeated submit created more than one completion event';
   end if;
-  if (select used_count from private.learning_allowance_usage
-      where user_id=auth.uid() and activity_type='quiz')<>1 then
+  if public.test_current_quiz_usage()<>1 then
     raise exception 'Free allowance ledger did not charge exactly once';
   end if;
 
@@ -214,9 +217,7 @@ declare v_failed boolean:=false;
 begin
   begin
     perform public.get_my_quiz_review(
-      (select id from private.quiz_sessions
-       where user_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
-         and status='completed' limit 1)
+      (select user_a_session_id from pg_temp.quiz_test_refs limit 1)
     );
   exception when no_data_found then v_failed:=true;
   end;
@@ -284,8 +285,7 @@ begin
     end if;
   end loop;
 
-  select used_count into v_count from private.learning_allowance_usage
-  where user_id=auth.uid() and activity_type='quiz';
+  v_count:=public.test_current_quiz_usage();
   if v_count<>3 then raise exception 'Premium daily allowance did not charge three completions'; end if;
 
   v_failed:=false;
@@ -344,11 +344,9 @@ declare
 begin
   v_result:=public.delete_my_learning_history();
   if v_result->>'deleted'<>'true' then raise exception 'History deletion did not report success'; end if;
-  select count(*) into v_count from private.quiz_sessions
-  where user_id=auth.uid();
+  v_count:=public.test_my_quiz_session_count();
   if v_count<>0 then raise exception 'Quiz history was not deleted'; end if;
-  select used_count into v_used from private.learning_allowance_usage
-  where user_id=auth.uid() and activity_type='quiz';
+  v_used:=public.test_current_quiz_usage();
   if v_used<>1 then raise exception 'History deletion incorrectly reset the Quiz allowance ledger'; end if;
 end;
 $deletion$;
