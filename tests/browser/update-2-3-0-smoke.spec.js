@@ -40,20 +40,65 @@ test("lesson library renders and difficulty tabs switch independently", async ({
   await expect(page.locator("#lessonReader")).toBeHidden();
 });
 
-test("Daily Learning does not expose account progress while signed out", async ({ page }) => {
+test("exhausted lesson allowance blocks new lessons but preserves completed lesson review", async ({ page }) => {
+  await installDailyLearningMock(page,"lesson-limit-user","free");
   await page.goto("/");
-  await page.locator('[data-page="daily-learning"]').click();
+  await expect.poll(() => page.evaluate(() => window.__swiftDailyMock?.user?.id)).toBe("lesson-limit-user");
+  await page.evaluate(() => {
+    const state = window.__swiftDailyMock;
+    state.allowanceUsage.find(row => row.activity_type === "lesson").used_count = 5;
+    state.tables.lesson_progress = [{
+      user_id:"lesson-limit-user",difficulty:"beginner",lesson_id:"b-sentence",status:"completed",
+      started_at:new Date().toISOString(),completed_at:new Date().toISOString(),updated_at:new Date().toISOString()
+    }];
+  });
+  await page.locator('[data-page="lessons"]').click();
+  await expect(page.locator("#lessonAllowanceCount")).toHaveText("0 / 5");
+  const completed = page.locator("#lessonCards .lesson-card").nth(0);
+  const notStarted = page.locator("#lessonCards .lesson-card").nth(1);
+  await expect(completed).toBeEnabled();
+  await expect(notStarted).toBeDisabled();
+  await completed.click();
+  await expect(page.locator("#lessonReader")).toBeVisible();
+  await expect(page.locator("#lessonStatus")).toContainText("已完成的课程已重新打开，可免费重温。");
+});
+
+test("Premium lesson allowance blocks new lessons after fifteen completions but keeps reviews free", async ({ page }) => {
+  await installDailyLearningMock(page,"premium-lesson-limit-user","premium");
+  await page.goto("/");
+  await expect.poll(() => page.evaluate(() => window.__swiftDailyMock?.user?.id)).toBe("premium-lesson-limit-user");
+  await page.evaluate(() => {
+    const state = window.__swiftDailyMock;
+    state.allowanceUsage.find(row => row.activity_type === "lesson").used_count = 15;
+    state.tables.lesson_progress = [{
+      user_id:"premium-lesson-limit-user",difficulty:"beginner",lesson_id:"b-sentence",status:"completed",
+      started_at:new Date().toISOString(),completed_at:new Date().toISOString(),updated_at:new Date().toISOString()
+    }];
+  });
+  await page.locator('[data-page="lessons"]').click();
+  await expect(page.locator("#lessonAllowanceCount")).toHaveText("0 / 15");
+  await expect(page.locator("#lessonCards .lesson-card").nth(0)).toBeEnabled();
+  await expect(page.locator("#lessonCards .lesson-card").nth(1)).toBeDisabled();
+});
+
+test("Daily Learning is integrated into Lessons and does not expose account progress while signed out", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('[data-page="daily-learning"]')).toHaveCount(0);
+  await page.locator('[data-page="lessons"]').click();
   await expect(page.locator("#dailyLearningPage")).toBeVisible();
+  const order = await page.evaluate(() => document.getElementById("dailyLearningPage").compareDocumentPosition(document.querySelector(".difficulty-tabs")));
+  expect(order & 4).toBeTruthy();
   await expect(page.locator("#dailyLearningStatus")).toContainText("Sign in");
-  await expect(page.locator("#dailyActivityGrid [data-activity-card]")).toHaveCount(4);
-  await expect(page.locator("#dailyActivityGrid [data-start-daily]:disabled")).toHaveCount(4);
+  await expect(page.locator("#dailyActivityGrid [role=tab]")).toHaveCount(4);
+  await expect(page.locator("#dailyActivityPanel [data-activity-card]")).toHaveCount(1);
+  await expect(page.locator("#dailyActivityPanel [data-start-daily]:disabled")).toHaveCount(1);
   await expect(page.locator('[data-daily-pref="daily_topic_enabled"]')).toBeChecked();
   await expect(page.locator('[data-daily-pref="daily_application_enabled"]')).toBeChecked();
   await expect(page.locator('[data-daily-pref="daily_discovery_enabled"]')).toBeChecked();
   await expect(page.locator('[data-daily-pref="daily_revision_enabled"]')).toBeChecked();
 });
 
-test("signed-out Profile route safely redirects to Dictionary", async ({ page }) => {
+test("signed-out Dashboard route safely redirects to Dictionary", async ({ page }) => {
   await page.goto("/#profile");
   await expect(page.locator("#dictionaryPage")).toBeVisible();
   await expect(page.locator("#profilePage")).toBeHidden();
@@ -62,17 +107,21 @@ test("signed-out Profile route safely redirects to Dictionary", async ({ page })
 test("signed-in Daily Topic completes through the server RPC without answer-level data", async ({ page }) => {
   await installDailyLearningMock(page);
   await page.goto("/");
-  await page.locator('[data-page="daily-learning"]').click();
+  await page.locator('[data-page="lessons"]').click();
   await expect(page.locator("#dailyLearningPage")).toBeVisible();
   const start = page.locator('#dailyActivityGrid [data-start-daily="daily_topic"]');
   await expect(start).toBeEnabled();
   await start.click();
   await expect(page.locator("#dailyActivityReader")).toBeVisible();
   await page.locator("#dailyActivityReader [data-complete-daily]").click();
+  await expect(page.locator("#dailyActivityReader")).toBeHidden();
 
-  await expect.poll(() => page.evaluate(() => window.__swiftDailyMock.rpcCalls.map(call => call.name)))
-    .toEqual(["start_daily_activity_session", "complete_daily_activity_session"]);
-  const calls = await page.evaluate(() => window.__swiftDailyMock.rpcCalls);
+  const dailyRpcNames = () => page.evaluate(() => window.__swiftDailyMock.rpcCalls
+    .filter(call => ["start_daily_activity_session","complete_daily_activity_session"].includes(call.name))
+    .map(call => call.name));
+  await expect.poll(dailyRpcNames).toEqual(["start_daily_activity_session","complete_daily_activity_session"]);
+  const calls = await page.evaluate(() => window.__swiftDailyMock.rpcCalls
+    .filter(call => ["start_daily_activity_session","complete_daily_activity_session"].includes(call.name)));
   expect(calls[0].args.p_activity_type).toBe("daily_topic");
   expect(calls[1].args).toEqual({
     p_session_id: "daily-session-1",
@@ -80,18 +129,36 @@ test("signed-in Daily Topic completes through the server RPC without answer-leve
     p_question_count: null
   });
   expect(JSON.stringify(calls)).not.toMatch(/selectedAnswer|answerIndex|questionAnswer/i);
-  await expect(page.locator('#dailyActivityGrid [data-activity-card="daily_topic"]'))
-    .toContainText("0 / 1 completions remaining");
+  const topicCards = page.locator('#dailyActivityGrid [data-activity-card="daily_topic"]');
+  await expect(topicCards).toHaveCount(1);
+  await expect(page.locator("#dailyActivityPanel .daily-activity-heading-note")).toContainText("每日额度将在午夜重置");
+  await expect(topicCards.first()).toContainText("已完成 · 可免费重温");
+  await expect(topicCards.first().locator("[data-start-daily]")).toBeEnabled();
+
+  // Reviewing the completed item reopens the saved content without charging again.
+  await topicCards.first().locator("[data-start-daily]").click();
+  await expect(page.locator("#dailyActivityReader")).toBeVisible();
+  await expect(page.locator("#dailyActivityReader")).toContainText("已完成 · 可免费重温");
+  await expect(page.locator("#dailyActivityReader [data-complete-daily]")).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => window.__swiftDailyMock.allowanceUsage.find(row => row.activity_type === "daily_topic").used_count)).toBe(1);
 });
 
 test("signed-in Daily Application submits only aggregate first-try results", async ({ page }) => {
   await installDailyLearningMock(page, "daily-user-b");
   await page.goto("/");
-  await page.locator('[data-page="daily-learning"]').click();
+  await page.locator('[data-page="lessons"]').click();
+  await page.locator('[data-daily-tab="daily_application"]').click();
   const start = page.locator('#dailyActivityGrid [data-start-daily="daily_application"]');
   await expect(start).toBeEnabled();
   await start.click();
   await expect(page.locator("#dailyActivityReader #dailyQuestions .daily-question").first()).toBeVisible();
+
+  const examples = page.locator("#dailyActivityReader .daily-examples-box li");
+  await expect(examples).toHaveCount(2);
+  const exampleTexts = await examples.allTextContents();
+  const questionPrompts = await page.locator("#dailyActivityReader #dailyQuestions .daily-question strong").allTextContents();
+  expect(exampleTexts.every(text => !text.trim().endsWith("?"))).toBeTruthy();
+  expect(exampleTexts.some(example => questionPrompts.includes(example))).toBeFalsy();
 
   const questions = page.locator("#dailyActivityReader #dailyQuestions .daily-question");
   const count = await questions.count();
@@ -110,7 +177,7 @@ test("signed-in Daily Application submits only aggregate first-try results", asy
   for (let i = 0; i < count; i += 1) {
     const question = questions.nth(i);
     let feedback = await question.locator(".daily-question-feedback").textContent();
-    if (feedback.includes("Correct.")) {
+    if (feedback.includes("Correct.") || feedback.includes("正确。")) {
       firstTryCorrect += 1;
       continue;
     }
@@ -121,7 +188,7 @@ test("signed-in Daily Application submits only aggregate first-try results", asy
       await options.nth(option).check();
       await page.locator("#dailyActivityReader [data-check-daily]").click();
       feedback = await question.locator(".daily-question-feedback").textContent();
-      if (feedback.includes("Correct.")) { solved = true; break; }
+      if (feedback.includes("Correct.") || feedback.includes("正确。")) { solved = true; break; }
     }
     expect(solved).toBeTruthy();
   }
@@ -193,7 +260,7 @@ window.__SWIFT_TEST_INITIAL_USER = ${JSON.stringify(initialUser)};`
   }));
 }
 
-async function installDailyLearningMock(page, userId = "daily-user-a") {
+async function installDailyLearningMock(page, userId = "daily-user-a", plan = "free") {
   await page.unroute("**/supabase-config.js");
   await page.route("**/supabase-config.js", route => route.fulfill({
     status: 200,
@@ -207,10 +274,20 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
     body: `(() => {
       const state = {
         user: null,
+        legacySchema: false,
         listeners: [],
         rpcCalls: [],
         sessions: [],
+        allowanceUsage: [
+          { activity_type: "lesson", used_count: 0 },
+          { activity_type: "daily_topic", used_count: 0 },
+          { activity_type: "daily_application", used_count: 0 },
+          { activity_type: "daily_discovery", used_count: 0 },
+          { activity_type: "daily_revision", used_count: 0 }
+        ],
         tables: {
+          profiles: [],
+          saved_words: [],
           user_preferences: [{
             user_id: ${JSON.stringify(userId)},
             timezone: "Asia/Kuala_Lumpur",
@@ -221,8 +298,9 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
             daily_discovery_enabled: true,
             daily_revision_enabled: true
           }],
-          user_entitlements: [{ user_id: ${JSON.stringify(userId)}, plan_code: "free", status: "active", valid_from: null, valid_until: null }],
-          learning_plan_limits: ["daily_topic","daily_application","daily_discovery","daily_revision"].map(activity_type => ({ plan_code: "free", activity_type, daily_limit: 1, is_enabled: true })),
+          user_entitlements: [{ user_id: ${JSON.stringify(userId)}, plan_code: ${JSON.stringify(plan)}, status: "active", valid_from: null, valid_until: null }],
+          learning_plan_limits: [{ plan_code: ${JSON.stringify(plan)}, activity_type:"lesson", daily_limit:${JSON.stringify(plan)} === "premium" ? 15 : 5, is_enabled:true }, ...["daily_topic","daily_application","daily_discovery","daily_revision"].map(activity_type => ({ plan_code: ${JSON.stringify(plan)}, activity_type, daily_limit: ${JSON.stringify(plan)} === "premium" ? 3 : 1, is_enabled: true }))],
+          lesson_progress: [],
           learning_activity_log: [],
           lesson_practice_results: [],
           daily_activity_sessions: []
@@ -246,17 +324,34 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
       }
       function query(table) {
         const filters = {};
+        let selectError = null;
         const q = {
-          select() { return q; },
+          insert(values) {
+            const rows = state.tables[table] || (state.tables[table] = []);
+            rows.push(...(Array.isArray(values) ? values : [values]));
+            return q;
+          },
+          select(columns) {
+            const selected = String(columns || "");
+            if (state.legacySchema && table === "user_preferences" && selected.includes("allowance_timezone")) {
+              selectError = { code:"PGRST204", message:"Could not find the allowance_timezone column in the user_preferences schema cache" };
+            } else if (state.legacySchema && table === "learning_activity_log" && selected.includes("event_type")) {
+              selectError = { code:"42703", message:"column learning_activity_log.event_type does not exist" };
+            } else if (state.legacySchema && table === "daily_activity_sessions") {
+              selectError = { code:"PGRST205", message:"Could not find the daily_activity_sessions table in the schema cache" };
+            }
+            return q;
+          },
           eq(key, value) { filters[key] = { op: "eq", value }; return q; },
           in(key, value) { filters[key] = { op: "in", value }; return q; },
           gte(key, value) { filters[key] = { op: "gte", value }; return q; },
           lt(key, value) { filters[key] = { op: "lt", value }; return q; },
           order() { return q; },
           limit() { return q; },
-          maybeSingle() { return Promise.resolve({ data: rowsFor(table, filters)[0] || null, error: null }); },
-          single() { return Promise.resolve({ data: rowsFor(table, filters)[0] || null, error: null }); },
-          then(resolve, reject) { return Promise.resolve({ data: rowsFor(table, filters), error: null }).then(resolve, reject); }
+          upsert() { return Promise.resolve({ data: null, error: null }); },
+          maybeSingle() { return Promise.resolve({ data: selectError ? null : (rowsFor(table, filters)[0] || null), error: selectError }); },
+          single() { return Promise.resolve({ data: selectError ? null : (rowsFor(table, filters)[0] || null), error: selectError }); },
+          then(resolve, reject) { return Promise.resolve({ data: selectError ? null : rowsFor(table, filters), error: selectError }).then(resolve, reject); }
         };
         return q;
       }
@@ -270,9 +365,18 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
         from(table) { return query(table); },
         async rpc(name, args) {
           state.rpcCalls.push({ name, args: structuredClone(args) });
+          if (name === "get_my_learning_allowance_usage") return state.legacySchema
+            ? { data:null, error:{ code:"PGRST202", message:"Could not find the get_my_learning_allowance_usage function in the schema cache" } }
+            : { data: state.allowanceUsage, error: null };
+          if (name === "is_personal_learning_test_access") return { data: false, error: null };
           if (name === "start_daily_activity_session") {
+            const completed = state.sessions.find(row => row.activity_type === args.p_activity_type && row.content_id === args.p_content_id && row.status === "completed");
+            if (completed) return { data: completed, error: null };
             const existing = state.sessions.find(row => row.activity_type === args.p_activity_type && row.status === "in_progress");
             if (existing) return { data: existing, error: null };
+            const limit = state.tables.learning_plan_limits.find(row => row.plan_code === ${JSON.stringify(plan)} && row.activity_type === args.p_activity_type);
+            const used = state.allowanceUsage.find(row => row.activity_type === args.p_activity_type)?.used_count || 0;
+            if (!limit?.is_enabled || used >= (limit?.daily_limit ?? 1)) return { data:null, error:{code:"P0001",message:"Daily learning completion limit reached"} };
             const session = {
               id: "daily-session-" + (state.sessions.length + 1),
               user_id: state.user.id,
@@ -282,6 +386,7 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
               difficulty: args.p_difficulty,
               source: args.p_source,
               status: "in_progress",
+              started_at: new Date().toISOString(),
               completed_at: null,
               correct_count: null,
               question_count: null
@@ -306,6 +411,8 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
               event_type: "completed",
               created_at: session.completed_at
             });
+            const allowance = state.allowanceUsage.find(row => row.activity_type === session.activity_type);
+            if (allowance) allowance.used_count += 1;
             return { data: session, error: null };
           }
           if (name === "abandon_daily_activity_session") {
@@ -322,6 +429,347 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
     })();`
   }));
 }
+
+test("Daily activity translation refreshes in place while preserving English learning context", async ({ page }) => {
+  await installDailyLearningMock(page, "daily-translation-user");
+  await page.goto("/");
+  await page.locator('[data-page="lessons"]').click();
+  await expect(page.locator("#dailyLearningHeading")).toHaveText("每日学习");
+  await expect(page.locator('[data-daily-pref-label="daily_topic"]')).toHaveText("每日主题");
+  await expect(page.locator("#dailyLearningStatus")).toContainText("每日活动于午夜重置");
+  await page.locator('[data-daily-tab="daily_application"]').click();
+  await page.locator('#dailyActivityGrid [data-start-daily="daily_application"]').click();
+  await expect(page.locator("#dailyActivityReader")).toBeVisible();
+  await expect(page.locator("#dailyActivityReader [data-daily-back]")).toHaveText("← 返回课程");
+  await expect(page.locator("#dailyActivityReader #dailyQuestions .daily-question strong").first()).toContainText(/[A-Za-z]/);
+  await page.locator('#dailyActivityReader #dailyQuestions input[type="radio"]').first().check();
+  await page.locator("#dailyActivityReader [data-check-daily]").click();
+  await expect(page.locator("#dailyActivityReader .daily-question-feedback").first()).toContainText("中文说明");
+
+  await page.locator("#translationSelect").evaluate(el => { el.value="en"; el.dispatchEvent(new Event("change",{bubbles:true})); });
+  await expect(page.locator("#dailyActivityReader [data-daily-back]")).toHaveText("← Back to Lessons");
+  await expect(page.locator("#dailyLearningHeading")).toHaveText("Daily Learning");
+  await expect(page.locator('[data-daily-pref-label="daily_topic"]')).toHaveText("Daily Topic");
+  await expect(page.locator("#dailyLearningStatus")).toContainText("Your daily activities reset at midnight");
+  await expect(page.locator("#dailyActivityReader #dailyQuestions .daily-question strong").first()).toContainText(/[A-Za-z]/);
+  await expect(page.locator("#dailyActivityReader .daily-question-feedback").first()).not.toBeEmpty();
+  await expect(page.locator("#dailyActivityReader .daily-question-feedback").first()).not.toContainText("中文说明");
+
+  await page.locator("#translationSelect").evaluate(el => { el.value="zh"; el.dispatchEvent(new Event("change",{bubbles:true})); });
+  await expect(page.locator("#dailyActivityReader [data-daily-back]")).toHaveText("← 返回课程");
+  await expect(page.locator("#dailyLearningHeading")).toHaveText("每日学习");
+  await expect(page.locator('[data-daily-pref-label="daily_topic"]')).toHaveText("每日主题");
+  await expect(page.locator("#dailyLearningStatus")).toContainText("每日活动于午夜重置");
+  await expect(page.locator("#dailyActivityReader .daily-question-feedback").first()).toContainText("中文说明");
+});
+
+test("Daily Revision presents real examples separately from its practice questions", async ({ page }) => {
+  await installDailyLearningMock(page,"daily-revision-example-user");
+  await page.goto("/");
+  await page.locator('[data-page="lessons"]').click();
+  await page.locator('[data-daily-tab="daily_revision"]').click();
+  await page.locator('#dailyActivityGrid [data-start-daily="daily_revision"]').click();
+  await expect(page.locator("#dailyActivityReader")).toBeVisible();
+  const examples = page.locator("#dailyActivityReader .daily-examples-box li");
+  const questions = page.locator("#dailyActivityReader #dailyQuestions .daily-question strong");
+  await expect(examples).toHaveCount(2);
+  await expect(questions).toHaveCount(2);
+  const exampleTexts = await examples.allTextContents();
+  const questionTexts = await questions.allTextContents();
+  expect(exampleTexts.every(text => !text.trim().endsWith("?"))).toBeTruthy();
+  expect(exampleTexts.some(example => questionTexts.some(question => question.includes(example)))).toBeFalsy();
+});
+
+test("completed Discovery content remains reviewable across UTC rollover within the local allowance day", async ({ page }) => {
+  await installDailyLearningMock(page,"discovery-rollover-review-user","free");
+  await page.goto("/");
+  await expect.poll(() => page.evaluate(() => window.__swiftDailyMock?.user?.id)).toBe("discovery-rollover-review-user");
+  await page.evaluate(() => {
+    const state = window.__swiftDailyMock;
+    const todayUtc = new Date().toISOString().slice(0,10);
+    const previousUtc = new Date(Date.parse(todayUtc + "T00:00:00.000Z") - 86400000).toISOString().slice(0,10);
+    const completed = {
+      id:"discovery-rollover-completed",user_id:"discovery-rollover-review-user",
+      activity_type:"daily_discovery",content_id:"discovery-word-meticulous-01:" + previousUtc,
+      topic_id:null,difficulty:null,source:"daily",status:"completed",
+      started_at:new Date().toISOString(),completed_at:new Date().toISOString(),
+      correct_count:null,question_count:null
+    };
+    state.sessions = [completed];
+    state.tables.daily_activity_sessions = state.sessions;
+    state.allowanceUsage.find(row => row.activity_type === "daily_discovery").used_count = 1;
+  });
+  await page.locator('[data-page="lessons"]').click();
+  await page.locator('[data-daily-tab="daily_discovery"]').click();
+  await expect(page.locator('#dailyActivityGrid [data-activity-card="daily_discovery"]')).toHaveCount(1);
+  const discoveryCards = page.locator('#dailyActivityGrid [data-activity-card="daily_discovery"]');
+  await expect(discoveryCards).toHaveCount(1);
+  await expect(discoveryCards.first()).toContainText("重温已完成内容");
+  await expect(page.locator("#dailyActivityPanel .daily-activity-heading-note")).toContainText("每日额度将在午夜重置");
+  await expect(discoveryCards.first().locator("[data-start-daily]")).toBeEnabled();
+  await discoveryCards.first().locator("[data-start-daily]").click();
+  await expect(page.locator("#dailyActivityReader")).toBeVisible();
+  await expect(page.locator("#dailyActivityReader")).toContainText("meticulous");
+});
+
+test("Daily activity tabs show one Free card or three Premium cards with row actions", async ({ browser }) => {
+  const freePage = await browser.newPage();
+  const premiumPage = await browser.newPage();
+  await installDailyLearningMock(freePage,"daily-tabs-free","free");
+  await installDailyLearningMock(premiumPage,"daily-tabs-premium","premium");
+  for (const page of [freePage,premiumPage]) {
+    await page.goto("/");
+    await page.locator('[data-page="lessons"]').click();
+    await expect(page.locator("#dailyActivityGrid [role='tab']")).toHaveCount(4);
+    for (const type of ["daily_topic","daily_application","daily_discovery","daily_revision"]) {
+      await page.locator('[data-daily-tab="' + type + '"]').click();
+      const panel = page.locator("#dailyActivityPanel");
+      await expect(panel.locator('[data-activity-card="' + type + '"]')).toHaveCount(page===freePage?1:3);
+      await expect(page.locator('[data-daily-tab="' + type + '"]')).toHaveAttribute("aria-selected","true");
+      const card = panel.locator('[data-activity-card="' + type + '"]').first();
+      await expect(card.locator(".daily-activity-card-action")).toBeVisible();
+      const actionLayout = await card.evaluate(el => {
+        const copy = el.querySelector(".daily-activity-card-copy");
+        const action = el.querySelector(".daily-activity-card-action");
+        return action.getBoundingClientRect().left >= copy.getBoundingClientRect().right - 1;
+      });
+      expect(actionLayout).toBeTruthy();
+    }
+  }
+  await freePage.close();
+  await premiumPage.close();
+});
+
+test("Daily Discovery shows one Free entry and three identical Premium entries globally", async ({ browser }) => {
+  const freePage = await browser.newPage();
+  const premiumPageA = await browser.newPage();
+  const premiumPageB = await browser.newPage();
+  await installDailyLearningMock(freePage,"discovery-free-account","free");
+  await installDailyLearningMock(premiumPageA,"discovery-premium-account-a","premium");
+  await installDailyLearningMock(premiumPageB,"discovery-premium-account-b","premium");
+  for (const page of [freePage,premiumPageA,premiumPageB]) {
+    await page.goto("/");
+    await page.locator('[data-page="lessons"]').click();
+    await page.locator('[data-daily-tab="daily_discovery"]').click();
+    await expect(page.locator('#dailyActivityGrid [data-discovery-card]')).toHaveCount(page === freePage ? 1 : 3);
+  }
+  const freeWords = await freePage.locator('#dailyActivityGrid [data-discovery-card] h3').allTextContents();
+  const premiumWordsA = await premiumPageA.locator('#dailyActivityGrid [data-discovery-card] h3').allTextContents();
+  const premiumWordsB = await premiumPageB.locator('#dailyActivityGrid [data-discovery-card] h3').allTextContents();
+  expect(freeWords).toHaveLength(1);
+  expect(premiumWordsA).toHaveLength(3);
+  expect(new Set(premiumWordsA).size).toBe(3);
+  expect(premiumWordsA).toEqual(premiumWordsB);
+  expect(freeWords[0]).toBe(premiumWordsA[0]);
+  await freePage.close();
+  await premiumPageA.close();
+  await premiumPageB.close();
+});
+
+test("Daily Discovery uses dictionary layout and the approved global catalogue metadata", async ({ page }) => {
+  await installDailyLearningMock(page, "daily-discovery-layout-user");
+  await page.goto("/");
+  await page.locator('[data-page="lessons"]').click();
+  await page.locator('[data-daily-tab="daily_discovery"]').click();
+  await page.locator('#dailyActivityGrid [data-start-daily="daily_discovery"]').click();
+  const reader = page.locator("#dailyActivityReader");
+  await expect(reader.locator(".daily-discovery-modal .modal-head")).toBeVisible();
+  await expect(reader.locator(".daily-discovery-modal .detail-section h3").first()).toContainText("释义");
+  expect(await reader.locator(".daily-discovery-modal .example-list li").count()).toBeGreaterThan(1);
+  await expect(reader.locator("[data-daily-back]")).toHaveCount(0);
+  await expect(reader.locator("[data-previous],[data-next],#previousButton,#nextButton")).toHaveCount(0);
+  const style = await reader.evaluate(el => ({
+    backdrop: getComputedStyle(el).backgroundColor,
+    padding: getComputedStyle(el.querySelector(".daily-discovery-modal .modal-content")).padding,
+    border: getComputedStyle(el.querySelector(".daily-discovery-modal")).borderTopWidth,
+    definitionColor: getComputedStyle(el.querySelector(".daily-discovery-modal .definition")).color
+  }));
+  expect(style.backdrop).toBe("rgba(0, 0, 0, 0)");
+  expect(style.padding).not.toBe("0px");
+  expect(style.border).toBe("0px");
+  expect(style.definitionColor).toBe("rgb(243, 244, 246)");
+
+  const start = await page.evaluate(() => window.__swiftDailyMock.rpcCalls.find(call => call.name === "start_daily_activity_session"));
+  expect(start.args.p_activity_type).toBe("daily_discovery");
+  expect(start.args.p_topic_id).toBeNull();
+  expect(start.args.p_difficulty).toBeNull();
+});
+
+test("Permanent lessons open on their own page and refresh language without losing lesson context", async ({ page }) => {
+  await installDailyLearningMock(page, "permanent-lesson-page-user");
+  await page.goto("/");
+  await page.locator('[data-page="lessons"]').click();
+  await page.locator("#lessonCards .lesson-card").first().click();
+  await expect(page.locator("#lessonDetailPage")).toBeVisible();
+  await expect(page.locator("#lessonsPage")).toBeHidden();
+  await expect(page.locator("#lessonReaderContent")).toContainText("本课目标");
+
+  await page.locator("#translationSelect").evaluate(el => { el.value="en"; el.dispatchEvent(new Event("change",{bubbles:true})); });
+  await expect(page.locator("#lessonReaderContent")).toContainText("What you will learn");
+  await expect(page.locator("#lessonDetailPage")).toBeVisible();
+
+  await page.locator("#lessonBack").click();
+  await expect(page.locator("#lessonsPage")).toBeVisible();
+  await expect(page.locator("#lessonDetailPage")).toBeHidden();
+});
+
+test("Daily Revision is adaptive, abandonment is free, and Daily Discovery is unscored", async ({ page }) => {
+  await installDailyLearningMock(page, "daily-behaviour-user");
+  await page.goto("/");
+  await page.evaluate(() => {
+    const state = window.__swiftDailyMock;
+    const now = Date.now();
+    state.tables.lesson_practice_results = [
+      { user_id:"daily-behaviour-user", topic_id:"verb-tenses", correct_count:1, question_count:3, attempted_at:new Date(now-2*86400000).toISOString() },
+      { user_id:"daily-behaviour-user", topic_id:"verb-tenses", correct_count:1, question_count:3, attempted_at:new Date(now-86400000).toISOString() }
+    ];
+  });
+  await page.locator('[data-page="lessons"]').click();
+  await page.locator('[data-daily-tab="daily_revision"]').click();
+
+  await page.locator('#dailyActivityGrid [data-start-daily="daily_revision"]').click();
+  await expect(page.locator("#dailyActivityReader #dailyQuestions .daily-question").first()).toBeVisible();
+  const revisionStart = await page.evaluate(() => window.__swiftDailyMock.rpcCalls.find(call => call.name === "start_daily_activity_session" && call.args.p_activity_type === "daily_revision"));
+  expect(revisionStart.args.p_source).toBe("adaptive_revision");
+  expect(revisionStart.args.p_topic_id).toBe("verb-tenses");
+  await page.locator("#dailyActivityReader [data-abandon-daily]").click();
+  await expect(page.locator("#dailyLearningStatus")).toContainText("Session abandoned. No daily allowance was used.");
+  const revisionUsage = await page.evaluate(() => window.__swiftDailyMock.allowanceUsage.find(row => row.activity_type === "daily_revision").used_count);
+  expect(revisionUsage).toBe(0);
+
+  await page.locator('[data-daily-tab="daily_discovery"]').click();
+  await page.locator('#dailyActivityGrid [data-start-daily="daily_discovery"]').click();
+  await expect(page.locator("#dailyActivityReader")).toBeVisible();
+  await expect(page.locator("#dailyActivityReader #dailyQuestions")).toHaveCount(0);
+  await page.locator("#dailyActivityReader [data-complete-daily]").click();
+  await expect(page.locator("#dailyLearningStatus")).toContainText("活动已成功完成。");
+  const discovery = await page.evaluate(() => ({
+    call: window.__swiftDailyMock.rpcCalls.find(call => call.name === "complete_daily_activity_session"),
+    session: window.__swiftDailyMock.sessions.find(row => row.activity_type === "daily_discovery"),
+    used: window.__swiftDailyMock.allowanceUsage.find(row => row.activity_type === "daily_discovery").used_count
+  }));
+  expect(discovery.call.args.p_correct_count).toBeNull();
+  expect(discovery.call.args.p_question_count).toBeNull();
+  expect(discovery.session.status).toBe("completed");
+  expect(discovery.used).toBe(1);
+});
+
+test("unfinished daily activities expire at the user's local midnight", async ({ page }) => {
+  await installDailyLearningMock(page, "daily-expiry-user");
+  await page.goto("/");
+  await page.locator('[data-page="lessons"]').click();
+  await page.evaluate(() => {
+    const state = window.__swiftDailyMock;
+    state.sessions.push({
+      id:"stale-daily-session", user_id:"daily-expiry-user", activity_type:"daily_topic",
+      content_id:"topic-present-perfect-01", topic_id:"verb-tenses", status:"in_progress",
+      started_at:"2026-11-13T08:00:00.000Z", completed_at:null, correct_count:null, question_count:null
+    });
+    state.tables.daily_activity_sessions = state.sessions;
+  });
+  await page.evaluate(() => window.initialiseDailyLearning());
+  await expect.poll(() => page.evaluate(() =>
+    window.__swiftDailyMock.sessions.find(row => row.id === "stale-daily-session")?.status
+  )).toBe("abandoned");
+  await expect(page.locator('#dailyActivityGrid [data-activity-card="daily_topic"]')).not.toContainText("In progress");
+  await expect(page.locator('#dailyActivityGrid [data-start-daily="daily_topic"]')).toBeEnabled();
+  await page.locator('#dailyActivityGrid [data-start-daily="daily_topic"]').click();
+  await expect(page.locator("#dailyActivityReader")).toBeVisible();
+  const active = await page.evaluate(() => window.__swiftDailyMock.sessions.find(row => row.status === "in_progress"));
+  expect(active.id).not.toBe("stale-daily-session");
+  expect(active.started_at).toBeTruthy();
+});
+
+test("Dashboard shows saved words, course recency, ledger allowances and practice insights; Preferences stays separate", async ({ page }) => {
+  const userId = "dashboard-user";
+  await installDailyLearningMock(page, userId);
+  await page.goto("/");
+  await page.evaluate(userId => {
+    const state = window.__swiftDailyMock;
+    const now = Date.now();
+    state.tables.profiles = [{ user_id:userId, display_name:"Learner", avatar_icon:"🦊" }];
+    state.tables.saved_words = [
+      { user_id:userId, course:"en", word:"hello" },
+      { user_id:userId, course:"zh", word:"你" }
+    ];
+    state.tables.learning_activity_log = [
+      { user_id:userId, activity_type:"lesson", event_type:"completed", language_code:"en", created_at:new Date(now-2*86400000).toISOString() },
+      { user_id:userId, activity_type:"lesson", event_type:"completed", language_code:"zh", created_at:new Date(now-3600000).toISOString() }
+    ];
+    state.tables.user_entitlements = [{ user_id:userId, plan_code:"free", status:"active", valid_from:null, valid_until:null }];
+    state.tables.learning_plan_limits = [
+      { plan_code:"free", activity_type:"lesson", daily_limit:5, is_enabled:true },
+      ...["daily_topic","daily_application","daily_discovery","daily_revision"].map(activity_type => ({ plan_code:"free", activity_type, daily_limit:1, is_enabled:true }))
+    ];
+    state.allowanceUsage = [
+      { activity_type:"lesson", used_count:2 },
+      { activity_type:"daily_topic", used_count:1 },
+      { activity_type:"daily_application", used_count:0 },
+      { activity_type:"daily_discovery", used_count:0 },
+      { activity_type:"daily_revision", used_count:0 }
+    ];
+    state.tables.lesson_practice_results = [
+      { user_id:userId, topic_id:"sentence-basics", correct_count:1, question_count:3, attempted_at:new Date(now-2*86400000).toISOString() },
+      { user_id:userId, topic_id:"sentence-basics", correct_count:1, question_count:3, attempted_at:new Date(now-86400000).toISOString() }
+    ];
+    state.tables.daily_activity_sessions = [];
+  }, userId);
+
+  await page.locator("#accountButton").click();
+  await page.locator("#menuProfile").click();
+  await expect(page.locator("#profilePage")).toBeVisible();
+  await expect(page.locator("#profileHeading")).toHaveText("Your Dashboard");
+  await expect(page.locator("#dashboardAvatar")).toHaveText("🦊");
+  await expect(page.locator("#activeLanguagesList .active-language-row").first()).toContainText("简体中文");
+  await expect(page.locator("#activeLanguagesList .active-language-row").first()).toContainText("Last active");
+  await expect(page.locator("#dashboardAllowanceBars")).toContainText("3 of 5 remaining");
+  await expect(page.locator("#dashboardAllowanceBars")).toContainText("0 of 1 remaining");
+  await expect(page.locator("#practiceAccuracy")).toHaveText("33%");
+  await expect(page.locator("#practiceReviewTopics")).toContainText("Sentence Basics");
+  await page.locator("#favoriteEnglishGrid").locator("xpath=..").locator("summary").click();
+  await expect(page.locator("#favoriteEnglishGrid .word-card")).toContainText("hello");
+  await page.locator("#favoriteChineseGrid").locator("xpath=..").locator("summary").click();
+  await expect(page.locator("#favoriteChineseGrid .word-card")).toContainText("你");
+
+  await page.locator("#accountButton").click();
+  await page.locator("#menuPreferences").click();
+  await expect(page.locator("#preferencesPage")).toBeVisible();
+  await expect(page.locator("#preferencesPage")).toContainText("Account preferences");
+  await expect(page.locator("#preferencesPage")).toContainText("Privacy and data");
+  await expect(page.locator("#profilePage")).toBeHidden();
+});
+
+test("Dashboard remains readable on the legacy 2.2 database while Daily Learning waits for migrations", async ({ page }) => {
+  const userId = "legacy-dashboard-user";
+  await installDailyLearningMock(page, userId);
+  await page.goto("/");
+  await page.evaluate(userId => {
+    const state = window.__swiftDailyMock;
+    state.legacySchema = true;
+    state.tables.profiles = [{ user_id:userId, display_name:"Legacy Learner", avatar_icon:"🐼" }];
+    state.tables.user_preferences = [{ user_id:userId, learning_language:"en", translation_language:"zh", timezone:"Asia/Kuala_Lumpur" }];
+    state.tables.user_entitlements = [{ user_id:userId, plan_code:"free", status:"active", valid_from:null, valid_until:null }];
+    state.tables.learning_plan_limits = [{ plan_code:"free", activity_type:"lesson", daily_limit:5, is_enabled:true }];
+    state.tables.learning_activity_log = [{ user_id:userId, activity_type:"lesson", language_code:"en", created_at:new Date().toISOString() }];
+    state.tables.saved_words = [{ user_id:userId, course:"en", word:"hello" }];
+    state.tables.lesson_practice_results = [];
+    state.tables.daily_activity_sessions = [];
+  }, userId);
+
+  await page.locator("#accountButton").click();
+  await page.locator("#menuProfile").click();
+  await expect(page.locator("#profilePage")).toBeVisible();
+  await expect(page.locator("#profileHeading")).toHaveText("Your Dashboard");
+  await expect(page.locator("#favoriteEnglishGrid")).toContainText("hello");
+  await expect(page.locator("#activeLanguagesList")).toContainText("English");
+  await expect(page.locator("#dashboardAllowanceBars")).toContainText("Usage unavailable");
+  await expect(page.locator("#allowanceDetails")).toContainText("Counts are not estimated from learning history.");
+  await expect(page.locator("#practiceInsightsDetails")).toContainText("Daily activity practice data will appear after the matching server update");
+
+  await page.locator('[data-page="lessons"]').click();
+  await expect(page.locator("#dailyLearningStatus")).toContainText("matching server database update has not been applied yet");
+  await expect(page.locator("#dailyActivityGrid")).toContainText("waiting for a server update");
+});
 
 test("Google sign-in requests account selection and a stable callback URL", async ({ page }) => {
   await installMockSupabase(page);
@@ -359,4 +807,11 @@ test("account switching clears the previous account state before another sign-in
   await page.evaluate(() => window.__swiftTestAuth.setUser({ id: "account-b", email: "second@example.test" }));
   await expect(page.locator("#accountStatus")).toContainText("Signed in as second@example.test");
   expect(await page.evaluate(() => localStorage.getItem("swiftdictionary-saved"))).toBeNull();
+});
+
+test("mock mode fails closed on the local test server even with the opt-in query", async ({ page }) => {
+  await page.goto("/?swiftMock=1");
+  expect(await page.evaluate(() => window.SWIFT_DICTIONARY_MOCK_MODE === true)).toBeFalsy();
+  await expect(page.locator("#swiftMockPanel")).toHaveCount(0);
+  await expect(page.locator("#dictionaryPage")).toBeVisible();
 });

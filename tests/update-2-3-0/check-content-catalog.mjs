@@ -20,13 +20,18 @@ for (const [name, type] of [
 ]) {
   const block = arrayBlock(dailySource, name);
   for (const match of block.matchAll(/\{\s*["']?id["']?\s*:\s*"([^"]+)"\s*,\s*["']?topicId["']?\s*:\s*"([^"]+)"\s*,\s*["']?difficulty["']?\s*:\s*"([^"]+)"/g)) {
-    frontendRows.push([type, match[1], match[2], match[3], "en"].join("|"));
+    frontendRows.push([type, match[1], null, match[2], match[3], "en"].join("|"));
   }
 }
 {
-  const block = arrayBlock(dailySource, "dailyDiscoveries");
-  for (const match of block.matchAll(/\{\s*["']?id["']?\s*:\s*"([^"]+)"/g)) {
-    frontendRows.push(["daily_discovery", match[1], null, null, "en"].join("|"));
+  const core = arrayBlock(dailySource, "dailyDiscoveryCoreVocabulary");
+  let rotationOrder = 0;
+  for (const match of core.matchAll(/id:"([^"]+)"/g)) {
+    frontendRows.push(["daily_discovery", match[1], ++rotationOrder, null, null, "en"].join("|"));
+  }
+  const additional = arrayBlock(dailySource, "dailyDiscoveryAdditionalWords");
+  for (const match of additional.matchAll(/\["(discovery-word-[^"]+)"/g)) {
+    frontendRows.push(["daily_discovery", match[1], ++rotationOrder, null, null, "en"].join("|"));
   }
 }
 
@@ -60,22 +65,23 @@ for (const line of lessonBlock.split("\n")) {
   if (id && topicName) {
     assert.ok(difficulty, `Missing difficulty for lesson ${id}`);
     assert.ok(topicMap[topicName], `Unknown lesson topic ${topicName}`);
-    frontendRows.push(["permanent_lesson", id, topicMap[topicName], difficulty, "en"].join("|"));
+    frontendRows.push(["permanent_lesson", id, null, topicMap[topicName], difficulty, "en"].join("|"));
   }
 }
 
 const sqlRows = [];
-for (const match of migration.matchAll(/\('([^']+)','([^']+)',(null|'[^']*'),(null|'[^']*'),'en',true\)/g)) {
-  const topic = match[3] === "null" ? null : match[3].slice(1, -1);
-  const level = match[4] === "null" ? null : match[4].slice(1, -1);
-  sqlRows.push([match[1], match[2], topic, level, "en"].join("|"));
+for (const match of migration.matchAll(/\('([^']+)','([^']+)',(null|[0-9]+),(null|'[^']*'),(null|'[^']*'),'en',true\)/g)) {
+  const order = match[3] === "null" ? null : Number(match[3]);
+  const topic = match[4] === "null" ? null : match[4].slice(1, -1);
+  const level = match[5] === "null" ? null : match[5].slice(1, -1);
+  sqlRows.push([match[1], match[2], order, topic, level, "en"].join("|"));
 }
 
 const normalize = rows => rows.slice().sort();
 assert.equal(new Set(frontendRows).size, frontendRows.length, "Frontend contains duplicate catalogue entries");
 assert.equal(new Set(sqlRows).size, sqlRows.length, "SQL catalogue contains duplicate entries");
-assert.equal(frontendRows.length, 95, `Expected 95 frontend content entries, found ${frontendRows.length}`);
-assert.equal(sqlRows.length, 95, `Expected 95 SQL catalogue entries, found ${sqlRows.length}`);
+assert.equal(frontendRows.length, 161, `Expected 161 frontend content entries, found ${frontendRows.length}`);
+assert.equal(sqlRows.length, 161, `Expected 161 SQL catalogue entries, found ${sqlRows.length}`);
 assert.deepEqual(normalize(sqlRows), normalize(frontendRows), "SQL approved catalogue differs from frontend IDs/topic/difficulty metadata");
 
-console.log("Approved content catalogue matches frontend exactly (95 entries; no answer-level content).");
+console.log("Approved content catalogue matches frontend exactly (161 entries; no answer-level content).");

@@ -1,4 +1,4 @@
-/* SwiftDictionary Update 2.3.0 — Daily Learning page.
+/* SwiftDictionary Update 2.3.1 — Daily Learning integrated into Lessons.
    Daily session writes use the server-side start/complete RPCs only.
    Answer selections remain in memory; only aggregate outcomes are submitted. */
 (() => {
@@ -9,10 +9,10 @@
     "daily_revision_enabled"
   ];
   const activityMeta = {
-    daily_topic: { title: "Daily Topic", label: "Learn one focused idea", description: "A short guided explanation with examples." },
-    daily_application: { title: "Daily Application", label: "Use what you know", description: "Apply grammar and vocabulary in practical contexts." },
-    daily_discovery: { title: "Daily Discovery", label: "Explore something new", description: "A mixed collection of language facts, expressions and common mistakes." },
-    daily_revision: { title: "Daily Revision", label: "Strengthen your memory", description: "An adaptive review chosen from your learning history." }
+    daily_topic: { title: "Daily Topic", titleZh:"每日主题", label: "Learn one focused idea", labelZh:"学习一个重点概念", description: "A short guided explanation with examples.", descriptionZh:"通过简短讲解和例句学习一个重点。" },
+    daily_application: { title: "Daily Application", titleZh:"每日应用", label: "Use what you know", labelZh:"运用所学知识", description: "Apply grammar and vocabulary in practical contexts.", descriptionZh:"在实际语境中运用语法和词汇。" },
+    daily_discovery: { title: "Daily Discovery", titleZh:"每日发现", label: "A word shared worldwide", labelZh:"全球每日共享词汇", description: "One of three less-common English words selected globally each day.", descriptionZh:"这是每天全球统一安排的三个较少见英语词汇之一。" },
+    daily_revision: { title: "Daily Revision", titleZh:"每日复习", label: "Strengthen your memory", labelZh:"巩固记忆", description: "An adaptive review chosen from your learning history.", descriptionZh:"根据你的学习记录安排个性化复习。" }
   };
 
   const dailyTopics = [
@@ -89,7 +89,260 @@
     {"id":"application-precise-02","topicId":"precise-vocabulary","difficulty":"advanced","title":"Choose a precise reporting verb","questions":[{"q":"The speaker _____ that the event would begin at six.","options":["said","told","mentioned to"],"answer":0,"explanation":"Say can introduce the words or message; tell normally needs a listener object.","zh":"say 可以引出说话内容；tell 通常需要接听话的人作宾语。"},{"q":"The report _____ three possible causes but does not explain them in detail.","options":["mentions","tells","says to"],"answer":0,"explanation":"Mention means refer to something briefly.","zh":"mention 表示简短地提及某事。"}]}
   ];
 
-  const dailyDiscoveries = [
+
+  const dailyApplicationExamples = {
+    "application-verb-patterns-01":["I look forward to hearing your ideas at the meeting.","They decided to take the earlier train after checking the timetable."],
+    "application-articles-01":["She gave us a useful suggestion during the workshop.","It was an unusual experience for everyone involved."],
+    "application-quantity-01":["We received fewer emails this morning than yesterday.","There is less information in this short note than in the full report."],
+    "application-say-tell-01":["Please tell me what happened after the meeting.","She said goodbye to her colleagues before leaving."],
+    "application-collocations-01":["We need to make a decision before Friday.","The town experienced heavy rain overnight."],
+    "application-present-routine-02":["My parents cook dinner at home most evenings.","The library opens at nine and closes at six."],
+    "application-present-continuous-02":["The baby is sleeping in the next room.","I am staying with my cousin while my flat is repaired."],
+    "application-past-continuous-02":["We were having dinner when the lights went out.","At nine last night, I was studying for my exam."],
+    "application-prepositions-time-01":["The appointment is on Friday morning.","The shop closes at nine o’clock."],
+    "application-pronouns-01":["They invited my brother and me to the event.","The teacher spoke to us after class."],
+    "application-articles-the-02":["I saw a dog outside. The dog was wearing a red collar.","Please open the window next to you."],
+    "application-many-much-02":["There is not much luggage in the car.","There are not many seats left."],
+    "application-everyday-vocabulary-02":["Please take a photo of the sign.","We need to make a plan before we leave."],
+    "application-frequency-01":["She usually arrives early for meetings.","They are often busy on Mondays."],
+    "application-phrasal-separable-02":["The music is too loud, so please turn it down.","Please pick your bag up before we leave."],
+    "application-phrasal-meaning-02":["We have run out of milk, so I’ll visit the shop.","She looks after her younger brother after school."],
+    "application-word-family-02":["Kindness can make a difficult day feel easier.","A careful review helped us avoid a mistake."],
+    "application-prefix-02":["The instructions were unclear, so I asked for help.","It is impossible to finish the whole project in one hour."],
+    "application-first-conditional-02":["If you leave now, you will catch the bus.","If the weather improves, we will eat outside."],
+    "application-second-conditional-02":["If I were fluent, I would apply for the role.","If we had a bigger kitchen, we would cook together more often."],
+    "application-modals-02":["The lights are on, so they must be home.","The meeting might be delayed because the organiser has not confirmed it."],
+    "application-inversion-02":["Rarely have I seen such a thoughtful design.","Never have we received so many helpful comments."],
+    "application-idioms-02":["A quick introduction helped break the ice at the workshop.","Finishing the first draft was a piece of cake for the experienced writer."],
+    "application-academic-02":["The results suggest that the change may improve access.","The sample was small; therefore, the findings are preliminary."],
+    "application-precise-02":["The witness said that the event began at six.","The report mentions three possible causes without explaining them in detail."]
+  };
+  dailyApplications.forEach(item => { item.examples = dailyApplicationExamples[item.id] || []; });
+
+  const dailyRevisionMaterials = {
+    "verb-tenses": {
+      title:"Choose the tense that fits the time", titleZh:"根据时间选择合适的时态",
+      examples:["I have known Mei since our first year at university.","We were walking home when the rain started."],
+      questions:[
+        {q:"Which sentence describes an experience without giving a finished time?",options:["I visited Seoul in 2022.","I have visited Seoul twice.","I visit Seoul last year."],answer:1,explanation:"The present perfect can describe life experience when no finished past time is stated.",zh:"没有说明已结束的过去时间时，现在完成时可以表达人生经历。"},
+        {q:"The phone rang while I _____ dinner.",options:["was preparing","prepare","am preparing"],answer:0,explanation:"The past continuous describes the action already in progress when the shorter event happened.",zh:"过去进行时描述另一件较短的事情发生时已经正在进行的动作。"}
+      ]
+    },
+    "sentence-basics": {
+      title:"Make the sentence easy to follow", titleZh:"让句子结构清晰易懂",
+      examples:["The new designer presented her ideas to the team.","Our neighbours invited us to their celebration."],
+      questions:[
+        {q:"In “The little boy opened the heavy door,” which phrase is the object?",options:["The little boy","opened","the heavy door"],answer:2,explanation:"The heavy door receives the action of the verb opened.",zh:"the heavy door 是 opened 这个动作的承受对象，因此是宾语。"},
+        {q:"Choose the sentence with a clear subject before its verb.",options:["After lunch the report finished.","The assistant checked the report after lunch.","Checked the assistant after lunch."],answer:1,explanation:"A standard statement normally places its subject before the verb.",zh:"英语陈述句通常把主语放在动词之前。"}
+      ]
+    },
+    "nouns-and-articles": {
+      title:"Refer to nouns clearly", titleZh:"清楚地指称名词",
+      examples:["A visitor left an umbrella by the entrance.","The umbrella was returned to its owner later."],
+      questions:[
+        {q:"Choose the natural phrase for a first mention: “We adopted _____ European rescue dog.”",options:["a","an","the"],answer:0,explanation:"European begins with the consonant sound /j/, so a is used.",zh:"European 以辅音音素 /j/ 开头，因此使用 a。"},
+        {q:"Which sentence refers to a specific item both speakers can identify?",options:["Please pass me a blue folder.","Please pass me the blue folder beside you.","Please pass me blue folder."],answer:1,explanation:"The identifies a particular folder that the listener can identify from the situation.",zh:"the 用于指称听者能从当前情境辨认出的特定文件夹。"}
+      ]
+    },
+    "nouns-and-quantity": {
+      title:"Measure amounts and individual items", titleZh:"表达数量与具体项目",
+      examples:["There are several pieces of equipment in the studio.","We have enough time to check each document."],
+      questions:[
+        {q:"Choose the standard expression.",options:["three advices","three pieces of advice","three advice"],answer:1,explanation:"Advice is uncountable; use a piece of advice to count individual suggestions.",zh:"advice 是不可数名词；要计数具体建议时使用 a piece of advice。"},
+        {q:"There were _____ applicants this year than last year.",options:["less","fewer","little"],answer:1,explanation:"Fewer is used with plural countable nouns such as applicants.",zh:"applicants 是可数复数名词，因此使用 fewer。"}
+      ]
+    },
+    "collocations": {
+      title:"Build natural word partnerships", titleZh:"建立自然的词语搭配",
+      examples:["The sudden announcement came as a complete surprise.","She made a strong argument in favour of the proposal."],
+      questions:[
+        {q:"Which adjective naturally completes “_____ evidence”?",options:["strong","powerful","heavy"],answer:0,explanation:"Strong evidence is the usual collocation.",zh:"strong evidence 是常见且自然的词语搭配。"},
+        {q:"Choose the natural phrase.",options:["do progress","make progress","take progress"],answer:1,explanation:"Make progress is the established expression.",zh:"make progress 是固定且自然的表达。"}
+      ]
+    },
+    "everyday-vocabulary": {
+      title:"Choose natural everyday combinations", titleZh:"选择自然的日常词语搭配",
+      examples:["He packed a lunch before leaving for the hike.","The receptionist gave us directions to the meeting room."],
+      questions:[
+        {q:"Which verb completes the natural expression “_____ a promise”?",options:["do","make","take"],answer:1,explanation:"Make a promise is the established collocation.",zh:"make a promise 是固定且自然的词语搭配。"},
+        {q:"Choose the phrase that means to become ready.",options:["get ready","make ready up","take ready"],answer:0,explanation:"Get ready is the common expression meaning prepare yourself.",zh:"get ready 是表示做好准备的常见表达。"}
+      ]
+    },
+    "phrasal-verbs": {
+      title:"Understand phrasal verbs in context", titleZh:"在语境中理解短语动词",
+      examples:["Please put the meeting off until next week.","I came across an old photograph while cleaning the drawer."],
+      questions:[
+        {q:"If a person “looks into” a problem, what do they do?",options:["Ignore it","Investigate it","Describe it briefly"],answer:1,explanation:"Look into means to investigate or examine something.",zh:"look into 表示调查或仔细检查某事。"},
+        {q:"Choose the natural sentence.",options:["Please switch off it.","Please switch it off.","Please it switch off."],answer:1,explanation:"A pronoun object normally goes between the verb and particle in a separable phrasal verb.",zh:"可分短语动词后接代词宾语时，代词通常放在动词与小品词之间。"}
+      ]
+    },
+    "word-formation": {
+      title:"Recognise word families", titleZh:"识别词族与词形变化",
+      examples:["Her explanation was helpful to the new students.","The team discussed the possibility of a later start."],
+      questions:[
+        {q:"Which word is an adjective formed from “hope”?",options:["hopefully","hopeful","hopefulness"],answer:1,explanation:"The suffix -ful forms the adjective hopeful.",zh:"后缀 -ful 构成形容词 hopeful。"},
+        {q:"Choose the correct negative form of “regular”.",options:["irregular","unregular","disregular"],answer:0,explanation:"Irregular is the established negative form of regular.",zh:"irregular 是 regular 约定俗成的否定形式。"}
+      ]
+    },
+    "conditional-sentences": {
+      title:"Connect a condition with its result", titleZh:"连接条件与结果",
+      examples:["If the package arrives today, I will collect it after work.","If I had more space, I would keep a larger desk."],
+      questions:[
+        {q:"Choose the correct completion: “If she had checked the address, she _____ the wrong building.”",options:["would not have visited","will not visit","does not visit"],answer:0,explanation:"A third conditional describes an unreal past condition and its imagined past result.",zh:"第三条件句描述不真实的过去条件及其假设的过去结果。"},
+        {q:"Which clause normally uses the present simple in a first conditional?",options:["The if-clause","The result clause with will","Both clauses with will"],answer:0,explanation:"The first conditional normally uses the present simple after if.",zh:"第一条件句的 if 从句通常使用一般现在时。"}
+      ]
+    },
+    "advanced-grammar": {
+      title:"Use emphasis and certainty carefully", titleZh:"谨慎使用强调与确定性表达",
+      examples:["Only after the review did the team approve the design.","The delivery must have been delayed by the storm."],
+      questions:[
+        {q:"Choose the correct formal inversion.",options:["Not until noon the office opened.","Not until noon did the office open.","Not until noon opened the office did."],answer:1,explanation:"A fronted negative expression such as not until triggers subject–auxiliary inversion.",zh:"not until 等否定表达置于句首时，会触发主语与助动词倒装。"},
+        {q:"The lights are off and the door is locked. They _____ have left.",options:["must","can't","mustn't"],answer:0,explanation:"Must have + past participle expresses a strong deduction about the past.",zh:"must have + 过去分词可以表达对过去情况的强烈推断。"}
+      ]
+    },
+    "idioms-fixed-expressions": {
+      title:"Interpret expressions beyond their literal words", titleZh:"理解超越字面意思的固定表达",
+      examples:["After a few minutes of small talk, the conversation began to flow.","We are in the same boat while the office is being renovated."],
+      questions:[
+        {q:"If a plan is “up in the air”, what does that mean?",options:["It is undecided","It is flying","It is finished"],answer:0,explanation:"Up in the air means that a decision or plan has not yet been settled.",zh:"up in the air 表示决定或计划尚未确定。"},
+        {q:"What does “keep an eye on” something mean?",options:["Watch it carefully","Avoid looking at it","Change its appearance"],answer:0,explanation:"Keep an eye on means to watch or monitor something.",zh:"keep an eye on 表示留意或密切观察某事。"}
+      ]
+    },
+    "academic-professional-english": {
+      title:"Match claims to the strength of evidence", titleZh:"让观点的确定程度符合证据",
+      examples:["The survey indicates a gradual increase in online participation.","These findings may not apply to every age group."],
+      questions:[
+        {q:"Which wording avoids claiming more than the evidence shows?",options:["The data proves every user prefers this option.","The data appears to support this interpretation.","This result is unquestionably universal."],answer:1,explanation:"Appears to support communicates a cautious interpretation.",zh:"appears to support 表达较为谨慎的解释，不会夸大证据。"},
+        {q:"Choose the transition that introduces a contrast.",options:["Furthermore","However","Therefore"],answer:1,explanation:"However introduces a contrast with the previous point.",zh:"however 用于引出与前文相反或不同的观点。"}
+      ]
+    },
+    "precise-vocabulary": {
+      title:"Select words that express the intended meaning", titleZh:"选择准确表达意思的词语",
+      examples:["The editor inferred the missing detail from the surrounding paragraph.","The new timetable is economical because it reduces unnecessary travel."],
+      questions:[
+        {q:"Which verb means to make something clear by giving details?",options:["clarify","assume","avoid"],answer:0,explanation:"Clarify means to make an idea or statement easier to understand.",zh:"clarify 表示通过补充说明使想法或陈述更清楚。"},
+        {q:"Choose the adjective meaning “related to the economy”.",options:["economic","economical","economy"],answer:0,explanation:"Economic means related to the economy; economical means using money or resources carefully.",zh:"economic 表示与经济有关；economical 表示节省金钱或资源。"}
+      ]
+    }
+  };
+
+  const dailyDiscoveryCoreVocabulary = [
+    {id:"discovery-word-meticulous-01",word:"meticulous",part:"adjective",phonetic:"/məˈtɪkjələs/",definition:"Very careful and precise, paying attention to every small detail.",definitionZh:"一丝不苟的；非常细致的",body:"Meticulous describes someone who works carefully and checks details rather than rushing.",examples:["She kept meticulous notes during the experiment.","The designer made a meticulous review of every page.","He is meticulous about checking the figures before sending a report."],tip:"Common patterns: meticulous attention to detail; meticulous planning; meticulous work.",tipZh:"常见搭配：meticulous attention to detail（注重细节）、meticulous planning（周密计划）、meticulous work（细致的工作）。",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {id:"discovery-word-reluctant-01",word:"reluctant",part:"adjective",phonetic:"/rɪˈlʌktənt/",definition:"Unwilling or hesitant to do something.",definitionZh:"不情愿的；勉强的",body:"Reluctant describes hesitation or unwillingness. It is useful when someone agrees to do something but does not really want to.",examples:["She was reluctant to speak in front of the crowd.","He reluctantly accepted the offer.","I am reluctant to decide without more information."],tip:"Common patterns: reluctant to do something; a reluctant decision; reluctantly agree.",tipZh:"常见搭配：reluctant to do something（不情愿做某事）、a reluctant decision（勉强作出的决定）、reluctantly agree（勉强同意）。",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {id:"discovery-word-plausible-01",word:"plausible",part:"adjective",phonetic:"/ˈplɔːzəbəl/",definition:"Seeming reasonable or likely to be true, although it has not been proved.",definitionZh:"看似合理的；貌似可信的",body:"Plausible describes an explanation or suggestion that sounds believable, without proving it is true.",examples:["That is a plausible explanation for the delay.","The team offered two plausible reasons for the change.","Her story sounded plausible, but we checked the details."],tip:"Common patterns: a plausible explanation; a plausible reason; seem plausible.",tipZh:"常见搭配：a plausible explanation（看似合理的解释）、a plausible reason（貌似可信的理由）、seem plausible（看起来合理）。",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {id:"discovery-word-fleeting-01",word:"fleeting",part:"adjective",phonetic:"/ˈfliːtɪŋ/",definition:"Lasting for only a very short time.",definitionZh:"短暂的；转瞬即逝的",body:"Fleeting describes something that passes quickly, such as a moment, glance, feeling or opportunity.",examples:["We caught a fleeting glimpse of the bird.","The excitement was fleeting, but the memory stayed.","She gave him a fleeting smile before leaving."],tip:"Common combinations: a fleeting moment; a fleeting glance; a fleeting feeling.",tipZh:"常见搭配：a fleeting moment（短暂的瞬间）、a fleeting glance（匆匆一瞥）、a fleeting feeling（一闪而过的感觉）。",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {id:"discovery-word-cumbersome-01",word:"cumbersome",part:"adjective",phonetic:"/ˈkʌmbəsəm/",definition:"Large, heavy, complicated or difficult to handle.",definitionZh:"笨重的；繁琐难处理的",body:"Cumbersome can describe a physical object that is awkward to carry or a process that is unnecessarily complicated.",examples:["The old equipment was cumbersome to move.","The approval process became cumbersome.","A smaller bag is easier to carry than that cumbersome case."],tip:"Often used with process, system, equipment, procedure or paperwork.",tipZh:"常与 process（流程）、system（系统）、equipment（设备）、procedure（程序）或 paperwork（文书工作）搭配。",topicId:"daily-discovery-vocabulary",difficulty:"advanced"},
+    {id:"discovery-word-quaint-01",word:"quaint",part:"adjective",phonetic:"/kweɪnt/",definition:"Attractively unusual or old-fashioned.",definitionZh:"古雅的；别致的；古色古香的",body:"Quaint often describes a small place, building or custom that feels charming because it is old-fashioned or unusual.",examples:["We stayed in a quaint little village.","The café occupies a quaint old building.","The street is known for its quaint shops."],tip:"Usually positive when describing places, buildings or details.",tipZh:"描述地点、建筑或细节时，通常带有正面或欣赏的语气。",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {id:"discovery-word-weary-01",word:"weary",part:"adjective",phonetic:"/ˈwɪəri/",definition:"Very tired, especially after a long period of effort or difficulty.",definitionZh:"疲倦的；疲惫的",body:"Weary is a more expressive alternative to tired. It can describe physical exhaustion or feeling worn down by a repeated situation.",examples:["The weary travellers finally reached the hotel.","I grew weary of having the same argument.","She gave a weary sigh and sat down."],tip:"Common patterns: feel weary; weary of something; a weary expression.",tipZh:"常见搭配：feel weary（感到疲惫）、weary of something（对某事感到厌倦）、a weary expression（疲惫的神情）。",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {id:"discovery-word-subtle-01",word:"subtle",part:"adjective",phonetic:"/ˈsʌtəl/",definition:"Not obvious or easy to notice; expressed in a delicate or indirect way.",definitionZh:"微妙的；不易察觉的；含蓄的",body:"Subtle describes a small difference, hint, change or effect that is easy to miss.",examples:["There is a subtle difference between the two versions.","The painting uses subtle shades of blue.","She gave a subtle hint that she wanted to leave."],tip:"Common combinations: subtle difference; subtle change; subtle hint; subtle effect.",tipZh:"常见搭配：subtle difference（细微差别）、subtle change（细微变化）、subtle hint（含蓄的暗示）、subtle effect（微妙的影响）。",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {id:"discovery-word-obsolete-01",word:"obsolete",part:"adjective",phonetic:"/ˈɒbsəliːt/",definition:"No longer used because something newer or better has replaced it.",definitionZh:"过时的；废弃的",body:"Obsolete describes technology, methods or systems that are no longer in practical use.",examples:["Many people consider fax machines obsolete.","The update replaced several obsolete features.","The old rule became obsolete after the policy changed."],tip:"Common patterns: become obsolete; obsolete technology; render something obsolete.",tipZh:"常见搭配：become obsolete（变得过时）、obsolete technology（过时技术）、render something obsolete（使某物过时）。",topicId:"daily-discovery-vocabulary",difficulty:"advanced"},
+    {id:"discovery-word-resilient-01",word:"resilient",part:"adjective",phonetic:"/rɪˈzɪliənt/",definition:"Able to recover after difficulty, damage or change.",definitionZh:"有韧性的；能迅速恢复的",body:"Resilient describes people, communities or systems that can adapt and recover after setbacks.",examples:["Children can be remarkably resilient.","The team remained resilient after the defeat.","A resilient system can recover from unexpected problems."],tip:"Common patterns: remain resilient; resilient community; resilient to change.",tipZh:"常见搭配：remain resilient（保持韧性）、resilient community（有韧性的社区）、resilient to change（能够适应变化）。",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {id:"discovery-word-bewildered-01",word:"bewildered",part:"adjective",phonetic:"/bɪˈwɪldəd/",definition:"Very confused and unsure what is happening or what to do.",definitionZh:"困惑的；不知所措的",body:"Bewildered is stronger than confused and often describes someone who cannot understand an unexpected situation.",examples:["He looked bewildered by the sudden change.","I was completely bewildered by the instructions.","The visitors seemed bewildered when the train was cancelled."],tip:"Common patterns: look bewildered; feel bewildered; a bewildered expression.",tipZh:"常见搭配：look bewildered（看起来困惑）、feel bewildered（感到不知所措）、a bewildered expression（困惑的表情）。",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"},
+    {id:"discovery-word-scarce-01",word:"scarce",part:"adjective",phonetic:"/skeəs/",definition:"Not available in large amounts; difficult to find or obtain.",definitionZh:"稀少的；不足的；难以获得的",body:"Scarce describes something that is in short supply. It is often used for resources, time, opportunities or supplies.",examples:["Clean water became scarce during the drought.","Affordable housing is scarce in the city centre.","Time was scarce, so we focused on the essentials."],tip:"Common patterns: become scarce; scarce resources; in scarce supply.",tipZh:"常见搭配：become scarce（变得稀缺）、scarce resources（稀缺资源）、in scarce supply（供应短缺）。",topicId:"daily-discovery-vocabulary",difficulty:"intermediate"}
+  ];
+
+
+  const dailyDiscoveryAdditionalWords = [
+    ["discovery-word-articulate-01","articulate","verb","/ɑːˈtɪkjəleɪt/","To express an idea or feeling clearly and effectively.","清楚表达；明确说出","Articulate is often used when someone explains a thought carefully so that others can understand it.","She articulated her concerns during the meeting.","The guide articulates the process in simple language.","articulate an idea; articulate clearly; articulate concerns","articulate an idea（清楚表达想法）；articulate clearly（清晰表达）；articulate concerns（表达顾虑）"],
+    ["discovery-word-astute-01","astute","adjective","/əˈstjuːt/","Quick to notice important details and make sensible judgments.","敏锐的；精明的","Astute describes someone who understands a situation quickly and makes perceptive decisions.","It was an astute decision to wait for more information.","The astute observer noticed the small change.","an astute decision; an astute observer; astute business sense","an astute decision（明智而敏锐的决定）；an astute observer（观察敏锐的人）；astute business sense（敏锐的商业判断）"],
+    ["discovery-word-candid-01","candid","adjective","/ˈkændɪd/","Honest and direct, even when the truth may be uncomfortable.","坦率的；直言不讳的","Candid describes open communication without trying to hide what someone really thinks.","Thank you for your candid feedback.","They had a candid conversation about the problem.","candid feedback; a candid discussion; be candid about something","candid feedback（坦率的反馈）；a candid discussion（坦诚的讨论）；be candid about（坦率谈论）"],
+    ["discovery-word-coherent-01","coherent","adjective","/kəʊˈhɪərənt/","Logical, clear and easy to understand as a connected whole.","连贯的；有条理的","A coherent explanation connects its points in a way that makes sense to the listener or reader.","She presented a coherent argument.","The notes form a coherent account of the event.","a coherent argument; a coherent explanation; remain coherent","a coherent argument（连贯的论点）；a coherent explanation（清晰连贯的解释）；remain coherent（保持条理清晰）"],
+    ["discovery-word-concise-01","concise","adjective","/kənˈsaɪs/","Giving the necessary information in a clear way using few words.","简洁的；言简意赅的","Concise writing removes unnecessary words while keeping the important meaning.","Please keep your summary concise.","The instructions are concise and easy to follow.","a concise summary; concise instructions; keep something concise","a concise summary（简洁的摘要）；concise instructions（简明的说明）；keep something concise（使内容简洁）"],
+    ["discovery-word-diligent-01","diligent","adjective","/ˈdɪlɪdʒənt/","Working carefully and steadily, with consistent effort.","勤奋的；用功的","Diligent describes someone who puts careful and sustained effort into a task.","She is a diligent student who reviews her notes regularly.","The team made a diligent effort to check every detail.","a diligent student; diligent work; diligent research","a diligent student（勤奋的学生）；diligent work（认真勤勉的工作）；diligent research（细致的研究）"],
+    ["discovery-word-elusive-01","elusive","adjective","/iˈluːsɪv/","Difficult to find, catch, achieve or understand.","难以找到的；难以捉摸的","Elusive is useful for something that repeatedly escapes attention or remains difficult to achieve.","A clear answer remained elusive.","The animal is rarely seen because it is so elusive.","an elusive answer; an elusive goal; remain elusive","an elusive answer（难以找到的答案）；an elusive goal（难以实现的目标）；remain elusive（仍难以捉摸）"],
+    ["discovery-word-empathetic-01","empathetic","adjective","/ˌempəˈθetɪk/","Able to understand and share another person's feelings.","有同理心的；能够共情的","An empathetic person tries to understand how another person feels rather than judging too quickly.","The manager took an empathetic approach to the concern.","Good teachers are patient and empathetic.","an empathetic response; an empathetic listener; show empathy","an empathetic response（有同理心的回应）；an empathetic listener（善于共情的倾听者）；show empathy（表现出同理心）"],
+    ["discovery-word-feasible-01","feasible","adjective","/ˈfiːzəbəl/","Possible to do successfully within the available time, resources or conditions.","可行的；行得通的","Feasible focuses on whether a plan can realistically be carried out.","The team needs a feasible schedule.","We discussed several options before choosing the most feasible one.","a feasible plan; a feasible solution; technically feasible","a feasible plan（可行的计划）；a feasible solution（可行的解决方案）；technically feasible（技术上可行）"],
+    ["discovery-word-frugal-01","frugal","adjective","/ˈfruːɡəl/","Careful about spending money or using resources; avoiding waste.","节俭的；节约的","Frugal usually describes sensible choices that avoid unnecessary spending or waste.","They chose a frugal holiday close to home.","A frugal use of materials reduced waste.","a frugal lifestyle; frugal spending; be frugal with resources","a frugal lifestyle（节俭的生活方式）；frugal spending（节制开支）；be frugal with resources（节约使用资源）"],
+    ["discovery-word-genuine-01","genuine","adjective","/ˈdʒenjuɪn/","Real, sincere or authentic rather than false or pretended.","真正的；真诚的","Genuine can describe objects that are not fake and feelings or interest that are sincere.","Her apology sounded genuine.","The museum confirmed that the painting is genuine.","genuine interest; a genuine concern; a genuine article","genuine interest（真诚的兴趣）；a genuine concern（真实的关切）；a genuine article（真品）"],
+    ["discovery-word-impartial-01","impartial","adjective","/ɪmˈpɑːʃəl/","Fair and not influenced by personal opinions or preferences.","公正的；不偏不倚的","An impartial person considers the relevant facts without favouring one side.","We need an impartial review of the proposal.","The judge remained impartial throughout the hearing.","an impartial decision; an impartial observer; remain impartial","an impartial decision（公正的决定）；an impartial observer（公正的观察者）；remain impartial（保持公正）"],
+    ["discovery-word-inevitable-01","inevitable","adjective","/ɪnˈevɪtəbəl/","Certain to happen and impossible to avoid.","不可避免的；必然发生的","Inevitable describes an outcome that cannot realistically be prevented.","Some delays are inevitable during major repairs.","Change is inevitable as the project grows.","an inevitable result; seem inevitable; the inevitable","an inevitable result（必然的结果）；seem inevitable（似乎不可避免）；the inevitable（不可避免的事）"],
+    ["discovery-word-innovative-01","innovative","adjective","/ˈɪnəvətɪv/","Introducing new ideas, methods or ways of doing something.","创新的；革新的","Innovative describes an approach that uses fresh ideas to improve how something is done.","The studio developed an innovative workflow.","They are looking for innovative ways to teach vocabulary.","an innovative approach; innovative design; innovative ideas","an innovative approach（创新的方法）；innovative design（创新设计）；innovative ideas（创新想法）"],
+    ["discovery-word-intuitive-01","intuitive","adjective","/ɪnˈtjuːɪtɪv/","Easy to understand or use without needing detailed instructions; based on intuition.","直观易懂的；凭直觉的","An intuitive interface feels natural to use, while an intuitive decision may come from instinct rather than analysis.","The new menu is more intuitive.","She had an intuitive sense that something was wrong.","an intuitive interface; an intuitive decision; feel intuitive","an intuitive interface（直观的界面）；an intuitive decision（凭直觉作出的决定）；feel intuitive（感觉自然易懂）"],
+    ["discovery-word-versatile-01","versatile","adjective","/ˈvɜːsətaɪl/","Able to be used for many different purposes or perform many different tasks.","多用途的；多才多艺的","Versatile highlights the ability to adapt to different tasks or situations.","A versatile jacket works in several seasons.","He is a versatile performer who can play many roles.","a versatile tool; a versatile performer; highly versatile","a versatile tool（多用途工具）；a versatile performer（多才多艺的表演者）；highly versatile（用途广泛）"],
+    ["discovery-word-ambiguous-01","ambiguous","adjective","/æmˈbɪɡjuəs/","Having more than one possible meaning, so the intended meaning is unclear.","模棱两可的；有歧义的","An ambiguous sentence can be understood in different ways because it lacks enough context.","The final instruction was ambiguous.","Try to avoid ambiguous wording in the form.","an ambiguous statement; ambiguous wording; remain ambiguous","an ambiguous statement（含义不明的陈述）；ambiguous wording（有歧义的措辞）；remain ambiguous（仍有歧义）"],
+    ["discovery-word-arbitrary-01","arbitrary","adjective","/ˈɑːbɪtrəri/","Based on personal choice or chance rather than a clear reason or system.","任意的；武断的","Arbitrary describes a decision that seems unsupported by consistent rules or evidence.","The deadline felt arbitrary to the team.","The samples were assigned arbitrary numbers.","an arbitrary decision; an arbitrary rule; seem arbitrary","an arbitrary decision（武断的决定）；an arbitrary rule（随意制定的规则）；seem arbitrary（显得任意）"],
+    ["discovery-word-assertive-01","assertive","adjective","/əˈsɜːtɪv/","Confident in expressing needs or opinions while respecting others.","坚定自信的；果断表达的","Assertive communication is clear and confident without being aggressive.","She was assertive but remained respectful.","You can be assertive when asking for clarification.","an assertive manner; assertive communication; be assertive","an assertive manner（坚定自信的态度）；assertive communication（坚定而尊重他人的沟通）；be assertive（自信明确地表达）"],
+    ["discovery-word-authentic-01","authentic","adjective","/ɔːˈθentɪk/","Genuine and true to its origin, character or identity.","真实的；地道的；原汁原味的","Authentic can describe something genuine or a style that feels faithful to its source.","The restaurant serves authentic regional dishes.","Her writing has an authentic voice.","authentic experience; authentic food; an authentic voice","authentic experience（真实的体验）；authentic food（地道的食物）；an authentic voice（真实自然的表达风格）"],
+    ["discovery-word-benevolent-01","benevolent","adjective","/bəˈnevələnt/","Kind and generous, especially when intending to help others.","仁慈的；乐善好施的","Benevolent is a relatively formal word for someone who wishes to do good for others.","The benevolent neighbour helped the family rebuild.","The organisation was founded by a benevolent donor.","a benevolent person; benevolent intentions; a benevolent fund","a benevolent person（仁慈的人）；benevolent intentions（善意）；a benevolent fund（慈善基金）"],
+    ["discovery-word-conventional-01","conventional","adjective","/kənˈvenʃənəl/","Following ideas or methods that are usual, traditional or widely accepted.","传统的；常规的","Conventional describes what is normal or established, often in contrast with something experimental.","They chose a conventional layout for the report.","The artist prefers unconventional materials to conventional paint.","conventional approach; conventional wisdom; conventional methods","conventional approach（常规方法）；conventional wisdom（普遍认同的看法）；conventional methods（传统方法）"],
+    ["discovery-word-credible-01","credible","adjective","/ˈkredəbəl/","Believable and supported by enough evidence to be trusted.","可信的；可靠的","A credible explanation or source gives people good reasons to believe it.","The witness gave a credible account.","Check whether the source is credible before sharing the claim.","a credible source; a credible explanation; highly credible","a credible source（可信的来源）；a credible explanation（可信的解释）；highly credible（非常可信）"],
+    ["discovery-word-deliberate-01","deliberate","adjective","/dɪˈlɪbərət/","Done intentionally or carefully, rather than by accident or in a hurry.","故意的；审慎的","Deliberate can mean intentional, or careful and considered; context shows which meaning is intended.","The pause was deliberate, not accidental.","She took a deliberate approach to the decision.","a deliberate choice; deliberate action; a deliberate pace","a deliberate choice（有意作出的选择）；deliberate action（刻意行动）；a deliberate pace（从容而审慎的节奏）"],
+    ["discovery-word-distinct-01","distinct","adjective","/dɪˈstɪŋkt/","Clearly different or separate from something else.","明显不同的；独特的","Distinct is used when differences are clear enough to recognise or when items are separate.","The two designs have distinct visual styles.","There are three distinct stages in the process.","distinct features; distinct from; a distinct possibility","distinct features（鲜明特征）；distinct from（与……明显不同）；a distinct possibility（相当大的可能性）"],
+    ["discovery-word-efficient-01","efficient","adjective","/ɪˈfɪʃənt/","Working well without wasting time, effort or resources.","高效的；效率高的","Efficient describes a method or system that achieves a result with little waste.","The new process is faster and more efficient.","An efficient learner uses short, focused review sessions.","an efficient system; work efficiently; energy-efficient","an efficient system（高效的系统）；work efficiently（高效工作）；energy-efficient（节能的）"],
+
+    ["discovery-word-elaborate-01","elaborate","adjective","/ɪˈlæbərət/","Containing many carefully arranged details; complicated but developed.","精心设计的；详尽的","Elaborate describes something with many connected details, such as a plan, design or explanation.","The invitation had an elaborate gold border.","He gave an elaborate explanation of the process.","an elaborate design; an elaborate plan; elaborate details","an elaborate design（精心设计的图案）；an elaborate plan（周密的计划）；elaborate details（详尽的细节）"],
+    ["discovery-word-evident-01","evident","adjective","/ˈevɪdənt/","Clear and easy to see or understand from the available facts.","明显的；显而易见的","Evident is often used when something becomes clear through signs or evidence.","It was evident that the team needed more time.","The benefits became evident after a few weeks.","be evident; it is evident that; become evident","be evident（显而易见）；it is evident that（显然……）；become evident（逐渐显现）"],
+    ["discovery-word-exceptional-01","exceptional","adjective","/ɪkˈsepʃənəl/","Unusually good or much greater than what is normal.","杰出的；非凡的","Exceptional describes a quality or result that is far above the usual standard.","Her portfolio shows exceptional attention to detail.","The service was exceptional from start to finish.","exceptional quality; exceptional talent; an exceptional case","exceptional quality（卓越的品质）；exceptional talent（非凡的才能）；an exceptional case（特殊情况）"],
+    ["discovery-word-flexible-01","flexible","adjective","/ˈfleksəbəl/","Able to change or adapt easily when circumstances require it.","灵活的；有弹性的","Flexible can describe schedules, materials or people who can adapt to change.","The studio offers flexible working hours.","We need a flexible plan in case the weather changes.","flexible schedule; flexible approach; be flexible","flexible schedule（灵活的时间安排）；flexible approach（灵活的方法）；be flexible（灵活变通）"],
+    ["discovery-word-hesitant-01","hesitant","adjective","/ˈhezɪtənt/","Slow to act or speak because of uncertainty or lack of confidence.","犹豫的；迟疑的","Hesitant describes a pause caused by uncertainty, not necessarily a refusal.","He was hesitant to ask for help.","Her hesitant answer suggested she was unsure.","hesitant to do something; sound hesitant; a hesitant response","hesitant to do something（犹豫是否做某事）；sound hesitant（听起来迟疑）；a hesitant response（迟疑的回应）"],
+    ["discovery-word-humble-01","humble","adjective","/ˈhʌmbəl/","Not thinking that you are more important or better than other people.","谦逊的；谦虚的","Humble usually describes someone who does not boast about achievements or status.","Despite the award, he remained humble.","She gave a humble thank-you to the whole team.","a humble person; remain humble; a humble beginning","a humble person（谦逊的人）；remain humble（保持谦虚）；a humble beginning（平凡的起点）"],
+    ["discovery-word-immense-01","immense","adjective","/ɪˈmens/","Extremely large in size, amount or degree.","巨大的；广大的","Immense emphasises a very great size, amount or effect.","The project required an immense amount of planning.","The library has immense historical value.","immense pressure; an immense amount; immense value","immense pressure（巨大压力）；an immense amount（大量）；immense value（巨大价值）"],
+    ["discovery-word-intricate-01","intricate","adjective","/ˈɪntrɪkət/","Having many small parts or details that fit together in a complicated way.","错综复杂的；精细复杂的","Intricate often describes patterns, designs, systems or problems with many connected details.","The artist created an intricate paper sculpture.","The machine has an intricate internal mechanism.","intricate pattern; intricate design; intricate details","intricate pattern（复杂精美的图案）；intricate design（精细复杂的设计）；intricate details（繁复细节）"],
+    ["discovery-word-logical-01","logical","adjective","/ˈlɒdʒɪkəl/","Following clear reasoning and making sense.","合乎逻辑的；合理的","A logical conclusion follows from the information and reasons that come before it.","That is a logical next step.","Try to arrange the instructions in a logical order.","logical conclusion; logical choice; logical order","logical conclusion（合乎逻辑的结论）；logical choice（合理的选择）；logical order（逻辑顺序）"],
+    ["discovery-word-modest-01","modest","adjective","/ˈmɒdɪst/","Not large, expensive or extreme; also not boasting about one's abilities.","适度的；谦虚的","Modest has several common meanings: a limited size or amount, or a humble attitude.","The team made modest improvements this month.","She is modest about her achievements.","a modest amount; modest improvement; remain modest","a modest amount（适量）；modest improvement（小幅改善）；remain modest（保持谦逊）"],
+    ["discovery-word-obscure-01","obscure","adjective","/əbˈskjʊə/","Not well known or easy to understand; difficult to see clearly.","鲜为人知的；晦涩的；模糊的","Obscure can describe information that few people know or language that is difficult to understand.","The article refers to an obscure historical event.","The meaning of the phrase is obscure without context.","an obscure reference; obscure language; remain obscure","an obscure reference（鲜为人知的典故）；obscure language（晦涩的语言）；remain obscure（仍不清楚）"],
+    ["discovery-word-optimistic-01","optimistic","adjective","/ˌɒptɪˈmɪstɪk/","Expecting that good things are likely to happen.","乐观的","Optimistic describes a positive expectation about the future, even when success is not certain.","She is optimistic about the new project.","The team remains optimistic despite the delay.","feel optimistic; an optimistic outlook; optimistic about","feel optimistic（感到乐观）；an optimistic outlook（乐观的展望）；optimistic about（对……持乐观态度）"],
+    ["discovery-word-persistent-01","persistent","adjective","/pəˈsɪstənt/","Continuing to try or continuing to exist despite difficulty or opposition.","坚持不懈的；持续存在的","Persistent can describe determined effort or a problem that does not go away.","Persistent practice helped him improve his pronunciation.","The area has a persistent shortage of affordable homes.","persistent effort; a persistent problem; remain persistent","persistent effort（持续努力）；a persistent problem（长期存在的问题）；remain persistent（坚持不懈）"],
+    ["discovery-word-profound-01","profound","adjective","/prəˈfaʊnd/","Very great or intense; showing deep understanding or meaning.","深刻的；意义深远的","Profound is used for ideas, effects or feelings that are deep or powerful.","The book had a profound effect on her thinking.","He asked a profound question about fairness.","a profound effect; profound insight; profound change","a profound effect（深远的影响）；profound insight（深刻的见解）；profound change（深刻的变化）"],
+    ["discovery-word-remarkable-01","remarkable","adjective","/rɪˈmɑːkəbəl/","Unusual or impressive enough to attract attention.","非凡的；引人注目的","Remarkable highlights something worth noticing because it is unusual or impressive.","The building survived a remarkable number of storms.","She made remarkable progress in a short time.","remarkable progress; a remarkable achievement; it is remarkable that","remarkable progress（显著进步）；a remarkable achievement（非凡成就）；it is remarkable that（值得注意的是）"],
+    ["discovery-word-resourceful-01","resourceful","adjective","/rɪˈsɔːsfəl/","Good at finding practical ways to solve problems with what is available.","足智多谋的；善于应变的","A resourceful person finds workable solutions instead of giving up when resources are limited.","The resourceful designer reused the available materials.","We need someone resourceful who can handle unexpected problems.","a resourceful person; be resourceful; resourceful solution","a resourceful person（足智多谋的人）；be resourceful（善于应变）；resourceful solution（巧妙可行的解决办法）"],
+    ["discovery-word-sincere-01","sincere","adjective","/sɪnˈsɪə/","Honest and genuine in what you say, feel or intend.","真诚的；诚恳的","Sincere describes feelings or words that are honestly meant rather than polite or false.","Please accept my sincere thanks.","Her sincere apology helped rebuild trust.","sincere thanks; a sincere apology; sincerely believe","sincere thanks（诚挚的感谢）；a sincere apology（真诚的道歉）；sincerely believe（真心相信）"],
+    ["discovery-word-sufficient-01","sufficient","adjective","/səˈfɪʃənt/","As much as is needed for a particular purpose.","足够的；充足的","Sufficient is a slightly formal alternative to enough and is often used with for or to.","We have sufficient time to review the draft.","One example is not sufficient to prove the point.","sufficient time; sufficient evidence; sufficient for","sufficient time（足够的时间）；sufficient evidence（充分的证据）；sufficient for（足以满足……）"],
+    ["discovery-word-temporary-01","temporary","adjective","/ˈtempərəri/","Lasting for a limited period and not intended to be permanent.","暂时的；临时的","Temporary describes a situation or arrangement that is expected to change or end.","The road closure is temporary.","She accepted a temporary position while studying.","temporary solution; temporary change; temporarily unavailable","temporary solution（临时解决方案）；temporary change（暂时的改变）；temporarily unavailable（暂时无法使用）"],
+    ["discovery-word-transparent-01","transparent","adjective","/trænsˈpærənt/","Easy to see through; also open and clear about actions or decisions.","透明的；公开透明的","Transparent can describe a material that lets light pass through or a process that is easy to understand and inspect.","The glass door is almost transparent.","The organisation promised a transparent selection process.","transparent material; transparent process; be transparent about","transparent material（透明材料）；transparent process（公开透明的流程）；be transparent about（坦诚说明）"],
+    ["discovery-word-unique-01","unique","adjective","/juːˈniːk/","Being the only one of its kind or very different from others.","独特的；独一无二的","Unique emphasises that something has no exact equivalent, although it is often used informally to mean very unusual.","Each handmade piece has a unique pattern.","The city has a unique mix of cultures.","a unique opportunity; a unique feature; unique to","a unique opportunity（独特的机会）；a unique feature（独有的特点）；unique to（为……所独有）"],
+    ["discovery-word-worthwhile-01","worthwhile","adjective","/ˌwɜːθˈwaɪl/","Useful, important or enjoyable enough to justify the time or effort spent.","值得的；有价值的","Worthwhile describes an activity or result that makes the effort feel worthwhile.","The extra practice was worthwhile.","It is worthwhile to compare several sources.","a worthwhile experience; worthwhile effort; be worthwhile","a worthwhile experience（有价值的经历）；worthwhile effort（值得付出的努力）；be worthwhile（值得做）"],
+    ["discovery-word-abundant-01","abundant","adjective","/əˈbʌndənt/","Existing in large quantities or more than enough.","丰富的；充裕的","Abundant is a formal way to describe something available in large amounts.","The region has abundant natural resources.","There is abundant evidence to support the claim.","abundant resources; abundant evidence; be abundant in","abundant resources（丰富的资源）；abundant evidence（充分的证据）；be abundant in（富含……）"],
+    ["discovery-word-accessible-01","accessible","adjective","/əkˈsesəbəl/","Easy to reach, enter, use or understand.","容易到达的；易于使用的；易懂的","Accessible can refer to physical access, inclusive design or information that is easy to understand.","The website makes the lessons accessible on mobile devices.","The museum is accessible by public transport.","easily accessible; accessible information; make something accessible","easily accessible（容易使用或到达）；accessible information（易懂的信息）；make something accessible（让某物更易使用）"],
+    ["discovery-word-accurate-01","accurate","adjective","/ˈækjərət/","Correct and free from mistakes.","准确的；精确的","Accurate describes information, measurements or work that matches the facts or intended result.","Please check that the figures are accurate.","The map gives an accurate picture of the area.","accurate information; accurate measurement; be accurate","accurate information（准确信息）；accurate measurement（精确测量）；be accurate（准确无误）"],
+    ["discovery-word-adaptable-01","adaptable","adjective","/əˈdæptəbəl/","Able to change or adjust successfully to new conditions.","适应力强的；能灵活调整的","Adaptable describes people or systems that can respond well when circumstances change.","An adaptable team can handle new requirements.","She is adaptable and learns new software quickly.","an adaptable person; adaptable system; highly adaptable","an adaptable person（适应力强的人）；adaptable system（可灵活调整的系统）；highly adaptable（适应性很强）"],
+    ["discovery-word-adjacent-01","adjacent","adjective","/əˈdʒeɪsənt/","Next to or very close to something else.","邻近的；毗连的","Adjacent is commonly used in descriptions of rooms, buildings, streets or areas that are next to one another.","The meeting room is adjacent to the reception area.","They bought two adjacent plots of land.","adjacent to; adjacent room; adjacent areas","adjacent to（紧邻……）；adjacent room（隔壁房间）；adjacent areas（相邻区域）"],
+
+
+    ["discovery-word-cautious-01","cautious","adjective","/ˈkɔːʃəs/","Careful to avoid danger, mistakes or unnecessary risks.","谨慎的；小心的","Cautious describes a careful attitude when a decision could have unwanted consequences.","Be cautious when opening links from unknown sources.","The team took a cautious approach to the launch.","a cautious approach; be cautious about; cautiously optimistic","a cautious approach（谨慎的方法）；be cautious about（对……保持谨慎）；cautiously optimistic（谨慎乐观）"],
+    ["discovery-word-compelling-01","compelling","adjective","/kəmˈpelɪŋ/","Very convincing or interesting, so that it attracts attention or makes people act.","令人信服的；引人入胜的","A compelling argument gives strong reasons to agree; a compelling story holds attention.","She made a compelling case for the change.","The documentary tells a compelling story.","a compelling argument; compelling evidence; a compelling story","a compelling argument（有说服力的论点）；compelling evidence（有力的证据）；a compelling story（引人入胜的故事）"],
+    ["discovery-word-competent-01","competent","adjective","/ˈkɒmpɪtənt/","Having the ability and knowledge needed to do something successfully.","有能力的；称职的","Competent means capable of doing a task to an acceptable standard; it does not necessarily mean outstanding.","The new assistant is competent and reliable.","You need a competent technician to inspect the device.","a competent professional; be competent at; fully competent","a competent professional（称职的专业人士）；be competent at（有能力做……）；fully competent（完全胜任）"],
+    ["discovery-word-considerate-01","considerate","adjective","/kənˈsɪdərət/","Thinking about other people's needs and feelings before acting.","体贴的；替他人着想的","A considerate person notices how their actions may affect other people.","It was considerate of her to check before changing the plan.","Please be considerate of your neighbours.","a considerate person; considerate of others; thoughtful and considerate","a considerate person（体贴的人）；considerate of others（为他人着想）；thoughtful and considerate（周到体贴）"],
+    ["discovery-word-consistent-01","consistent","adjective","/kənˈsɪstənt/","Staying the same in quality, behaviour or results over time.","一致的；始终如一的","Consistent can describe reliable habits, matching information or results that do not change unexpectedly.","Short, consistent practice is often effective.","Make sure the spelling is consistent throughout the document.","consistent quality; remain consistent; consistent with","consistent quality（稳定的品质）；remain consistent（保持一致）；consistent with（与……一致）"],
+    ["discovery-word-constructive-01","constructive","adjective","/kənˈstrʌktɪv/","Helpful and intended to improve a situation rather than simply criticise it.","建设性的；有助益的","Constructive feedback identifies a problem while offering a useful direction for improvement.","The reviewer gave constructive suggestions.","They had a constructive discussion about the design.","constructive feedback; constructive criticism; a constructive discussion","constructive feedback（建设性反馈）；constructive criticism（建设性批评）；a constructive discussion（有益的讨论）"],
+    ["discovery-word-crucial-01","crucial","adjective","/ˈkruːʃəl/","Extremely important because it can determine the success or result of something.","至关重要的；决定性的","Crucial highlights something that has a major effect on the final outcome.","Clear communication is crucial to the project.","The next few days will be crucial.","crucial to; a crucial role; a crucial decision","crucial to（对……至关重要）；a crucial role（关键作用）；a crucial decision（关键决定）"],
+    ["discovery-word-diverse-01","diverse","adjective","/daɪˈvɜːs/","Including people or things that are different from one another.","多样的；形形色色的","Diverse emphasises variety within a group, collection or community.","The course uses examples from diverse situations.","The city has a diverse population.","a diverse range; culturally diverse; diverse backgrounds","a diverse range（多种多样的范围）；culturally diverse（文化多元的）；diverse backgrounds（不同背景）"],
+    ["discovery-word-frequent-01","frequent","adjective","/ˈfriːkwənt/","Happening often or at short intervals.","频繁的；经常发生的","Frequent describes something that happens many times, while frequently is the adverb form.","Frequent breaks can help maintain concentration.","The area experiences frequent heavy rain.","frequent visits; frequent changes; occur frequently","frequent visits（频繁拜访）；frequent changes（频繁变化）；occur frequently（经常发生）"],
+    ["discovery-word-generous-01","generous","adjective","/ˈdʒenərəs/","Willing to give or share more than is expected; also large in amount or size.","慷慨的；宽宏大量的","Generous can describe a person who gives freely or an amount that is larger than usual.","It was generous of him to share his notes.","The recipe uses a generous amount of fresh herbs.","a generous offer; generous with time; a generous amount","a generous offer（慷慨的提议）；generous with time（乐于付出时间）；a generous amount（大量）"],
+    ["discovery-word-gradual-01","gradual","adjective","/ˈɡrædʒuəl/","Happening slowly over a period rather than suddenly.","逐渐的；渐进的","Gradual describes a change that happens in small steps over time.","The town has seen a gradual increase in visitors.","Make gradual changes instead of changing everything at once.","a gradual change; gradual improvement; a gradual increase","a gradual change（逐步变化）；gradual improvement（逐渐改善）；a gradual increase（逐步增加）"],
+    ["discovery-word-hostile-01","hostile","adjective","/ˈhɒstaɪl/","Unfriendly or strongly opposed; sometimes showing anger or aggression.","敌对的；不友善的","Hostile can describe an unfriendly attitude, an environment or strong opposition to an idea.","The proposal received a hostile response.","Some plants cannot survive in a hostile environment.","a hostile reaction; hostile environment; be hostile to","a hostile reaction（敌对的反应）；hostile environment（恶劣环境）；be hostile to（对……抱有敌意）"],
+    ["discovery-word-relevant-01","relevant","adjective","/ˈreləvənt/","Directly connected with the subject or useful for the matter being considered.","相关的；切题的","Relevant information helps answer the question or supports the current discussion.","Please include only relevant details in the summary.","Her experience is relevant to the role.","relevant information; relevant to; highly relevant","relevant information（相关信息）；relevant to（与……有关）；highly relevant（高度相关）"],
+    ["discovery-word-reliable-01","reliable","adjective","/rɪˈlaɪəbəl/","Able to be trusted to work well or provide correct information.","可靠的；可信赖的","Reliable describes a person, tool or source that can be depended on over time.","We need a reliable internet connection for the meeting.","Use reliable sources when checking a claim.","a reliable source; reliable service; be reliable","a reliable source（可靠的信息来源）；reliable service（稳定可靠的服务）；be reliable（值得信赖）"],
+    ["discovery-word-significant-01","significant","adjective","/sɪɡˈnɪfɪkənt/","Important or large enough to have a noticeable effect or meaning.","重要的；显著的","Significant can mean important, or large enough to be noticeable in a measurement or result.","The update brought a significant improvement.","There was a significant difference between the two results.","significant change; significant impact; highly significant","significant change（显著变化）；significant impact（重大影响）；highly significant（非常重要／显著）"],
+    ["discovery-word-straightforward-01","straightforward","adjective","/ˌstreɪtˈfɔːwəd/","Easy to understand or do; honest and direct in manner.","简单明了的；直截了当的","Straightforward describes a task without unnecessary difficulty or communication without hidden meaning.","The installation process is straightforward.","She gave a straightforward answer to the question.","a straightforward process; straightforward explanation; be straightforward","a straightforward process（简单的流程）；straightforward explanation（清楚明了的解释）；be straightforward（坦率直接）"],
+    ["discovery-word-sustainable-01","sustainable","adjective","/səˈsteɪnəbəl/","Able to continue for a long time without using up resources or causing unacceptable harm.","可持续的；能长期维持的","Sustainable is often used for practices that can continue while protecting resources and the environment.","The city is investing in sustainable transport.","A sustainable study routine is better than an exhausting short burst.","sustainable development; sustainable growth; environmentally sustainable","sustainable development（可持续发展）；sustainable growth（可持续增长）；environmentally sustainable（环境可持续的）"],
+    ["discovery-word-tentative-01","tentative","adjective","/ˈtentətɪv/","Not final or certain; done carefully because more information may be needed.","暂定的；试探性的","Tentative is useful for plans, agreements or conclusions that may still change.","We made a tentative booking for Friday.","The early results are tentative and need further testing.","a tentative plan; tentative agreement; tentative conclusion","a tentative plan（暂定计划）；tentative agreement（初步协议）；tentative conclusion（暂时性结论）"],
+    ["discovery-word-thorough-01","thorough","adjective","/ˈθʌrə/","Complete and careful, including all important details.","彻底的；全面细致的","Thorough emphasises that a task or check covers everything important rather than only the obvious parts.","The technician carried out a thorough inspection.","Please give the document a thorough review.","a thorough check; thorough research; be thorough","a thorough check（全面检查）；thorough research（深入研究）；be thorough（做事周全细致）"],
+    ["discovery-word-valid-01","valid","adjective","/ˈvælɪd/","Acceptable or legally/ logically sound according to the relevant rules or facts.","有效的；合理的；成立的","Valid can describe a document that is still accepted, or an argument that follows sound reasoning.","You need a valid ticket to enter.","That is a valid point, and we should consider it.","a valid reason; valid until; a valid argument","a valid reason（合理的理由）；valid until（有效期至）；a valid argument（成立的论点）"],
+    ["discovery-word-vulnerable-01","vulnerable","adjective","/ˈvʌlnərəbəl/","Easily harmed, influenced or affected by a particular danger or difficulty.","脆弱的；易受伤害的","Vulnerable describes someone or something with less protection against harm or risk.","Young plants are vulnerable to frost.","The system is vulnerable to this type of attack.","vulnerable to; a vulnerable group; feel vulnerable","vulnerable to（容易受到……影响）；a vulnerable group（弱势群体）；feel vulnerable（感到脆弱）"],
+    ["discovery-word-wary-01","wary","adjective","/ˈweəri/","Careful because you do not fully trust a person, situation or possibility.","谨慎提防的；警惕的","Wary suggests caution caused by possible risk or uncertainty.","Be wary of messages asking for personal details.","Investors remained wary after the sudden price change.","be wary of; a wary expression; remain wary","be wary of（提防……）；a wary expression（警惕的神情）；remain wary（保持警惕）"],
+    ["discovery-word-vivid-01","vivid","adjective","/ˈvɪvɪd/","Producing strong, clear images or feelings in the mind; bright and intense.","生动的；鲜明的","Vivid often describes memories, descriptions, colours or imagination that feel especially clear.","She gave a vivid description of the journey.","The artist used vivid colours in the poster.","a vivid memory; vivid description; vivid colours","a vivid memory（清晰鲜明的记忆）；vivid description（生动的描述）；vivid colours（鲜艳的色彩）"],
+    ["discovery-word-adequate-01","adequate","adjective","/ˈædɪkwət/","Enough for a particular purpose or need, although not necessarily excellent.","足够的；合格的","Adequate means sufficient to meet a requirement, but it can suggest that the quality is only acceptable.","The room has adequate lighting for reading.","We need adequate evidence before making a decision.","adequate time; adequate protection; be adequate for","adequate time（足够的时间）；adequate protection（充分的保护）；be adequate for（足以满足……）"],
+    ["discovery-word-compatible-01","compatible","adjective","/kəmˈpætəbəl/","Able to exist, work or be used together without problems.","兼容的；相容的","Compatible is common in technology, relationships and systems that can function together.","Check that the software is compatible with your device.","The new schedule is compatible with my classes.","compatible with; fully compatible; compatible devices","compatible with（与……兼容）；fully compatible（完全兼容）；compatible devices（兼容设备）"],
+    ["discovery-word-comprehensive-01","comprehensive","adjective","/ˌkɒmprɪˈhensɪv/","Including nearly all important details or aspects of a subject.","全面的；综合性的","Comprehensive describes coverage that is broad and detailed rather than limited to one part.","The guide provides a comprehensive introduction to the topic.","We need a comprehensive review before release.","a comprehensive guide; comprehensive review; comprehensive coverage","a comprehensive guide（全面的指南）；comprehensive review（全面审查）；comprehensive coverage（全面涵盖）"],
+
+
+    ["discovery-word-astounding-01","astounding","adjective","/əˈstaʊndɪŋ/","Extremely surprising or impressive.","令人震惊的；惊人的","Astounding describes something so surprising or impressive that it is difficult to believe.","The team made astounding progress in a few months.","The view from the mountain was astounding.","astounding progress; an astounding result; truly astounding","astounding progress（惊人的进展）；an astounding result（令人惊叹的结果）；truly astounding（确实令人震撼）"],
+    ["discovery-word-intriguing-01","intriguing","adjective","/ɪnˈtriːɡɪŋ/","Interesting because it is unusual or makes you want to know more.","有趣的；引人好奇的","Intriguing describes something that creates curiosity because it is unusual or not fully explained.","The article raises an intriguing question.","We noticed an intriguing detail in the old photograph.","an intriguing idea; an intriguing question; find something intriguing","an intriguing idea（耐人寻味的想法）；an intriguing question（引人深思的问题）；find something intriguing（觉得某事很有趣）"]
+
+  ];
+  const dailyDiscoveryVocabulary = [
+    ...dailyDiscoveryCoreVocabulary,
+    ...dailyDiscoveryAdditionalWords.map(([id,word,part,phonetic,definition,definitionZh,body,example1,example2,tip,tipZh]) => ({
+      id,word,part,phonetic,definition,definitionZh,body,examples:[example1,example2],tip,tipZh,
+      topicId:"daily-discovery-vocabulary",difficulty:"intermediate"
+    }))
+  ];
+  const DAILY_DISCOVERY_SCHEDULE_VERSION = 1;
+  const DAILY_DISCOVERY_SCHEDULE_EPOCH = "2026-11-15";
+  const DAILY_DISCOVERY_SCHEDULE_POOL_SIZE = 93;
+
+  const legacyDailyDiscoveriesBacklog = [
     { id:"discovery-look-forward-01", category:"Grammar insight", title:"The hidden grammar in “look forward to”", body:"In this expression, to is a preposition rather than an infinitive marker. Follow it with a noun or an -ing form.", example:"I look forward to meeting your team.", zh:"这个表达中的 to 是介词，不是不定式标记。后面可以接名词或 -ing 形式。", zhExample:"I look forward to meeting your team.", source:"Cambridge Dictionary · English Grammar Today", sourceUrl:"https://dictionary.cambridge.org/grammar/british-grammar/word-patterns-look-forward-to" },
     { id:"discovery-less-fewer-01", category:"Usage note", title:"Less and fewer are not interchangeable in formal writing", body:"Use fewer with plural countable nouns and less with uncountable nouns. You may hear less with plural nouns in informal speech, but fewer is the safer choice in formal writing.", example:"fewer meetings / less time", zh:"正式写作中，fewer 通常搭配可数复数名词，less 通常搭配不可数名词。口语中也常听到 less 搭配复数名词。", zhExample:"fewer meetings / less time", source:"Cambridge Dictionary · English Grammar Today", sourceUrl:"https://dictionary.cambridge.org/grammar/british-grammar/less-or-fewer" },
     { id:"discovery-say-tell-01", category:"Common mistake", title:"Why “tell me” but “say to me”?", body:"Tell normally takes the listener directly as its object. With say, add to before the listener.", example:"Tell me the answer. / Say the answer to me.", zh:"tell 后面通常直接接听话的人；say 若要指出听话的人，通常在对方前面加 to。", zhExample:"Tell me the answer. / Say the answer to me.", source:"Cambridge Dictionary · About Words", sourceUrl:"https://dictionaryblog.cambridge.org/2015/11/11/say-and-tell-how-to-talk-about-talking-1/" },
@@ -120,7 +373,8 @@
   ];
 
   let preferences = Object.fromEntries(preferenceKeys.map(key => [key, true]));
-  let snapshot = { timezone:"UTC", day:"", plan:"free", limits:{}, completed:{}, content:{} };
+  let selectedDailyTab = "daily_topic";
+  let snapshot = { timezone:"UTC", day:"", plan:"free", limits:{}, completed:{}, openSessions:[], dailyResults:[], content:{} };
   let readerState = null;
   let loadSequence = 0;
   let preferenceListenersReady = false;
@@ -137,26 +391,82 @@
     return prefs?.timezone || "UTC";
   }
 
+  const dailyChineseTitles = {
+    "topic-present-perfect-01":"一般过去时还是现在完成时？","topic-articles-01":"根据发音选择 a 或 an","topic-quantity-01":"可数名词与不可数名词","topic-sentence-order-01":"构建清晰的英语句子","topic-collocations-01":"学习自然的词语搭配",
+    "topic-present-routines-01":"描述日常习惯与事实","topic-present-continuous-01":"描述正在发生的事情","topic-past-continuous-01":"用过去进行时交代背景","topic-prepositions-time-01":"用 in、on 和 at 表示时间","topic-pronouns-01":"选择主格和宾格代词",
+    "topic-articles-the-01":"了解 the 的使用时机","topic-quantity-many-much-01":"选择 many 或 much","topic-everyday-vocabulary-01":"选择准确的日常动词","topic-everyday-vocabulary-02":"表达动作发生的频率","topic-phrasal-verbs-01":"理解可分离短语动词",
+    "topic-phrasal-verbs-02":"在语境中学习短语动词","topic-word-formation-01":"用后缀构建词族","topic-word-formation-02":"识别常见否定前缀","topic-conditionals-01":"用第一类条件句表达真实可能性","topic-conditionals-02":"用第二类条件句表达假设情境",
+    "topic-advanced-inversion-01":"在否定副词后使用倒装","topic-advanced-modals-01":"用情态动词表达不同程度的确定性","topic-idioms-01":"把习语作为完整表达来理解","topic-idioms-02":"选择符合语境的表达","topic-academic-01":"更谨慎地表达观点",
+    "topic-academic-02":"用准确的连接词衔接观点","topic-precise-vocabulary-01":"区分 say、tell 和 mention","topic-precise-vocabulary-02":"用具体词语替换模糊表达",
+    "application-verb-patterns-01":"日常计划中的动词结构","application-articles-01":"真实句子中的冠词","application-quantity-01":"选择正确的数量词","application-say-tell-01":"Say 还是 tell？","application-collocations-01":"选择自然的词语搭配",
+    "application-present-routine-02":"日常习惯中的一般现在时","application-present-continuous-02":"描述当前正在发生的动作","application-past-continuous-02":"描述过去正在进行的动作","application-prepositions-time-01":"时间介词","application-pronouns-01":"主格代词还是宾格代词？",
+    "application-articles-the-02":"冠词与共同语境","application-many-much-02":"Many、much 和 a lot of","application-everyday-vocabulary-02":"日常动词搭配","application-frequency-01":"频率副词的位置","application-phrasal-separable-02":"在短语动词中放置宾语",
+    "application-phrasal-meaning-02":"理解语境中的短语动词","application-word-family-02":"识别后缀的含义","application-prefix-02":"选择否定前缀","application-first-conditional-02":"表达真实的未来可能性","application-second-conditional-02":"想象不同的情境",
+    "application-modals-02":"用情态动词表达确定性","application-inversion-02":"识别主语与助动词倒装","application-idioms-02":"理解常见表达","application-academic-02":"使用谨慎的学术表达","application-precise-02":"选择准确的表达动词"
+  };
+  const dailyUi = (english, chinese) => translationLanguage === "zh" ? chinese : english;
+  function dailyTitle(item) {
+    return translationLanguage === "zh" ? (item.titleZh || dailyChineseTitles[item.id] || item.title) : item.title;
+  }
   function selectedTranslation(item) {
     if (typeof translationLanguage !== "undefined" && translationLanguage === "zh" && item.zh) {
-      return '<p class="daily-translation">' + esc(item.zh) + '</p>';
+      return '<p class="daily-translation"><strong>中文说明：</strong>' + esc(item.zh) + '</p>';
     }
     return "";
   }
+  function renderDailyStaticLabels() {
+    const zh = translationLanguage === "zh";
+    const labels = {
+      dailyLearningEyebrow: zh ? "每日练习" : "DAILY PRACTICE",
+      dailyLearningHeading: zh ? "每日学习" : "Daily Learning",
+      dailyLearningIntro: zh ? "通过个性化活动和全球共享的每日词汇，建立持续学习的习惯。" : "Build consistency with personalised activities and a shared daily dictionary word for everyone.",
+      dailyPreferencesLegend: zh ? "我的每日活动" : "My daily activities"
+    };
+    Object.entries(labels).forEach(([id,value]) => { const node=byId(id); if(node) node.textContent=value; });
+    const names = {
+      daily_topic: zh ? "每日主题" : "Daily Topic",
+      daily_application: zh ? "每日应用" : "Daily Application",
+      daily_discovery: zh ? "每日发现" : "Daily Discovery",
+      daily_revision: zh ? "每日复习" : "Daily Revision"
+    };
+    document.querySelectorAll("[data-daily-pref-label]").forEach(node => {
+      if(names[node.dataset.dailyPrefLabel]) node.textContent=names[node.dataset.dailyPrefLabel];
+    });
+  }
+
+  function renderDailyStatus() {
+    if (!snapshot.day) return;
+    const status = byId("dailyLearningStatus");
+    if (!status) return;
+    const timezone = snapshot.timezone || "UTC";
+    const plan = snapshot.plan === "premium" ? "Premium" : "Free";
+    status.textContent = dailyUi(
+      "Your daily activities reset at midnight (" + timezone + "). Plan: " + plan + ". English learning context is preserved; Chinese explanations are shown where available.",
+      "每日活动于午夜重置（" + timezone + "）。方案：" + plan + "。英语学习语境会保留，并在适用位置提供中文说明。"
+    );
+    if (snapshot.timezoneChangePending) status.textContent += dailyUi(
+      " Your preferred timezone (" + snapshot.preferredTimezone + ") will take effect after this allowance day ends.",
+      " 你偏好的时区（" + snapshot.preferredTimezone + "）将在当前额度日结束后生效。"
+    );
+    if (snapshot.courseNeedsEnglish) status.textContent += dailyUi(
+      " Select English as your Learning course to start these activities. Your saved Chinese course preference is not changed by this message.",
+      "请将学习课程切换为 English 后开始这些活动。此提示不会更改你已保存的中文课程偏好。"
+    );
+  }
 
   function makeRevisionContent(topicId, contentId, reason) {
-    const source = dailyApplications.find(item =>
-      item.topicId === topicId && contentId.includes(":" + item.id + ":"))
-      || dailyApplications.find(item => item.topicId === topicId)
-      || dailyApplications[0];
+    const material = dailyRevisionMaterials[topicId] || dailyRevisionMaterials["sentence-basics"];
+    const source = dailyApplications.find(item => item.topicId === topicId) || dailyApplications[0];
     return {
       id: contentId,
       topicId: topicId || source.topicId,
       difficulty: source.difficulty,
-      title: "Review: " + source.title,
+      title: "Review: " + material.title,
+      titleZh: "复习：" + material.titleZh,
       body: reason || "A short adaptive review selected from your learning history.",
       zh: "根据你的学习记录安排的简短复习。",
-      questions: source.questions
+      examples: material.examples.slice(),
+      questions: material.questions.map(question => ({...question,options:question.options.slice()}))
     };
   }
 
@@ -248,14 +558,45 @@
     return candidates;
   }
 
+  function accountContentOffset() {
+    const accountKey = String(currentUser?.id || "anonymous");
+    const accountHash = [...accountKey].reduce((hash,char)=>((hash*31)+char.charCodeAt(0))>>>0,7);
+    const mockGeneration = Number(window.__swiftDictionaryMock?.selectionGeneration?.() || 0);
+    return (accountHash + mockGeneration) >>> 0;
+  }
+
+  function dailyDiscoverySchedule(globalDay) {
+    const poolSize = DAILY_DISCOVERY_SCHEDULE_POOL_SIZE;
+    if (dailyDiscoveryVocabulary.length < poolSize || poolSize < 90 || poolSize % 3 !== 0) {
+      throw new Error("Daily Discovery requires an approved vocabulary pool of at least 90 entries in groups of three.");
+    }
+    const dayOffset = dayOrdinal(globalDay) - dayOrdinal(DAILY_DISCOVERY_SCHEDULE_EPOCH);
+    const firstIndex = ((dayOffset * 3) % poolSize + poolSize) % poolSize;
+    return [0,1,2].map(slot => {
+      const word = dailyDiscoveryVocabulary[(firstIndex + slot) % poolSize];
+      return {
+        ...word,
+        id:word.id + ":" + globalDay,
+        title:word.word,
+        example:word.examples[0],
+        examples:word.examples.slice(1),
+        zh:word.definitionZh,
+        scheduleVersion:DAILY_DISCOVERY_SCHEDULE_VERSION,
+        scheduleSlot:slot + 1
+      };
+    });
+  }
+
   function chooseContent(activityType, slot) {
     const day = snapshot.day;
     const baseIndex = dayOrdinal(day);
-    const pools = {
-      daily_topic:dailyTopics,
-      daily_application:dailyApplications,
-      daily_discovery:dailyDiscoveries
-    };
+    if (activityType === "daily_discovery") {
+      // Global UTC schedule: never use account ID, local timezone, completion count or mock offset.
+      const globalDay = new Date().toISOString().slice(0,10);
+      return dailyDiscoverySchedule(globalDay);
+    }
+    const accountOffset = accountContentOffset();
+    const pools = {daily_topic:dailyTopics,daily_application:dailyApplications};
     if (pools[activityType]) {
       const pool = pools[activityType];
       const completedIds = new Set((snapshot.dailyResults || [])
@@ -265,11 +606,21 @@
       // Never surface yesterday's completed Premium slot as today's first item.
       // If the curated pool is exhausted, fall back to a free replay.
       return available.length
-        ? available[(baseIndex + slot) % available.length]
-        : pool[(baseIndex + slot) % pool.length];
+        ? available[(baseIndex + slot + accountOffset) % available.length]
+        : pool[(baseIndex + slot + accountOffset) % pool.length];
     }
     const candidates = revisionCandidates(snapshot.lessonResults, snapshot.dailyResults, snapshot.completedToday);
-    const candidate = candidates[0] || { topicId:dailyApplications[0].topicId, reason:"A short review to keep your knowledge active." };
+    const best = candidates[0];
+    const equallyRanked = best && best.accuracy === null
+      ? candidates.filter(item=>item.priority===best.priority && item.accuracy===null)
+      : best && candidates.filter(item=>item.priority===best.priority && item.accuracy===best.accuracy);
+    const preferred = (equallyRanked?.length
+      ? equallyRanked[accountOffset % equallyRanked.length]
+      : best) || { topicId:dailyApplications[0].topicId, reason:"A short review to keep your knowledge active." };
+    const alternatives = candidates.filter(item => item.topicId !== preferred.topicId);
+    const candidate = slot === 0 || !alternatives.length
+      ? preferred
+      : alternatives[(accountOffset + slot - 1) % alternatives.length];
     const topicPool = dailyApplications.filter(item => item.topicId === candidate.topicId);
     const previouslyUsedSources = new Set((snapshot.dailyResults || [])
       .filter(row => row.activity_type === "daily_revision" && row.topic_id === candidate.topicId)
@@ -279,22 +630,22 @@
       }).filter(Boolean));
     const unusedSources = topicPool.filter(item => !previouslyUsedSources.has(item.id));
     const sourcePool = unusedSources.length ? unusedSources : topicPool;
-    const source = sourcePool[(dayOrdinal(day) + slot) % sourcePool.length] || dailyApplications[0];
+    const source = sourcePool[(dayOrdinal(day) + slot + accountOffset) % sourcePool.length] || dailyApplications[0];
     const id = ["revision",candidate.topicId,source.id,day,String(slot+1)].join(":");
     return makeRevisionContent(candidate.topicId,id,candidate.reason);
   }
-
   function resolveSessionContent(activityType, session, fallback) {
     if (activityType === "daily_revision") {
       const candidate = revisionCandidates(snapshot.lessonResults, snapshot.dailyResults, snapshot.completedToday)
         .find(item => item.topicId === session.topic_id);
       return makeRevisionContent(session.topic_id,session.content_id,candidate?.reason || "Resume your adaptive review.");
     }
-    const pools = {
-      daily_topic:dailyTopics,
-      daily_application:dailyApplications,
-      daily_discovery:dailyDiscoveries
-    };
+    if (activityType === "daily_discovery") {
+      const approvedId=String(session.content_id).split(":")[0];
+      const word=dailyDiscoveryVocabulary.find(item=>item.id===approvedId);
+      return word?{...word,id:session.content_id,title:word.word,example:word.examples[0],examples:word.examples.slice(1),zh:word.definitionZh}:fallback;
+    }
+    const pools={daily_topic:dailyTopics,daily_application:dailyApplications};
     return (pools[activityType] || []).find(item => item.id === session.content_id) || fallback;
   }
 
@@ -304,7 +655,7 @@
     const grid = byId("dailyActivityGrid");
     if (!supabaseClient || !currentUser) {
       preferences = Object.fromEntries(preferenceKeys.map(key => [key, true]));
-      snapshot = { timezone:"UTC", day:localDayStart("UTC"), learningLanguage:"en", plan:"free", limits:{}, completed:{}, content:{} };
+      snapshot = { timezone:"UTC", day:localDayStart("UTC"), learningLanguage:"en", plan:"free", limits:{}, completed:{}, openSessions:[], dailyResults:[], content:{} };
       applyPreferenceInputs(false);
       status.textContent = "Sign in to start activities and sync your preferences and progress across devices.";
       renderCards();
@@ -340,48 +691,63 @@
       && (!entitlement.valid_until || Date.parse(entitlement.valid_until) > now);
     const plan = active ? entitlement.plan_code : "free";
 
-    const [limitResult, logResult, lessonResult, dailyResult] = await Promise.all([
+    const [limitResult, usageResult, lessonResult, dailyResult, openSessionResult] = await Promise.all([
       supabaseClient.from("learning_plan_limits")
         .select("activity_type,daily_limit,is_enabled")
         .eq("plan_code",plan)
         .in("activity_type",["daily_topic","daily_application","daily_discovery","daily_revision"]),
-      supabaseClient.from("learning_activity_log")
-        .select("activity_type,created_at")
-        .eq("user_id",userId).eq("event_type","completed")
-        .gte("created_at",start).lt("created_at",finish),
+      supabaseClient.rpc("get_my_learning_allowance_usage"),
       supabaseClient.from("lesson_practice_results")
         .select("topic_id,correct_count,question_count,attempted_at")
         .eq("user_id",userId).order("attempted_at",{ascending:false}).limit(200),
       supabaseClient.from("daily_activity_sessions")
-        .select("activity_type,content_id,topic_id,correct_count,question_count,completed_at,status")
+        .select("activity_type,content_id,topic_id,difficulty,source,correct_count,question_count,completed_at,status,started_at")
         .eq("user_id",userId).eq("status","completed")
-        .order("completed_at",{ascending:false}).limit(200)
+        .order("completed_at",{ascending:false}).limit(200),
+      supabaseClient.from("daily_activity_sessions")
+        .select("activity_type,content_id,topic_id,difficulty,source,status,started_at")
+        .eq("user_id",userId).eq("status","in_progress")
+        .order("started_at",{ascending:false}).limit(10)
     ]);
     if (sequence !== loadSequence) return;
-    for (const result of [limitResult,logResult,lessonResult,dailyResult]) if (result.error) throw result.error;
+    for (const result of [limitResult,usageResult,lessonResult,dailyResult,openSessionResult]) if (result.error) throw result.error;
 
     const limits = {};
     for (const row of limitResult.data || []) limits[row.activity_type] = { limit:row.daily_limit, enabled:row.is_enabled };
     const completed = {};
-    for (const row of logResult.data || []) completed[row.activity_type] = (completed[row.activity_type] || 0) + 1;
+    for (const row of usageResult.data || []) {
+      const used = Number(row.used_count);
+      if (typeof row.activity_type === "string" && Number.isInteger(used) && used >= 0) completed[row.activity_type] = used;
+    }
     const completedToday = (dailyResult.data || []).filter(row => row.completed_at && row.completed_at >= start && row.completed_at < finish);
+    const activeSessions = [];
+    for (const session of openSessionResult.data || []) {
+      const startedAt = Date.parse(session.started_at || "");
+      if (!Number.isFinite(startedAt) || startedAt < Date.parse(start) || startedAt >= Date.parse(finish)) {
+        if (!session.id) throw new Error("An expired daily activity session could not be identified for reset.");
+        const {error} = await supabaseClient.rpc("abandon_daily_activity_session",{p_session_id:session.id});
+        if (error) throw error;
+      } else {
+        activeSessions.push(session);
+      }
+    }
     const language = prefs.learning_language || "en";
+    const timezoneChangePending = !!(prefs.allowance_timezone && Date.parse(prefs.allowance_timezone_until || "") > Date.now());
     snapshot = {
       timezone, day, learningLanguage:language, plan, limits, completed, completedToday,
       lessonResults:lessonResult.data || [],
       dailyResults:dailyResult.data || [],
+      openSessions:activeSessions,
+      timezoneChangePending,
+      preferredTimezone:prefs.timezone || "UTC",
+      courseNeedsEnglish:language !== "en" || course !== "en",
       content:{}
     };
 
     const slots = {};
     for (const type of Object.keys(activityMeta)) slots[type] = completed[type] || 0;
     for (const type of Object.keys(activityMeta)) snapshot.content[type] = chooseContent(type,slots[type]);
-    const timezoneChangePending = prefs.allowance_timezone && Date.parse(prefs.allowance_timezone_until || "") > Date.now();
-    status.textContent = "Your daily activities reset at midnight (" + timezone + "). Plan: " + (plan === "premium" ? "Premium" : "Free") + ". Daily content currently focuses on English learning.";
-    if (timezoneChangePending) status.textContent += " Your preferred timezone (" + prefs.timezone + ") will take effect after this allowance day ends.";
-    if (language !== "en" || course !== "en") {
-      status.textContent += " Switch the learning course to English to start these activities.";
-    }
+    renderDailyStatus();
     renderCards();
   }
 
@@ -394,50 +760,107 @@
   }
 
   function renderCards() {
+    renderDailyStaticLabels();
     const grid = byId("dailyActivityGrid");
-    const enabledTypes = Object.keys(activityMeta).filter(type => preferences[type + "_enabled"] !== false);
-    if (!enabledTypes.length) {
-      grid.innerHTML = '<div class="coming-card"><h2>All daily activities are paused</h2><p>Enable at least one activity above whenever you are ready to continue.</p></div>';
-      return;
+    const allTypes = Object.keys(activityMeta);
+    const type = allTypes.includes(selectedDailyTab) ? selectedDailyTab : "daily_topic";
+    selectedDailyTab = type;
+    const meta = activityMeta[type];
+    const limitConfig = snapshot.limits[type];
+    const limit = Number(limitConfig?.limit);
+    const used = Number(snapshot.completed[type] || 0);
+    const remaining = Number.isFinite(limit) ? Math.max(0,limit-used) : null;
+    const completedRows = (snapshot.completedToday || []).filter(row => row.activity_type === type && row.content_id).sort((a,b) => Date.parse(b.completed_at || 0) - Date.parse(a.completed_at || 0));
+    const activeRows = (snapshot.openSessions || []).filter(row => row.activity_type === type);
+    const isEnabled = preferences[type + "_enabled"] !== false;
+    const availableForPlan = !!limitConfig && limitConfig.enabled !== false && Number.isFinite(limit) && limit > 0;
+    const resetMessage = used >= limit && availableForPlan
+      ? dailyUi("You have completed all of today’s " + meta.title + " activities. Your allowance resets at midnight (" + (snapshot.timezone || "your timezone") + ").","今天的" + meta.titleZh + "活动已全部完成。每日额度将在午夜重置（" + (snapshot.timezone || "你的时区") + "）。")
+      : "";
+    const panelStatus = !currentUser || !supabaseClient
+      ? dailyUi("Sign in to start this activity and sync your progress.","登录后即可开始此活动并同步学习进度。")
+      : !isEnabled
+        ? dailyUi("This daily activity is paused. You can turn it back on in the preferences above.","此每日活动已暂停。你可以在上方偏好设置中重新启用。")
+        : !availableForPlan
+          ? dailyUi("This activity is not available for your current plan.","当前方案暂不提供此活动。")
+          : resetMessage;
+    const contentByKey = new Map();
+    const renderCard = (content,discoveryIndex=null,reviewOnly=false) => {
+      contentByKey.set(type + "|" + content.id,content);
+      const activeSession = reviewOnly ? null : activeRows.find(row => row.content_id === content.id) || null;
+      const alreadyCompleted = reviewOnly || (snapshot.dailyResults || []).some(row => row.activity_type === type && row.content_id === content.id && row.status === "completed");
+      const allowanceUnavailable = !availableForPlan;
+      const exhausted = !activeSession && !alreadyCompleted && !allowanceUnavailable && remaining <= 0;
+      const statusLabel = activeSession ? dailyUi("In progress","进行中") : alreadyCompleted ? dailyUi("Completed · replay is free","已完成 · 可免费重温") : dailyUi("New activity","新活动");
+      const buttonLabel = activeSession ? dailyUi("Resume activity","继续活动") : alreadyCompleted ? dailyUi("Review completed content","重温已完成内容") : allowanceUnavailable ? dailyUi("Unavailable","暂不可用") : exhausted ? dailyUi("Daily limit reached","今日额度已用完") : dailyUi("Start activity","开始活动");
+      const disabledReason = !currentUser || !supabaseClient ? dailyUi("Sign in to start and sync this activity.","登录后即可开始活动并同步进度。") : snapshot.learningLanguage !== "en" || (typeof course !== "undefined" && course !== "en") ? dailyUi("Daily activities currently teach English. Select English in Learning course to begin.","每日活动目前以英语为学习内容。请将学习课程切换为 English 后开始。") : allowanceUnavailable ? dailyUi("Your allowance could not be checked. Please refresh before starting this activity.","无法确认活动额度，请刷新页面后再试。") : "";
+      const disabled = !!disabledReason || (exhausted && !alreadyCompleted);
+      const indexAttribute = discoveryIndex === null ? "" : ' data-discovery-index="' + discoveryIndex + '"';
+      const heading = type === "daily_discovery" ? content.word : dailyTitle(content);
+      const subheading = type === "daily_discovery" ? '<p class="muted-note">' + esc(content.phonetic || "") + " · " + esc(content.part || "") + "</p>" : '<p>' + esc(meta.description) + "</p>";
+      const reason = type === "daily_revision" ? '<p class="daily-activity-meta"><span class="daily-activity-tag">' + esc(translationLanguage === "zh" ? "根据你的学习记录选择" : content.body) + "</span></p>" : "";
+      const preview = type === "daily_discovery" ? '<p class="daily-card-preview">' + esc(content.definition || meta.description) + "</p>" : '<p class="daily-card-preview">' + esc(content.body || content.description || meta.description) + "</p>";
+      return '<article class="daily-activity-card" data-activity-card="' + type + '"' + (discoveryIndex === null ? "" : ' data-discovery-card="' + (discoveryIndex+1) + '"') + ">"
+        + '<div class="daily-activity-card-copy"><div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(statusLabel) + "</span>"
+        + (discoveryIndex === null ? "" : '<span class="daily-activity-tag">' + esc(dailyUi("Discovery " + (discoveryIndex+1) + " of " + limit,"每日发现 " + (discoveryIndex+1) + " / " + limit)) + "</span>")
+        + "</div><h3>" + esc(heading) + "</h3>" + subheading + preview + reason
+        + (disabledReason ? '<p class="daily-activity-status">' + esc(disabledReason) + "</p>" : "")
+        + '</div><div class="daily-activity-card-action"><button type="button" class="primary-button" data-label="' + esc(buttonLabel) + '" data-start-daily="' + type + '" data-content-id="' + esc(content.id) + '"' + indexAttribute + (disabled ? " disabled" : "") + ">" + esc(buttonLabel) + "</button></div></article>";
+    };
+    let cards = [];
+    if (isEnabled && type === "daily_discovery") {
+      const scheduled = Array.isArray(snapshot.content.daily_discovery) ? snapshot.content.daily_discovery : chooseContent("daily_discovery",0);
+      const seen = new Set();
+      completedRows.forEach(row => { if (seen.has(row.content_id)) return; seen.add(row.content_id); const item=resolveSessionContent(type,row,null); if(item) cards.push(renderCard(item,null,true)); });
+      activeRows.forEach(row => { if (seen.has(row.content_id)) return; seen.add(row.content_id); const item=resolveSessionContent(type,row,null); if(item) cards.push(renderCard(item,null,false)); });
+      const newSlots = Math.max(0,Math.min(remaining-activeRows.length,Math.min(3,limit || 1)-cards.length));
+      let added = 0;
+      for(let index=0;index<Math.min(3,limit || 1) && added<newSlots;index++){
+        const item=scheduled[index];
+        if(!item || seen.has(item.id)) continue;
+        seen.add(item.id);
+        cards.push(renderCard(item,index,false));
+        added++;
+      }
+    } else if (isEnabled) {
+      const seen = new Set();
+      completedRows.forEach(row => { if(seen.has(row.content_id)) return; seen.add(row.content_id); const item=resolveSessionContent(type,row,snapshot.content[type]); if(item) cards.push(renderCard(item,null,true)); });
+      activeRows.forEach(row => { if(seen.has(row.content_id)) return; seen.add(row.content_id); const item=resolveSessionContent(type,row,snapshot.content[type]); if(item) cards.push(renderCard(item,null,false)); });
+      for(let slot=used;cards.length<Math.min(3,limit || 1) && slot<used+5;slot++){ const item=chooseContent(type,slot); if(!item || seen.has(item.id)) continue; seen.add(item.id); cards.push(renderCard(item,null,false)); }
+      if(!cards.length && availableForPlan){ const item=chooseContent(type,used); if(item) cards.push(renderCard(item,null,false)); }
     }
-    grid.innerHTML = enabledTypes.map(type => {
-      const meta = activityMeta[type];
-      const content = snapshot.content[type] || chooseContent(type,snapshot.completed?.[type] || 0);
-      const limit = snapshot.limits[type]?.limit;
-      const used = snapshot.completed[type] || 0;
-      const remaining = Number.isFinite(limit) ? Math.max(0,limit-used) : null;
-      const alreadyCompleted = (snapshot.dailyResults || []).some(row =>
-        row.activity_type === type && row.content_id === content.id && row.status === "completed");
-      const remainingLabel = alreadyCompleted
-        ? "No new content available · replay is free"
-        : remaining === null ? "Allowance unavailable" : remaining + " / " + limit + " completions remaining";
-      const buttonLabel = alreadyCompleted ? "Review completed content" : "Start / Resume";
-      const reason = type === "daily_revision" ? '<p class="daily-activity-meta"><span class="daily-activity-tag">' + esc(content.body) + '</span></p>' : "";
-      const disabled = !currentUser || !supabaseClient || snapshot.learningLanguage !== "en" || (typeof course !== "undefined" && course !== "en");
-      return '<article class="daily-activity-card" data-activity-card="' + type + '">'
-        + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(meta.label) + '</span><span class="daily-activity-tag">' + esc(remainingLabel) + '</span></div>'
-        + '<h2>' + esc(meta.title) + '</h2><p>' + esc(meta.description) + '</p>'
-        + '<div class="daily-reader-example"><strong>' + esc(content.title) + '</strong></div>'
-        + reason
-        + '<button type="button" class="primary-button" data-label="' + esc(buttonLabel) + '" data-start-daily="' + type + '"' + (disabled ? " disabled" : "") + '>' + esc(buttonLabel) + '</button>'
-        + '</article>';
+    const tabs = allTypes.map(tabType => {
+      const tabMeta=activityMeta[tabType],active=tabType===type,enabled=preferences[tabType+"_enabled"]!==false;
+      return '<button type="button" role="tab" class="daily-activity-tab' + (active ? " active" : "") + '" id="dailyTab-' + tabType + '" aria-selected="' + active + '" aria-controls="dailyActivityPanel" tabindex="' + (active?"0":"-1") + '" data-daily-tab="' + tabType + '">' + esc(translationLanguage==="zh"?tabMeta.titleZh:tabMeta.title) + (enabled?"":'<span class="daily-tab-paused">' + esc(dailyUi("Paused","已暂停")) + "</span>") + "</button>";
     }).join("");
-    grid.querySelectorAll("[data-start-daily]").forEach(button => {
-      button.addEventListener("click",() => startDailyActivity(button.dataset.startDaily));
-    });
+    const panelTitle=translationLanguage==="zh"?meta.titleZh:meta.title;
+    const columns=snapshot.plan==="premium"?3:1;
+    const allowanceRatio=Number.isFinite(Number(remaining))&&Number(limit)>0?Math.max(0,Number(remaining))/Number(limit):0;
+    const allowanceTone=remaining<=0?"exhausted":allowanceRatio<=1/3?"low":allowanceRatio<=2/3?"medium":"healthy";
+    const allowanceCount=isEnabled&&availableForPlan
+      ? '<span class="daily-activity-count '+allowanceTone+'" aria-label="'+esc(Math.max(0,remaining)+" of "+limit+" activities remaining today")+'"><strong>'+esc(Math.max(0,remaining)+" / "+limit)+'</strong><small>'+esc(dailyUi("remaining today","今日剩余"))+'</small></span>'
+      : '<span class="daily-activity-count" aria-hidden="true"></span>';
+    grid.innerHTML = '<div class="daily-activity-tabs" role="tablist" aria-label="' + esc(dailyUi("Daily activity categories","每日活动类别")) + '">' + tabs + '</div><section id="dailyActivityPanel" class="daily-activity-panel" role="tabpanel" aria-labelledby="dailyTab-' + type + '"><header class="daily-activity-heading"><div><h3>' + esc(panelTitle) + '</h3><p class="daily-activity-heading-note">' + esc(panelStatus) + '</p></div>' + allowanceCount + '</header>' + (isEnabled ? '<div class="daily-activity-cards' + (columns===3?" premium":" free") + '">' + (cards.join("") || '<div class="coming-card"><p>' + esc(dailyUi("No activities are available in this category right now.","此类别目前没有可用活动。")) + "</p></div>") + "</div>" : '<div class="coming-card"><p>' + esc(panelStatus) + "</p></div>") + "</section>";
+    grid.querySelectorAll("[data-daily-tab]").forEach(button => button.addEventListener("click",() => { selectedDailyTab=button.dataset.dailyTab; renderCards(); }));
+    grid.querySelectorAll("[data-start-daily]").forEach(button => button.addEventListener("click",() => startDailyActivity(button.dataset.startDaily,button.dataset.discoveryIndex===undefined?0:Number(button.dataset.discoveryIndex),contentByKey.get(button.dataset.startDaily+"|"+button.dataset.contentId)||null,button)));
   }
-
-  async function startDailyActivity(activityType) {
+  async function startDailyActivity(activityType, discoveryIndex=0, contentOverride=null, buttonElement=null) {
     if (!currentUser || !supabaseClient) return;
-    const selected = snapshot.content[activityType] || chooseContent(activityType,snapshot.completed?.[activityType] || 0);
-    const button = document.querySelector('[data-start-daily="' + activityType + '"]');
-    if (button) { button.disabled = true; button.textContent = "Opening…"; }
+    const discoverySlots = snapshot.content.daily_discovery;
+    const selected = contentOverride || (activityType === "daily_discovery"
+      ? (Array.isArray(discoverySlots) ? discoverySlots[discoveryIndex] : null)
+      : snapshot.content[activityType] || chooseContent(activityType,snapshot.completed?.[activityType] || 0));
+    if (!selected) return;
+    const button = buttonElement || (activityType === "daily_discovery"
+      ? document.querySelector('[data-start-daily="daily_discovery"][data-discovery-index="' + discoveryIndex + '"]')
+      : document.querySelector('[data-start-daily="' + activityType + '"]'));
+    if (button) { button.disabled = true; button.textContent = dailyUi("Opening…","正在打开…"); }
     try {
       const {data,error} = await supabaseClient.rpc("start_daily_activity_session",{
         p_activity_type:activityType,
         p_content_id:selected.id,
-        p_topic_id:selected.topicId || null,
-        p_difficulty:selected.difficulty || null,
+        p_topic_id:activityType === "daily_discovery" ? null : selected.topicId || null,
+        p_difficulty:activityType === "daily_discovery" ? null : selected.difficulty || null,
         p_source:activityType === "daily_revision" ? "adaptive_revision" : "daily"
       });
       if (error) throw error;
@@ -452,44 +875,67 @@
     }
   }
 
-  function renderReader(activityType,content,session) {
+  function renderReader(activityType,content,session,existingState=null) {
     const reader = byId("dailyActivityReader");
+    const isDiscovery = activityType === "daily_discovery";
+    reader.classList.add("modal-backdrop","daily-activity-backdrop");
+    reader.setAttribute("role","dialog");
+    reader.setAttribute("aria-modal","true");
+    reader.setAttribute("aria-label",dailyUi(activityMeta[activityType].title,activityMeta[activityType].titleZh));
     const completed = session.status === "completed";
     const isQuiz = activityType === "daily_application" || activityType === "daily_revision";
     reader.hidden = false;
-    readerState = { activityType,content,session,firstTry:(content.questions || []).map(() => null),passed:(content.questions || []).map(() => false) };
-    let html = '<button type="button" class="secondary-button" data-daily-back>← Back to Daily Learning</button>'
-      + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(activityMeta[activityType].title) + '</span>'
-      + (completed ? '<span class="daily-activity-tag">Completed · replay is free</span>' : '<span class="daily-activity-tag">In progress · no allowance used yet</span>')
-      + '</div><h2>' + esc(content.title) + '</h2>';
-    if (content.body) html += '<p>' + esc(content.body) + '</p>';
-    if (content.example) html += '<div class="daily-reader-example"><strong>Example</strong><p>' + esc(content.example) + '</p></div>';
-    html += selectedTranslation(content);
-    if (content.zhExample && typeof translationLanguage !== "undefined" && translationLanguage === "zh") {
-      html += '<div class="daily-reader-example"><strong>例句</strong><p>' + esc(content.zhExample) + '</p></div>';
-    }
-    if (content.sourceUrl) {
-      html += '<p class="lesson-muted">Reference: <a href="' + esc(content.sourceUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(content.source) + '</a>. The explanation and examples above are original SwiftDictionary content.</p>';
-    }
-    if (isQuiz) {
-      html += '<div id="dailyQuestions">';
-      content.questions.forEach((question,index) => {
-        html += '<div class="daily-question" data-daily-question="' + index + '"><strong>' + (index+1) + '. ' + esc(question.q) + '</strong>';
-        question.options.forEach((option,optionIndex) => {
-          html += '<label><input type="radio" name="daily-question-' + index + '" value="' + optionIndex + '"' + (completed ? " disabled" : "") + '> <span>' + esc(option) + '</span></label>';
+    reader.classList.add("open");
+    document.body.style.overflow = "hidden";
+    readerState = existingState || { activityType,content,session,firstTry:(content.questions || []).map(() => null),passed:(content.questions || []).map(() => false) };
+    const closeButton = '<button type="button" class="icon-button" data-daily-close aria-label="' + esc(dailyUi("Close activity","关闭活动")) + '">×</button>';
+    let html = "";
+    if (isDiscovery) {
+      const examples = [content.example,...(content.examples || [])].filter(Boolean);
+      html = '<div class="modal-head"><div><h2 class="modal-word">' + esc(content.word || content.title) + '</h2><div class="modal-pronunciation">' + esc(content.phonetic || "") + '</div><span class="part">' + esc(dailyUi(content.part || "Vocabulary",content.part === "adjective" ? "形容词" : content.part === "noun" ? "名词" : content.part === "verb" ? "动词" : "词汇")) + '</span></div>' + closeButton + '</div>'
+        + '<div class="modal-content">'
+        + '<section class="detail-section"><h3>' + esc(dailyUi("Definition","释义")) + '</h3><p class="definition">' + esc(translationLanguage === "zh" && content.definitionZh ? content.definitionZh : content.definition || "") + '</p></section>'
+        + '<section class="detail-section"><h3>' + esc(dailyUi("Examples","例句")) + '</h3><ul class="example-list">' + examples.map(example=>'<li>' + esc(example) + '</li>').join("") + '</ul></section>'
+        + (content.tip ? '<section class="detail-section"><h3>' + esc(dailyUi("Usage note","用法提示")) + '</h3><p class="tip">' + esc(translationLanguage === "zh" && content.tipZh ? content.tipZh : content.tip) + '</p></section>' : "")
+        + '<p class="daily-discovery-frequency-note">' + esc(dailyUi("A less-common word to recognise and understand. Frequency classification is curated, not a live conversational-corpus ranking.","认识并理解一个较少见的词汇。目前词频分类由编辑整理，并非实时口语语料库排名。")) + '</p>'
+        + '<p class="muted-note">' + esc(completed ? dailyUi("Completed · replay is free","已完成 · 可免费重温") : dailyUi("In progress · no allowance used until completion","进行中 · 完成后才会扣除次数")) + '</p>';
+    } else {
+      html = '<div class="daily-drawer-actions"><button type="button" class="secondary-button" data-daily-back>' + esc(dailyUi("← Back to Lessons","← 返回课程")) + '</button>' + closeButton + '</div>'
+        + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(dailyUi(activityMeta[activityType].title,activityMeta[activityType].titleZh)) + '</span>'
+        + (completed ? '<span class="daily-activity-tag">' + esc(dailyUi("Completed · replay is free","已完成 · 可免费重温")) + '</span>' : '<span class="daily-activity-tag">' + esc(dailyUi("In progress · no allowance used yet","进行中 · 尚未扣除次数")) + '</span>')
+        + '</div><h2>' + esc(dailyTitle(content)) + '</h2>';
+      if (content.body) html += '<p>' + esc(content.body) + '</p>';
+      html += selectedTranslation(content);
+      const examples = [
+        ...(content.example ? String(content.example).split(/\s+\/\s+/) : []),
+        ...(Array.isArray(content.examples) ? content.examples : [])
+      ].filter(example => typeof example === "string" && example.trim());
+      if (examples.length) html += '<section class="daily-reader-example daily-examples-box"><strong>' + esc(dailyUi("Examples","例句")) + '</strong><ul>' + examples.map(example=>'<li>' + esc(example) + '</li>').join("") + '</ul></section>';
+      if (content.tip) html += '<div class="daily-reader-example"><strong>' + esc(dailyUi("Usage note","用法提示")) + '</strong><p>' + esc(content.tip) + '</p></div>';
+      if (isQuiz) {
+        html += '<p class="daily-practice-instruction">' + esc(dailyUi("Read each English sentence and choose the correct answer. The English wording is kept as the learning context.","请阅读每个英语句子并选择正确答案。英语题目和选项会保留，以便学习英语语境。")) + '</p><div id="dailyQuestions">';
+        content.questions.forEach((question,index) => {
+          html += '<div class="daily-question" data-daily-question="' + index + '"><strong>' + (index+1) + '. ' + esc(question.q) + '</strong>';
+          question.options.forEach((option,optionIndex) => {
+            html += '<label><input type="radio" name="daily-question-' + index + '" value="' + optionIndex + '"' + (completed ? " disabled" : "") + '> <span>' + esc(option) + '</span></label>';
+          });
+          html += '<p class="daily-question-feedback" id="daily-feedback-' + index + '" role="status"></p></div>';
         });
-        html += '<p class="daily-question-feedback" id="daily-feedback-' + index + '"></p></div>';
-      });
-      html += '</div>';
-      if (!completed) html += '<button type="button" class="secondary-button" data-check-daily>Check answers</button>';
-      html += '<p id="dailyPracticeStatus" role="status" aria-live="polite" class="page-intro"></p>';
+        html += '</div>';
+        if (!completed) html += '<button type="button" class="secondary-button" data-check-daily>' + esc(dailyUi("Check answers","检查答案")) + '</button>';
+        html += '<p id="dailyPracticeStatus" role="status" aria-live="polite" class="page-intro"></p>';
+      }
     }
-    if (!completed && !isQuiz) html += '<button type="button" class="primary-button" data-complete-daily>Mark activity complete</button>';
-    if (!completed) html += '<button type="button" class="secondary-button" data-abandon-daily>Abandon session</button>';
-    if (!completed && isQuiz) html += '<button type="button" class="primary-button" data-complete-daily hidden>Complete activity</button>';
-    if (completed) html += '<p class="page-intro">This content is already completed. You can revisit it without using another daily allowance.</p>';
-    reader.innerHTML = html;
-    reader.querySelector("[data-daily-back]").addEventListener("click",() => { reader.hidden = true; reader.innerHTML = ""; readerState = null; });
+    if (!completed && !isQuiz) html += '<button type="button" class="primary-button" data-complete-daily>' + esc(dailyUi("Mark activity complete","标记活动为已完成")) + '</button>';
+    if (!completed) html += '<button type="button" class="secondary-button" data-abandon-daily>' + esc(dailyUi("Abandon session","放弃本次活动")) + '</button>';
+    if (!completed && isQuiz) html += '<button type="button" class="primary-button" data-complete-daily hidden>' + esc(dailyUi("Complete activity","完成活动")) + '</button>';
+    if (completed) html += '<p class="page-intro">' + esc(dailyUi("This content is already completed. You can revisit it without using another daily allowance.","此内容已完成。你可以免费重温，不会再次消耗每日额度。")) + '</p>';
+    if (isDiscovery) html += '</div>';
+    reader.innerHTML = '<article class="modal daily-activity-modal' + (isDiscovery ? ' daily-discovery-modal' : '') + '">' + html + '</article>';
+    const backButton = reader.querySelector("[data-daily-back]");
+    if (backButton) backButton.addEventListener("click",closeDailyReader);
+    reader.querySelector("[data-daily-close]").addEventListener("click",closeDailyReader);
+    reader.onclick = event => { if(event.target===reader) closeDailyReader(); };
     const checkButton = reader.querySelector("[data-check-daily]");
     if (checkButton) checkButton.addEventListener("click",checkDailyAnswers);
     reader.querySelectorAll('input[type="radio"]').forEach(input => input.addEventListener("change",() => {
@@ -498,13 +944,56 @@
       const complete = reader.querySelector("[data-complete-daily]");
       if (complete) complete.hidden = true;
       const practiceStatus = byId("dailyPracticeStatus");
-      if (practiceStatus) practiceStatus.textContent = "Your answer changed. Check your answers again before completing.";
+      if (practiceStatus) practiceStatus.textContent = dailyUi("Your answer changed. Check your answers again before completing.","答案已更改。请重新检查答案后再完成活动。");
     }));
     const completeButton = reader.querySelector("[data-complete-daily]");
     if (completeButton) completeButton.addEventListener("click",completeDailyActivity);
     const abandonButton = reader.querySelector("[data-abandon-daily]");
     if (abandonButton) abandonButton.addEventListener("click",abandonDailyActivity);
-    reader.scrollIntoView({behavior:"smooth",block:"start"});
+    if (existingState) {
+      existingState.passed.forEach((passed,index)=>{
+        const previous=document.querySelector('input[name="daily-question-'+index+'"]:checked');
+        if(previous) previous.checked=true;
+        if(existingState.firstTry[index]!==null){
+          const feedback=byId("daily-feedback-"+index);
+          if(feedback) {
+            const question=existingState.content.questions[index];
+            const explanation=question.explanation || "";
+            const zhExplanation=translationLanguage === "zh" && question.zh ? " 中文说明：" + question.zh : "";
+            feedback.textContent=dailyUi(passed?"Correct. ":"Not quite. Try again. ",passed?"正确。":"还不正确，请再试一次。")+explanation+zhExplanation;
+          }
+        }
+      });
+      const complete=reader.querySelector("[data-complete-daily]");
+      if(complete && isQuiz) complete.hidden=!existingState.passed.every(Boolean);
+    }
+  }
+
+  window.refreshDailyLearningTranslation = function() {
+    renderDailyStaticLabels();
+    renderDailyStatus();
+    if (typeof renderCards === "function" && snapshot.content && Object.keys(snapshot.content).length) renderCards();
+    if (readerState) {
+      const state=readerState;
+      const selected=state.content.questions ? state.content.questions.map((_,index)=>document.querySelector('input[name="daily-question-'+index+'"]:checked')?.value ?? null) : [];
+      renderReader(state.activityType,state.content,state.session,state);
+      selected.forEach((value,index)=>{
+        if(value!==null){
+          const input=document.querySelector('input[name="daily-question-'+index+'"][value="'+value+'"]');
+          if(input) input.checked=true;
+        }
+      });
+    }
+  };
+
+
+  function closeDailyReader() {
+    const reader=byId("dailyActivityReader");
+    reader.classList.remove("open");
+    reader.hidden=true;
+    reader.innerHTML="";
+    readerState=null;
+    document.body.style.overflow="";
   }
 
   function checkDailyAnswers() {
@@ -516,42 +1005,45 @@
       const feedback = byId("daily-feedback-" + i);
       if (!selected) {
         allCorrect = false;
-        feedback.textContent = "Choose an answer before checking.";
+        feedback.textContent = dailyUi("Choose an answer before checking.","检查答案前，请先选择一个选项。");
         continue;
       }
       const correct = Number(selected.value) === content.questions[i].answer;
       if (firstTry[i] === null) firstTry[i] = correct;
       passed[i] = correct;
-      if (correct) feedback.textContent = "Correct. " + content.questions[i].explanation;
+      const translatedExplanation = typeof translationLanguage !== "undefined" && translationLanguage === "zh" && content.questions[i].zh ? " 中文说明：" + content.questions[i].zh : "";
+      if (correct) feedback.textContent = dailyUi("Correct. ","正确。") + content.questions[i].explanation + translatedExplanation;
       else {
         allCorrect = false;
-        feedback.textContent = "Not quite. Try again. " + content.questions[i].explanation;
+        feedback.textContent = dailyUi("Not quite. Try again. ","还不正确，请再试一次。") + content.questions[i].explanation + translatedExplanation;
       }
     }
     const completeButton = byId("dailyActivityReader").querySelector("[data-complete-daily]");
     if (completeButton) completeButton.hidden = !allCorrect;
     const status = byId("dailyPracticeStatus");
-    if (status) status.textContent = allCorrect ? "All answers are correct. You can now complete this activity." : "Review the feedback and try the unanswered or incorrect questions again.";
+    if (status) status.textContent = allCorrect ? dailyUi("All answers are correct. You can now complete this activity.","全部答案正确。现在可以完成此活动。") : dailyUi("Review the feedback and try the unanswered or incorrect questions again.","请查看反馈，并重新回答尚未作答或答错的题目。");
   }
 
   async function abandonDailyActivity() {
     if (!readerState || !currentUser || !supabaseClient) return;
     const sessionId = readerState.session.id;
     const button = byId("dailyActivityReader").querySelector("[data-abandon-daily]");
-    if (button) { button.disabled = true; button.textContent = "Abandoning…"; }
+    if (button) { button.disabled = true; button.textContent = dailyUi("Abandoning…","正在放弃…"); }
     try {
       const {data,error} = await supabaseClient.rpc("abandon_daily_activity_session",{p_session_id:sessionId});
       if (error) throw error;
       const saved = Array.isArray(data) ? data[0] : data;
       if (!saved || saved.status !== "abandoned") throw new Error("The session could not be abandoned.");
-      byId("dailyActivityReader").hidden = true;
-      byId("dailyActivityReader").innerHTML = "";
-      readerState = null;
-      byId("dailyLearningStatus").textContent = "Session abandoned. No daily allowance was used.";
-      await loadDailyData();
+      closeDailyReader();
+      try {
+        await loadDailyData();
+        byId("dailyLearningStatus").textContent = "Session abandoned. No daily allowance was used. " + byId("dailyLearningStatus").textContent;
+      } catch (refreshError) {
+        byId("dailyLearningStatus").textContent = "Session abandoned. No daily allowance was used, but the activity list could not refresh: " + (refreshError.message || "Please reload the page.");
+      }
     } catch (error) {
       byId("dailyLearningStatus").textContent = error.message || "The session could not be abandoned.";
-      if (button) { button.disabled = false; button.textContent = "Abandon session"; }
+      if (button) { button.disabled = false; button.textContent = dailyUi("Abandon session","放弃本次活动"); }
     }
   }
 
@@ -563,11 +1055,11 @@
       return;
     }
     const button = byId("dailyActivityReader").querySelector("[data-complete-daily]");
-    if (button) { button.disabled = true; button.textContent = "Saving…"; }
+    if (button) { button.disabled = true; button.textContent = dailyUi("Saving…","正在保存…"); }
     const args = { p_session_id:session.id, p_correct_count:null, p_question_count:null };
     if (activityType === "daily_application" || activityType === "daily_revision") {
       if (firstTry.some(value => value === null)) {
-        if (button) { button.disabled = false; button.textContent = "Complete activity"; }
+        if (button) { button.disabled = false; button.textContent = dailyUi("Complete activity","完成活动"); }
         byId("dailyPracticeStatus").textContent = "Check every question before completing this activity.";
         return;
       }
@@ -580,17 +1072,17 @@
       if (error) throw error;
       saved = Array.isArray(data) ? data[0] : data;
       if (!saved) throw new Error("The completion could not be confirmed.");
-      readerState.session = saved;
-      renderReader(activityType,content,saved);
+      closeDailyReader();
     } catch (error) {
       byId("dailyLearningStatus").textContent = error.message || "Completion could not be saved. Your session remains in progress.";
-      if (button) { button.disabled = false; button.textContent = "Complete activity"; }
+      if (button) { button.disabled = false; button.textContent = dailyUi("Complete activity","完成活动"); }
       return;
     }
     try {
       await loadDailyData();
+      byId("dailyLearningStatus").textContent = dailyUi("Activity completed successfully. ","活动已成功完成。") + byId("dailyLearningStatus").textContent;
     } catch (error) {
-      byId("dailyLearningStatus").textContent = "Activity completed successfully. The remaining allowance display could not be refreshed: " + (error.message || "Please reload the page.");
+      byId("dailyLearningStatus").textContent = dailyUi("Activity completed successfully. The remaining allowance display could not be refreshed: ","活动已成功完成，但无法刷新剩余额度显示：") + (error.message || "Please reload the page.");
     }
   }
 
@@ -599,8 +1091,14 @@
     try {
       await loadDailyData();
     } catch (error) {
-      byId("dailyLearningStatus").textContent = "Daily Learning could not load: " + (error.message || "Please try again.");
-      byId("dailyActivityGrid").innerHTML = "";
+      const message = String(error.message || "");
+      const needsServerUpdate = /PGRST202|PGRST204|PGRST205|42703|42P01|does not exist|schema cache/i.test(message);
+      byId("dailyLearningStatus").textContent = needsServerUpdate
+        ? "Daily Learning is temporarily unavailable because the matching server database update has not been applied yet. No activity allowance has been consumed."
+        : "Daily Learning could not load. Please refresh and try again.";
+      byId("dailyActivityGrid").innerHTML = needsServerUpdate
+        ? '<div class="coming-card"><h3>Daily Learning is waiting for a server update</h3><p>Your daily activities and completion allowances will become available after the matching database update is installed.</p></div>'
+        : "";
     }
   }
 
@@ -639,7 +1137,7 @@
   window.initialiseDailyLearning = initialiseDailyLearning;
   bindPreferenceControls();
   window.addEventListener("swift-auth-updated",() => {
-    if (location.hash === "#daily-learning") initialiseDailyLearning();
+    if (location.hash === "#lessons") initialiseDailyLearning();
   });
-  if (location.hash === "#daily-learning") initialiseDailyLearning();
+  if (location.hash === "#lessons") initialiseDailyLearning();
 })();

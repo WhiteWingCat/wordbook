@@ -140,6 +140,62 @@ revoke all on function private.current_learning_allowance_usage(uuid,text,text)
 grant execute on function private.current_learning_allowance_usage(uuid,text,text)
   to authenticated;
 
+-- Read-only dashboard endpoint. It exposes only the caller's own current-window
+-- counters; the private ledger itself remains inaccessible to browser roles.
+create or replace function public.get_my_learning_allowance_usage()
+returns table(activity_type text, used_count integer)
+language plpgsql
+security invoker
+set search_path = ''
+as $function$
+declare
+  v_user uuid := auth.uid();
+  v_timezone text;
+begin
+  if v_user is null then
+    raise exception 'Authentication required'
+      using errcode = '42501';
+  end if;
+
+  select coalesce(
+           case when p.allowance_timezone is not null
+                     and p.allowance_timezone_until > pg_catalog.now()
+                then p.allowance_timezone else p.timezone end,
+           'UTC'
+         )
+  into v_timezone
+  from public.user_preferences p
+  where p.user_id = v_user;
+
+  if v_timezone is null
+     or not exists (
+       select 1 from pg_catalog.pg_timezone_names z where z.name = v_timezone
+     ) then
+    raise exception 'A valid saved IANA timezone is required'
+      using errcode = '22023';
+  end if;
+
+  -- Delegate each count to the narrowly scoped private helper. The exposed
+  -- RPC runs as invoker and never reads the private ledger directly.
+  return query
+  select requested.activity_type,
+         private.current_learning_allowance_usage(v_user,requested.activity_type,v_timezone)
+  from (values
+    ('lesson'),
+    ('daily_topic'),
+    ('daily_application'),
+    ('daily_discovery'),
+    ('daily_revision')
+  ) as requested(activity_type)
+  order by requested.activity_type;
+end;
+$function$;
+
+revoke all on function public.get_my_learning_allowance_usage()
+  from public, anon;
+grant execute on function public.get_my_learning_allowance_usage()
+  to authenticated;
+
 -- Replace the completion-event trigger function. It still records history,
 -- but the private ledger—not the history table—now enforces quota.
 create or replace function public.enforce_learning_daily_limit()
@@ -319,19 +375,6 @@ begin
     pg_catalog.hashtextextended(v_user::text, 0)
   );
 
-  select * into v_session
-  from public.daily_activity_sessions
-  where user_id = v_user
-    and activity_type = p_activity_type
-    and status = 'in_progress'
-  order by started_at desc
-  limit 1
-  for update;
-
-  if found then
-    return v_session;
-  end if;
-
   select case
            when p.allowance_timezone is not null
                 and p.allowance_timezone_until > pg_catalog.now()
@@ -369,6 +412,32 @@ begin
 
   if found then
     return v_session;
+  end if;
+
+  -- Completed content is checked before another open session so a learner can
+  -- explicitly review a completed item even if another item is unfinished.
+  -- Otherwise, preserve the one-open-session-per-category resume behaviour.
+  select * into v_session
+  from public.daily_activity_sessions
+  where user_id = v_user
+    and activity_type = p_activity_type
+    and status = 'in_progress'
+  order by started_at desc
+  limit 1
+  for update;
+
+  if found then
+    return v_session;
+  end if;
+
+  -- Validate new content only after exact completed/open sessions have been
+  -- considered. This keeps previously approved content reviewable across UTC
+  -- Discovery rollover, plan changes, and activity preference changes.
+  if not private.is_approved_learning_content(
+    p_activity_type,p_content_id,p_topic_id,p_difficulty,v_language,p_source
+  ) then
+    raise exception 'Content is not in the approved learning catalogue or daily schedule'
+      using errcode = '22023';
   end if;
 
   if not v_preference_enabled then

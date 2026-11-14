@@ -35,6 +35,13 @@ begin
     raise exception 'Scoped usage helper expected 2, got %',v_used;
   end if;
 
+  select usage.used_count into v_used
+  from public.get_my_learning_allowance_usage() usage
+  where usage.activity_type = 'lesson';
+  if v_used <> 2 then
+    raise exception 'Dashboard allowance RPC expected own lesson usage 2, got %',v_used;
+  end if;
+
   for i in 1..4 loop
     insert into public.lesson_progress(user_id,difficulty,lesson_id,status)
     values (auth.uid(),'beginner','ledger-test-'||i,'in_progress');
@@ -67,11 +74,19 @@ do $$
 declare
   v_used integer;
   v_rejected boolean := false;
+  v_replay public.daily_activity_sessions%rowtype;
 begin
   select private.current_learning_allowance_usage(auth.uid(),'lesson','UTC')
   into v_used;
   if v_used <> 5 then
     raise exception 'Deleting history changed the current allowance count to %',v_used;
+  end if;
+
+  select usage.used_count into v_used
+  from public.get_my_learning_allowance_usage() usage
+  where usage.activity_type = 'lesson';
+  if v_used <> 5 then
+    raise exception 'Dashboard allowance RPC lost usage after history deletion (got %)',v_used;
   end if;
 
   begin
@@ -87,7 +102,7 @@ begin
   -- Daily category completions use the same independent ledger.
   perform public.complete_daily_activity_session(
     (select id from public.start_daily_activity_session(
-      'daily_topic','ledger-daily-one','sentence-basics','beginner','daily'
+      'daily_topic','topic-present-perfect-01','verb-tenses','intermediate','daily'
     )),null,null
   );
 
@@ -95,6 +110,28 @@ begin
   into v_used;
   if v_used <> 1 then
     raise exception 'Daily Topic ledger did not record exactly one completion';
+  end if;
+
+  -- Reopening the exact completed item must return the saved session for free,
+  -- even though the Free daily allowance is now exhausted.
+  select * into v_replay
+  from public.start_daily_activity_session(
+    'daily_topic','topic-present-perfect-01','verb-tenses','intermediate','daily'
+  );
+  if v_replay.status <> 'completed' then
+    raise exception 'Completed Daily Topic content was not available for free review';
+  end if;
+  select private.current_learning_allowance_usage(auth.uid(),'daily_topic','UTC')
+  into v_used;
+  if v_used <> 1 then
+    raise exception 'Reviewing completed Daily Topic content consumed another allowance';
+  end if;
+
+  select usage.used_count into v_used
+  from public.get_my_learning_allowance_usage() usage
+  where usage.activity_type = 'daily_topic';
+  if v_used <> 1 then
+    raise exception 'Dashboard allowance RPC did not report the Daily Topic ledger count';
   end if;
 end;
 $$;
@@ -113,7 +150,7 @@ declare
 begin
   begin
     perform public.start_daily_activity_session(
-      'daily_topic','ledger-daily-two','sentence-basics','beginner','daily'
+      'daily_topic','topic-present-routines-01','verb-tenses','beginner','daily'
     );
   exception when sqlstate 'P0001' then v_rejected := true;
   end;

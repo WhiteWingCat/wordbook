@@ -14,15 +14,32 @@ function readCuratedArray(name) {
   const open = dailyScript.indexOf("[", start);
   return vm.runInNewContext(`(${dailyScript.slice(open, end + 4)})`);
 }
+
+function readDailyDiscoveryVocabulary() {
+  const start = dailyScript.indexOf("const dailyDiscoveryCoreVocabulary = [");
+  const end = dailyScript.indexOf("const DAILY_DISCOVERY_SCHEDULE_VERSION", start);
+  if (start < 0 || end < 0) throw new Error("Could not locate the complete Daily Discovery vocabulary source.");
+  const source = dailyScript.slice(start, end);
+  return vm.runInNewContext(`(() => { ${source}; return dailyDiscoveryVocabulary; })()`);
+}
 const curated = {
   topics: readCuratedArray("dailyTopics"),
   applications: readCuratedArray("dailyApplications"),
-  discoveries: readCuratedArray("dailyDiscoveries")
+  discoveries: readDailyDiscoveryVocabulary()
 };
+const materialStart = dailyScript.indexOf("  const dailyApplicationExamples = {");
+const materialEnd = dailyScript.indexOf("  const dailyDiscoveryCoreVocabulary = [",materialStart);
+if (materialStart < 0 || materialEnd < 0) throw new Error("Daily Application and Revision content materials could not be isolated.");
+const materialSource = dailyScript.slice(materialStart,materialEnd);
+const activityMaterials = vm.runInNewContext(
+  `(() => { const dailyApplications = ${JSON.stringify(curated.applications)}; ${materialSource}; return {dailyApplicationExamples,dailyRevisionMaterials}; })()`
+);
+for (const item of curated.applications) item.examples = activityMaterials.dailyApplicationExamples[item.id] || [];
+
 for (const [name, items, minimum] of [
   ["Daily Topic", curated.topics, 20],
   ["Daily Application", curated.applications, 20],
-  ["Daily Discovery", curated.discoveries, 20]
+  ["Daily Discovery", curated.discoveries, 90]
 ]) {
   if (items.length < minimum) throw new Error(`${name} content pool too small: ${items.length}`);
   const ids = items.map(item => item.id);
@@ -34,8 +51,11 @@ for (const item of curated.topics) {
   }
 }
 for (const item of curated.applications) {
-  if (!item.topicId || !item.questions?.length) {
-    throw new Error(`Daily Application is missing topic, questions or translation: ${item.id}`);
+  if (!item.topicId || !item.questions?.length || item.examples.length < 2) {
+    throw new Error(`Daily Application is missing topic, independent examples or questions: ${item.id}`);
+  }
+  if (item.examples.some(example => typeof example !== "string" || !example.trim() || example.trim().endsWith("?"))) {
+    throw new Error(`Daily Application contains a question instead of an example: ${item.id}`);
   }
   for (const question of item.questions) {
     if (!question.q || !question.explanation || !question.zh
@@ -46,11 +66,6 @@ for (const item of curated.applications) {
     }
   }
 }
-for (const item of curated.discoveries) {
-  if (!item.category || !item.title || !item.body || !item.example || !item.zh) {
-    throw new Error(`Daily Discovery is missing required metadata or Chinese translation: ${item.id}`);
-  }
-}
 const revisionTopicIds = [
   "sentence-basics","verb-tenses","nouns-and-articles","everyday-vocabulary",
   "nouns-and-quantity","phrasal-verbs","collocations","word-formation",
@@ -58,10 +73,88 @@ const revisionTopicIds = [
   "academic-professional-english","precise-vocabulary"
 ];
 for (const topicId of revisionTopicIds) {
-  if (!curated.applications.some(item => item.topicId === topicId)) {
-    throw new Error(`Adaptive revision has no application content for topic ${topicId}`);
+  const revision = activityMaterials.dailyRevisionMaterials[topicId];
+  const applications = curated.applications.filter(item => item.topicId === topicId);
+  if (!revision || revision.examples?.length < 2 || revision.questions?.length < 2 || !applications.length) {
+    throw new Error(`Daily Revision is missing independent examples or questions for ${topicId}`);
+  }
+  const applicationQuestions = new Set(applications.flatMap(item => item.questions.map(question => question.q.trim())));
+  const applicationExamples = new Set(applications.flatMap(item => item.examples.map(example => example.trim())));
+  if (revision.questions.some(question => applicationQuestions.has(question.q.trim()))) {
+    throw new Error(`Daily Revision reuses a Daily Application question for ${topicId}`);
+  }
+  if (revision.examples.some(example => applicationExamples.has(example.trim()) || example.trim().endsWith("?"))) {
+    throw new Error(`Daily Revision reuses an Application example or contains a question for ${topicId}`);
+  }
+  for (const question of revision.questions) {
+    if (!question.q || !question.explanation || !question.zh
+        || !Array.isArray(question.options) || question.options.length < 2
+        || !Number.isInteger(question.answer) || question.answer < 0
+        || question.answer >= question.options.length) {
+      throw new Error(`Invalid Daily Revision question for ${topicId}`);
+    }
   }
 }
+const makeRevisionStart = dailyScript.indexOf("  function makeRevisionContent(");
+const makeRevisionEnd = dailyScript.indexOf("\n\n  function revisionCandidates(",makeRevisionStart);
+if (makeRevisionStart < 0 || makeRevisionEnd < 0) throw new Error("Daily Revision content generator could not be isolated.");
+const makeRevisionContent = vm.runInNewContext(
+  `const dailyApplications = ${JSON.stringify(curated.applications)};
+   const dailyRevisionMaterials = ${JSON.stringify(activityMaterials.dailyRevisionMaterials)};
+   ${dailyScript.slice(makeRevisionStart,makeRevisionEnd)}
+   makeRevisionContent;`
+);
+const revisionSample = makeRevisionContent("verb-tenses","revision:verb-tenses:application-verb-patterns-01:2026-11-14:1","Test review");
+const applicationSample = curated.applications.find(item => item.topicId === "verb-tenses");
+if (!revisionSample || revisionSample.questions[0].q === applicationSample.questions[0].q
+    || revisionSample.examples.some(example => applicationSample.examples.includes(example))
+    || revisionSample.examples.some(example => example.trim().endsWith("?"))) {
+  throw new Error("Daily Revision must generate its own examples and Q&A rather than reusing Daily Application content.");
+}
+if (dailyScript.includes("const practiceExamples =")) {
+  throw new Error("Practice prompts must not be converted into example sentences.");
+}
+
+for (const item of curated.discoveries) {
+  if (!item.id || !item.word || !item.part || !item.definition || !item.definitionZh
+      || !item.body || !item.examples?.length || !item.phonetic) {
+    throw new Error(`Daily Discovery vocabulary is missing dictionary metadata or translation: ${item.id}`);
+  }
+}
+
+const discoveryScheduleStart = dailyScript.indexOf("  function dailyDiscoverySchedule(");
+const discoveryScheduleEnd = dailyScript.indexOf("\n\n  function chooseContent(", discoveryScheduleStart);
+if (discoveryScheduleStart < 0 || discoveryScheduleEnd < 0) throw new Error("Global Discovery schedule function could not be isolated.");
+const dayOrdinalSource = dailyScript.match(/const dayOrdinal = day => Math\.floor\(Date\.parse\(day \+ "T00:00:00Z"\) \/ 86400000\);/)?.[0];
+if (!dayOrdinalSource) throw new Error("UTC day ordinal helper could not be located.");
+const scheduleRunner = vm.runInNewContext(`
+  const dailyDiscoveryVocabulary = ${JSON.stringify(curated.discoveries)};
+  const DAILY_DISCOVERY_SCHEDULE_EPOCH = "2026-11-15";
+  const DAILY_DISCOVERY_SCHEDULE_VERSION = 1;
+  const DAILY_DISCOVERY_SCHEDULE_POOL_SIZE = 93;
+  ${dayOrdinalSource}
+  ${dailyScript.slice(discoveryScheduleStart,discoveryScheduleEnd)}
+  dailyDiscoverySchedule;
+`, {Date,Math});
+const scheduleA = scheduleRunner("2026-11-15");
+const scheduleARepeat = scheduleRunner("2026-11-15");
+const scheduleB = scheduleRunner("2026-11-16");
+const scheduleLast = scheduleRunner("2026-12-15");
+const scheduleNextCycle = scheduleRunner("2026-12-16");
+if (scheduleA.length !== 3 || scheduleARepeat.map(x=>x.id).join("|") !== scheduleA.map(x=>x.id).join("|")) {
+  throw new Error("Daily Discovery must return three stable entries for the same UTC date.");
+}
+if (scheduleA.some(x=>scheduleB.some(y=>y.id.split(":")[0]===x.id.split(":")[0]))) {
+  throw new Error("Daily Discovery repeated an entry on consecutive UTC dates.");
+}
+if (scheduleLast.some(x=>scheduleNextCycle.some(y=>y.id.split(":")[0]===x.id.split(":")[0]))) {
+  throw new Error("Daily Discovery repeated an entry across the rotation boundary.");
+}
+if (new Set([...Array.from({length:31},(_,day)=>scheduleRunner(new Date(Date.parse("2026-11-15T00:00:00Z")+day*86400000).toISOString().slice(0,10))).flat().map(x=>x.id.split(":")[0])]).size !== 93) {
+  throw new Error("Daily Discovery's first 31-day rotation must use all 93 entries exactly once.");
+}
+
+
 
 const revisionStart = dailyScript.indexOf("  function revisionCandidates(");
 const revisionEnd = dailyScript.indexOf("\n  function chooseContent(", revisionStart);
@@ -139,6 +232,78 @@ for (let i = 0; i < scripts.length; i += 1) {
 }
 
 if (checked === 0) throw new Error("No inline JavaScript blocks were checked.");
+const titleMapStart = dailyScript.indexOf("const dailyChineseTitles = {");
+const titleMapEnd = dailyScript.indexOf("\n  };", titleMapStart);
+if (titleMapStart < 0 || titleMapEnd < 0) throw new Error("Daily Learning Chinese title map is missing.");
+const dailyChineseTitles = new Function("return (" + dailyScript.slice(dailyScript.indexOf("{", titleMapStart), titleMapEnd + 4) + ")")();
+for (const item of [...curated.topics, ...curated.applications]) {
+  if (!dailyChineseTitles[item.id]) throw new Error(`Missing Chinese activity title translation: ${item.id}`);
+}
+
+const accountOffsetStart = dailyScript.indexOf("  function accountContentOffset()");
+const accountOffsetEnd = dailyScript.indexOf("\n  function chooseContent(", accountOffsetStart);
+if (accountOffsetStart < 0 || accountOffsetEnd < 0) throw new Error("Account-personalised activity selector is missing.");
+const accountOffsetSource = dailyScript.slice(accountOffsetStart, accountOffsetEnd);
+const accountOffset = (userId, generation = 0) => new Function(
+  "currentUser", "window", accountOffsetSource + "\nreturn accountContentOffset();"
+)({id:userId},{__swiftDictionaryMock:{selectionGeneration:()=>generation}});
+const userAOffset = accountOffset("mock-user-a");
+const userBOffset = accountOffset("mock-user-b");
+if (userAOffset % curated.topics.length === userBOffset % curated.topics.length
+    || userAOffset % curated.applications.length === userBOffset % curated.applications.length
+    || userAOffset % revisionTopicIds.length === userBOffset % revisionTopicIds.length) {
+  throw new Error("Fresh mock identities did not receive different Daily Topic, Application and Revision selection offsets.");
+}
+if (accountOffset("mock-user-a",1) % curated.topics.length === userAOffset % curated.topics.length
+    || accountOffset("mock-user-a",1) % curated.applications.length === userAOffset % curated.applications.length
+    || accountOffset("mock-user-a",1) % revisionTopicIds.length === userAOffset % revisionTopicIds.length) {
+  throw new Error("Resetting mock data did not advance all personalised daily activity selections.");
+}
+const chooserStart = dailyScript.indexOf("  function chooseContent(");
+const chooserEnd = dailyScript.indexOf("\n  function resolveSessionContent(", chooserStart);
+const chooserSource = dailyScript.slice(chooserStart, chooserEnd);
+if (chooserStart < 0 || chooserEnd < 0
+    || chooserSource.indexOf('if (activityType === "daily_discovery")') > chooserSource.indexOf("const accountOffset = accountContentOffset()")
+    || !chooserSource.includes('new Date().toISOString().slice(0,10)')) {
+  throw new Error("Daily Discovery must remain globally date-selected before any account-specific selection is applied.");
+}
+if (curated.discoveries.length !== 93 || curated.discoveries.some(item => !item.tipZh)) {
+  throw new Error("Daily Discovery must contain 93 translated vocabulary entries with Chinese usage notes.");
+}
+const dailyStartActivityStart = dailyScript.indexOf("  async function startDailyActivity(");
+const dailyStartActivityEnd = dailyScript.indexOf("\n  function renderReader(", dailyStartActivityStart);
+const dailyStartActivitySource = dailyScript.slice(dailyStartActivityStart, dailyStartActivityEnd);
+if (!dailyStartActivitySource.includes('p_topic_id:activityType === "daily_discovery" ? null')
+    || !dailyStartActivitySource.includes('p_difficulty:activityType === "daily_discovery" ? null')) {
+  throw new Error("Global Daily Discovery sessions must use the approved null topic/difficulty catalogue metadata.");
+}
+if (!html.includes('id="lessonDetailPage"') || !html.includes('showPage("lessonDetail")')
+    || !html.includes("function refreshTranslationViews()")
+    || !html.includes("window.refreshDailyLearningTranslation")) {
+  throw new Error("Permanent lesson page navigation or shared translation refresh is missing.");
+}
+if (!html.includes(".daily-activity-cards.premium { grid-template-columns:minmax(0,1fr); }")
+    || !html.includes(".daily-activity-tab { flex:0 0 auto; border:1px solid var(--border); border-bottom:0; border-radius:10px 10px 0 0; padding:12px 18px; background:var(--panel); color:#fff;")
+    || !html.includes(".daily-activity-count.healthy")
+    || !html.includes('if (typeof initialiseLessons === "function") await initialiseLessons();')
+    || !dailyScript.includes('dailyUi("New activity","新活动")')
+    || !dailyScript.includes("const allowanceTone=remaining<=0")
+    || !dailyScript.includes("daily-activity-count '+allowanceTone")) {
+  throw new Error("Update 2.3.1 category layout, title-side allowance indicator, neutral card status, or account-switch lesson refresh is missing.");
+}
+if (!html.includes(".daily-activity-backdrop{background:transparent}")
+    || !html.includes(".daily-activity-modal{width:min(580px,92vw);min-width:0;max-width:760px;height:100dvh;max-height:100dvh;overflow-y:auto;overscroll-behavior:contain;padding:clamp(20px,3vw,34px);border:0;")
+    || !html.includes(".definition-sense-text { margin:4px 0 0; line-height:1.65; color:var(--text); }")
+    || !html.includes(".daily-discovery-modal .modal-content .definition{display:block;color:var(--text)}")
+    || !dailyScript.includes("function renderDailyStatus()")
+    || !dailyScript.includes('await supabaseClient.rpc("abandon_daily_activity_session",{p_session_id:session.id})')
+    || !dailyScript.includes("closeDailyReader();")
+    || !html.includes("daily-examples-box")
+    || !dailyScript.includes('dailyUi("Examples","例句")')
+    || dailyScript.includes("More examples")) {
+  throw new Error("Daily activity panel styling or unified examples presentation regressed.");
+}
+
 
 const dateFnStart = html.indexOf("function datePartsInZone(");
 const zoneFnStart = html.indexOf("function zonedMidnightUtc(", dateFnStart);
@@ -203,7 +368,7 @@ if (!dailyScript.includes("function effectiveAllowanceTimezone(")
 }
 
 const dailyZoneStart = dailyScript.indexOf("  function effectiveAllowanceTimezone(");
-const dailyZoneEnd = dailyScript.indexOf("\n\n  function selectedTranslation(", dailyZoneStart);
+const dailyZoneEnd = dailyScript.indexOf("\n\n  const dailyChineseTitles = {", dailyZoneStart);
 if (dailyZoneStart < 0 || dailyZoneEnd < 0) {
   throw new Error("Daily Learning effective timezone helper could not be isolated.");
 }
@@ -246,7 +411,7 @@ const required = [
 for (const fragment of required) {
   if (!html.includes(fragment)) throw new Error(`Frontend integration check failed: missing ${fragment}`);
 }
-for (const fragment of ["start_daily_activity_session","complete_daily_activity_session","abandon_daily_activity_session","daily_topic_enabled","daily_revision","revisionCandidates","learningLanguage","firstTry"]) {
+for (const fragment of ["start_daily_activity_session","complete_daily_activity_session","abandon_daily_activity_session","get_my_learning_allowance_usage","daily_topic_enabled","daily_revision","revisionCandidates","learningLanguage","firstTry"]) {
   if (!dailyScript.includes(fragment)) throw new Error(`Daily Learning integration check failed: missing ${fragment}`);
 }
 const languageDeclaration = dailyScript.indexOf('const language = prefs.learning_language || "en";');
@@ -263,15 +428,50 @@ for (const fragment of [
 ]) {
   if (!html.includes(fragment)) throw new Error(`Profile practice insights check failed: missing ${fragment}`);
 }
-for (const fragment of ['data-page="daily-learning"','id="dailyLearningPage"','data-daily-pref=']) {
-  if (!html.includes(fragment)) throw new Error(`Daily Learning page shell check failed: missing ${fragment}`);
+if (html.includes('data-page="daily-learning"')) {
+  throw new Error("Daily Learning must not be a separate top-level navigation destination.");
 }
-for (const fragment of ["dailyTopics","dailyApplications","dailyDiscoveries","sourceUrl","learning_activity_log","lesson_practice_results"]) {
+const lessonsShellStart = html.indexOf('<section id="lessonsPage"');
+const dailySectionStart = html.indexOf('<section id="dailyLearningPage"');
+const difficultyNavStart = html.indexOf('<div class="difficulty-tabs"');
+if (lessonsShellStart < 0 || dailySectionStart < lessonsShellStart || difficultyNavStart < dailySectionStart) {
+  throw new Error("Daily Learning must appear inside Lessons above the difficulty navigation.");
+}
+for (const fragment of ['id="dailyLearningPage"','data-daily-pref=','Your Dashboard','id="dashboardAvatar"','Favorite words','id="favoriteEnglishGrid"','id="favoriteChineseGrid"','id="preferencesPage"','Privacy and data','id="dashboardAllowanceBars"','id="practiceChart"','id="practiceReviewTopics"','id="activeLanguagesList"']) {
+  if (!html.includes(fragment)) throw new Error(`Update 2.3.1 dashboard/navigation check failed: missing ${fragment}`);
+}
+const dashboardStart = html.indexOf('<section id="profilePage"');
+const preferencesStart = html.indexOf('<section id="preferencesPage"');
+const dashboardShell = html.slice(dashboardStart,preferencesStart);
+const preferencesShell = html.slice(preferencesStart);
+if (/Account preferences|Privacy and data/i.test(dashboardShell)
+    || !/Account preferences/i.test(preferencesShell)
+    || !/Privacy and data/i.test(preferencesShell)) {
+  throw new Error("Account preferences and Privacy and Data must live in the dedicated Preferences page.");
+}
+for (const fragment of ["dailyTopics","dailyApplications","dailyDiscoveryVocabulary","legacyDailyDiscoveriesBacklog","sourceUrl","get_my_learning_allowance_usage","lesson_practice_results"]) {
   if (!dailyScript.includes(fragment)) throw new Error(`Daily Learning content check failed: missing ${fragment}`);
 }
 if (dailyScript.includes('.from("daily_activity_sessions").insert(')
     || dailyScript.includes('.from("learning_activity_log").insert(')) {
   throw new Error("Daily Learning frontend must use server RPCs, not direct activity-log/session INSERTs.");
+}
+if (!dailyScript.includes("const disabled = !!disabledReason || (exhausted && !alreadyCompleted);")
+    || !dailyScript.includes("const completedRows = (snapshot.completedToday || [])")
+    || !dailyScript.includes("renderCard(item,null,true)")
+    || !dailyScript.includes("role=\"tablist\"")
+    || !dailyScript.includes("daily-activity-cards")
+    || !dailyScript.includes('columns===3?" premium":" free"')
+    || !dailyScript.includes("Your allowance resets at midnight")
+    || dailyScript.includes("Today’s activity is complete")
+    || dailyScript.includes("const practiceExamples =")) {
+  throw new Error("Daily activity tabs, plan-sized rows, allowance lock/reset placement, completed review, or example/Q&A separation regressed.");
+}
+if (!html.includes("allowanceRemaining<=0")
+    || !html.includes("get_my_learning_allowance_usage")
+    || !html.includes("if(!allowance.known||(!allowance.unlimited&&allowance.remaining<=0))")
+    || !html.includes("b.disabled=blocked")) {
+  throw new Error("Permanent lesson start gating or allowance-aware review access regressed.");
 }
 
 
@@ -284,6 +484,7 @@ const mockElements = {
 };
 const mockData = {
   user_preferences: {
+    user_id: "test-user",
     timezone: "Asia/Kuala_Lumpur",
     learning_language: "en",
     translation_language: "zh",
@@ -292,12 +493,13 @@ const mockData = {
     daily_discovery_enabled: true,
     daily_revision_enabled: true
   },
-  user_entitlements: { plan_code: "free", status: "active", valid_from: null, valid_until: null },
+  user_entitlements: { user_id: "test-user", plan_code: "free", status: "active", valid_from: null, valid_until: null },
   learning_plan_limits: ["daily_topic","daily_application","daily_discovery","daily_revision"]
     .map(activity_type => ({ activity_type, daily_limit: 1, is_enabled: true })),
   learning_activity_log: [],
   lesson_practice_results: [],
   daily_activity_sessions: [{
+    user_id: "test-user",
     activity_type: "daily_topic",
     content_id: "topic-present-perfect-01",
     topic_id: "verb-tenses",
@@ -309,21 +511,46 @@ const mockData = {
 };
 const mockSupabase = {
   from(table) {
-    return {
-      select() { return this; },
-      eq() { return this; },
-      gte() { return this; },
-      lt() { return this; },
-      in() { return this; },
-      order() { return this; },
-      limit() { return this; },
-      maybeSingle() { return Promise.resolve({ data: mockData[table], error: null }); },
-      then(resolve, reject) {
-        return Promise.resolve({ data: mockData[table] || [], error: null }).then(resolve, reject);
+    const filters = [];
+    const rows = () => {
+      const value = mockData[table];
+      const source = Array.isArray(value) ? value : value ? [value] : [];
+      return source.filter(row => filters.every(filter => {
+        const field = row[filter.key];
+        if (filter.op === "eq") return field === filter.value;
+        if (filter.op === "in") return filter.value.includes(field);
+        if (filter.op === "gte") return field >= filter.value;
+        if (filter.op === "lt") return field < filter.value;
+        return true;
+      }));
+    };
+    const query = {
+      select() { return query; },
+      eq(key,value) { filters.push({ op:"eq",key,value }); return query; },
+      gte(key,value) { filters.push({ op:"gte",key,value }); return query; },
+      lt(key,value) { filters.push({ op:"lt",key,value }); return query; },
+      in(key,value) { filters.push({ op:"in",key,value }); return query; },
+      order() { return query; },
+      limit() { return query; },
+      maybeSingle() { return Promise.resolve({ data: rows()[0] || null, error: null }); },
+      then(resolve,reject) {
+        return Promise.resolve({ data: rows(), error: null }).then(resolve,reject);
       }
     };
+    return query;
   },
-  rpc() { throw new Error("RPC should not run during page initialisation"); }
+  rpc(name) {
+    if (name === "get_my_learning_allowance_usage") {
+      return Promise.resolve({ data: [
+        { activity_type:"lesson", used_count:0 },
+        { activity_type:"daily_topic", used_count:0 },
+        { activity_type:"daily_application", used_count:0 },
+        { activity_type:"daily_discovery", used_count:0 },
+        { activity_type:"daily_revision", used_count:0 }
+      ], error:null });
+    }
+    throw new Error("Unexpected RPC during Daily Learning initialisation: " + name);
+  }
 };
 const runtimeWindow = { addEventListener() {} };
 const runtimeContext = {
@@ -336,7 +563,7 @@ const runtimeContext = {
   currentUser: { id: "test-user" },
   supabaseClient: mockSupabase,
   course: "en",
-  translationLanguage: "zh",
+  translationLanguage: "en",
   escapeHTML: value => String(value),
   browserTimezone: () => "UTC",
   localDayStart: () => "2026-11-10",
@@ -353,20 +580,26 @@ if (!mockElements.dailyLearningStatus.textContent.includes("Asia/Kuala_Lumpur"))
   throw new Error("Daily Learning runtime fixture failed: " + mockElements.dailyLearningStatus.textContent);
 }
 for (const activity of ["daily_topic","daily_application","daily_discovery","daily_revision"]) {
-  if (!mockElements.dailyActivityGrid.innerHTML.includes(`data-start-daily="${activity}"`)) {
-    throw new Error(`Daily Learning runtime did not render ${activity}.`);
+  if (!mockElements.dailyActivityGrid.innerHTML.includes(`data-daily-tab="${activity}"`)) {
+    throw new Error(`Daily Learning runtime did not render the ${activity} tab.`);
   }
 }
-if (mockElements.dailyActivityGrid.innerHTML.includes("Past simple or present perfect?")) {
-  throw new Error("Daily Learning selected a previously completed topic as a new daily assignment.");
+if (!mockElements.dailyActivityGrid.innerHTML.includes('data-start-daily="daily_topic"')) {
+  throw new Error("Daily Learning runtime did not render the selected Daily Topic panel.");
+}
+const firstTopicCard = mockElements.dailyActivityGrid.innerHTML
+  .split('data-activity-card="daily_topic"')[1] || "";
+if (firstTopicCard.includes("Past simple or present perfect?")) {
+  throw new Error("Daily Topic selected a previously completed assignment instead of unused content.");
 }
 mockData.daily_activity_sessions = curated.topics.map(item => item.id).map(content_id => ({
-  activity_type:"daily_topic",content_id,topic_id:"test-topic",
+  user_id:"test-user",activity_type:"daily_topic",content_id,topic_id:"test-topic",
   correct_count:null,question_count:null,completed_at:"2026-11-09T08:00:00.000Z",status:"completed"
 }));
 await runtimeWindow.initialiseDailyLearning();
-const topicCard = mockElements.dailyActivityGrid.innerHTML.split('data-activity-card="daily_topic"')[1] || "";
-if (!topicCard.includes("No new content available") || !topicCard.includes("Review completed content")) {
+const topicCard = mockElements.dailyActivityGrid.innerHTML
+  .split('data-activity-card="daily_topic"')[1]?.split('data-activity-card="daily_application"')[0] || "";
+if (!topicCard.includes("Completed · replay is free") || !topicCard.includes("Review completed content")) {
   throw new Error("Daily Learning did not clearly label an exhausted content pool as a free replay.");
 }
 

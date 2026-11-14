@@ -20,16 +20,17 @@ The new review migration `docs/UPDATE-2.3.0-CONTENT-CATALOG-MIGRATION-DRAFT.sql`
 - Difficulty where applicable.
 - Learning language code.
 - Active/inactive status.
+- Daily Discovery rotation order (server-only schedule metadata; no learner activity or personal data).
 
-The current snapshot contains 95 approved English content entries:
+The current snapshot contains 161 approved English content entries:
 
 | Type | Entries |
 |---|---:|
 | Daily Topic | 28 |
 | Daily Application | 25 |
-| Daily Discovery | 27 |
+| Daily Discovery | 93 |
 | Permanent lessons | 15 |
-| **Total** | **95** |
+| **Total** | **161** |
 
 No question text, answer options, correct answers or learner responses are copied into the catalogue.
 
@@ -64,3 +65,8 @@ The migration remains a review draft on the Update 2.3.0 development branch. It 
 The first end-to-end catalogue test run exposed an important test-order detail: the negative "lesson not started" RPC case must use an *approved* lesson ID with no progress row, otherwise the new catalogue guard correctly rejects it before the test reaches the intended missing-progress condition. The disposable fixture now includes that approved-but-unstarted ID.
 
 The test fixture also contains synthetic IDs for allowance-boundary, account-isolation, timezone-transition and concurrency tests. It is seeded only after the production catalogue count/security assertions and only in disposable test environments.
+
+
+## Daily Discovery global schedule metadata
+
+The 93-entry vocabulary pool is assigned immutable rotation positions 1–93 for schedule version 1. The private catalogue stores these positions so the server can validate the globally scheduled UTC-date entries and enforce plan visibility: Free may start slot 1; Premium may start slots 1–3. The client does not control the approved rotation order. The schedule uses a fixed UTC epoch and pool size; adding or reordering entries requires an explicit versioned migration rather than silently changing existing assignments.
