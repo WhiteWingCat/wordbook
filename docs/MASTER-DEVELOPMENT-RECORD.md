@@ -5,7 +5,7 @@
 > **Repository:** https://github.com/WhiteWingCat/wordbook  
 > **Last consolidated:** 2026-11-14 (Quiz technical preparation and read-only repository/Supabase inspection)  
 > **Current baseline:** Update 2.3.3 merged to main and GitHub Pages deployment succeeded on 2026-11-14 (merge commit `90dc73a9b65fc3af713fefab4955057026089b96`); six 2.3.0 Supabase migrations are applied to production  
-> **Current work:** Update 2.3.3 is live and owner-confirmed working. Update 2.4.0 Quiz technical specification prepared; owner review and remaining product confirmations are pending. No Quiz implementation has started.  
+> **Current work:** Update 2.4.0 Quiz technical specification and product decisions are final; implementation is authorised to proceed on a dedicated feature branch. No Quiz implementation has started.  
 > **Record status:** Updated after the six approved production migrations were applied and verified, PR #7 merged, and main GitHub Pages deployment succeeded. No production user-content bulk operation was performed.
 
 This record combines confirmed owner decisions, repository evidence and the latest development handover. It is not proof that the live application or production database matches a draft branch.
@@ -210,8 +210,9 @@ Historical note: the PR state above describes the repository at the time of the 
 
 ### Future roadmap
 
-- **Update 2.4.0 — Quiz:** dedicated Quiz experience, progress tracking and allowance integration.
+- **Update 2.4.0 — Quiz:** **Technical specification finalised; implementation authorised to proceed on a dedicated feature branch.** See Sections 29–33 and `docs/UPDATE-2.4.0-QUIZ-TECHNICAL-SPECIFICATION.md`.
 - **Update 2.5.0 — Flashcards:** Flashcard learning experience, review progress and allowance integration.
+- **Proposed Update 2.6.0 — Legal, Privacy & Terms Foundation:** deferred until after Update 2.5.0 is released to `main`; scope and legal requirements will be researched and approved closer to that release.
 
 These are roadmap targets, not implemented or released features. Preserve Coming Soon behaviour until each feature is ready.
 
@@ -1089,14 +1090,14 @@ Cloudflare's pull-request deployment status reported a successful preview deploy
 
 ### Next development milestone
 
-The next planned milestone remains **Update 2.4.0 — Quiz**:
+The next active milestone is **Update 2.4.0 — Quiz**:
 - Dedicated Quiz experience.
 - Quiz progress tracking.
 - Quiz allowance integration using the established completion-based allowance principles.
 - Preserve free dictionary search and account isolation.
 - Before planning or implementing any new feature, perform the standing Malaysia-specific and general legal/privacy review. Re-check content licensing and data minimisation if the Quiz introduces new question content, answer telemetry or analytics.
 
-Update 2.5.0 — Flashcards remains planned after Quiz. Do not treat either roadmap item as implemented.
+Update 2.5.0 — Flashcards remains planned after Quiz. Proposed Update 2.6.0 — Legal, Privacy & Terms Foundation is deferred until after Flashcards is released to `main`. Do not treat any roadmap item as implemented until released.
 
 ### Release safeguards
 
@@ -1178,7 +1179,7 @@ The Update 2.3.2 hotfix:
 3. Prepare the six Update 2.3.0 production migration files in the dependency order above, using proper Supabase-generated timestamps and preserving the tested SQL.
 4. Before applying production migrations, present the exact migration list, data backfill effects, security/RLS changes and rollback/backup plan, then obtain explicit owner approval.
 5. Verify production migration history and schema after approval; then retest Daily Learning start, resume, completion, review, timezone reset and Free/Premium allowance behavior.
-6. Update 2.4.0 Quiz remains planned after the 2.3.0 server database rollout is complete.
+6. Update 2.4.0 Quiz is the next feature after the 2.3.3 rollout; product decisions and technical specification are now final.
 
 ## 27. Update 2.3.3 — production Daily Learning database rollout and Dashboard Favorite Words details (2026-11-14)
 
@@ -1258,7 +1259,7 @@ Malaysia PDPA and general international privacy obligations remain relevant to a
 1. Owner refreshes the live website and tests Daily Learning start/resume/completion/allowance behaviour.
 2. Owner tests English and Simplified Chinese Dashboard Favorite Word details, including close/return focus, on desktop and mobile.
 3. Record any production-only bugs as a small 2.3.3 follow-up patch if needed.
-4. Continue to Update 2.4.0 Quiz after the 2.3.3 rollout is accepted.
+4. Proceed with Update 2.4.0 Quiz implementation on a dedicated branch after the final source/schema checks.
 
 
 ## 28. Update 2.4.0 — Quiz planning and multilingual learning/translation rules (2026-11-14)
