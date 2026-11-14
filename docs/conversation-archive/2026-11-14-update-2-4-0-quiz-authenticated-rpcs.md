@@ -63,7 +63,7 @@ The workflow includes:
 1. A disposable PostgreSQL 17 service applying the foundation and RPC migrations, then testing schema constraints, question sampling, session lifecycle, answer changes, scoring, allowances, deletion, ownership and privileges.
 2. A disposable local Supabase stack validating real local Auth schema/JWT helpers, the synthetic SwiftDictionary application baseline, 2.3.x prerequisite migrations, both Quiz migrations, authenticated RPC tests and Supabase security advisors.
 
-Workflow run 68 passed both Quiz jobs (PostgreSQL 17 and full local Supabase Auth/RPC integration plus security advisors), including the final direct-access and RLS assertion for the daily reservation table. The companion 2.3.x workflow's PostgreSQL and Chromium browser regression jobs also passed.
+Workflow run 68 passed both Quiz jobs (PostgreSQL 17 and full local Supabase Auth/RPC integration plus security advisors), including the final direct-access and RLS assertion for the daily reservation table. The companion 2.3.x workflow's PostgreSQL, local Supabase Auth compatibility and Chromium browser regression jobs also passed.
 
 The local Supabase stack is created and destroyed within GitHub Actions. It is not a hosted Supabase branch and is not connected to the production project.
 
