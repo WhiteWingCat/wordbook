@@ -74,6 +74,22 @@ test("mock data is isolated by identity and scoped to session storage",async()=>
   assert.deepEqual(Array.from(result.data,row=>row.word).sort(),["thank","好"].sort());
 });
 
+test("mock identities represent separate Free and Premium plans",async()=>{
+  const env=makeContext("feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev");
+  const client=env.window.supabase.createClient();
+
+  let entitlement=await client.from("user_entitlements").select("plan_code").eq("user_id","mock-user-a").single();
+  assert.equal(entitlement.data.plan_code,"free");
+  let limit=await client.from("learning_plan_limits").select("daily_limit").eq("plan_code","free").eq("activity_type","daily_discovery").single();
+  assert.equal(limit.data.daily_limit,1);
+
+  env.window.__swiftDictionaryMock.setActiveUser("mock-user-b");
+  entitlement=await client.from("user_entitlements").select("plan_code").eq("user_id","mock-user-b").single();
+  assert.equal(entitlement.data.plan_code,"premium");
+  limit=await client.from("learning_plan_limits").select("daily_limit").eq("plan_code","premium").eq("activity_type","daily_discovery").single();
+  assert.equal(limit.data.daily_limit,3);
+});
+
 test("daily activity RPCs simulate completion and allowance use without cloud access",async()=>{
   const env=makeContext("feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev");
   const client=env.window.supabase.createClient();
