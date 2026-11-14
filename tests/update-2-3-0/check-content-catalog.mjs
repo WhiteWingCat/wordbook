@@ -24,7 +24,7 @@ for (const [name, type] of [
   }
 }
 {
-  const block = arrayBlock(dailySource, "dailyDiscoveries");
+  const block = arrayBlock(dailySource, "dailyDiscoveryVocabulary");
   for (const match of block.matchAll(/\{\s*["']?id["']?\s*:\s*"([^"]+)"/g)) {
     frontendRows.push(["daily_discovery", match[1], null, null, "en"].join("|"));
   }
@@ -74,8 +74,8 @@ for (const match of migration.matchAll(/\('([^']+)','([^']+)',(null|'[^']*'),(nu
 const normalize = rows => rows.slice().sort();
 assert.equal(new Set(frontendRows).size, frontendRows.length, "Frontend contains duplicate catalogue entries");
 assert.equal(new Set(sqlRows).size, sqlRows.length, "SQL catalogue contains duplicate entries");
-assert.equal(frontendRows.length, 95, `Expected 95 frontend content entries, found ${frontendRows.length}`);
-assert.equal(sqlRows.length, 95, `Expected 95 SQL catalogue entries, found ${sqlRows.length}`);
+assert.equal(frontendRows.length, 80, `Expected 80 frontend content entries, found ${frontendRows.length}`);
+assert.equal(sqlRows.length, 80, `Expected 80 SQL catalogue entries, found ${sqlRows.length}`);
 assert.deepEqual(normalize(sqlRows), normalize(frontendRows), "SQL approved catalogue differs from frontend IDs/topic/difficulty metadata");
 
-console.log("Approved content catalogue matches frontend exactly (95 entries; no answer-level content).");
+console.log("Approved content catalogue matches frontend exactly (80 entries; no answer-level content).");
