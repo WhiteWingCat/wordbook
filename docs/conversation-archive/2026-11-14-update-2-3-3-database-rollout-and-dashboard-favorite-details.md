@@ -55,8 +55,8 @@ No production synthetic account or test session was inserted. No personal saved-
 ## Validation and deployment status
 
 - GitHub Actions run #775 passed PostgreSQL 17 migration/allowance tests, Chromium browser regression (including the new favorite-detail test), and disposable local Supabase Auth compatibility.
-- Follow-up CI run #780 was queued/in progress for the final branch head after migration header cleanup; verify final conclusion.
-- Cloudflare reported a successful branch preview for an intermediate commit; verify the current PR preview before merge.
+- GitHub Actions run #780 passed all three jobs on final branch head `b09f10aa1fa22ea3ba4209408758cb2325eba4ae`: PostgreSQL 17 migration/allowance tests, Chromium browser regression and disposable local Supabase Auth compatibility.
+- Cloudflare Pages reported a successful branch preview for final PR head `b09f10a`: https://feature-update-2-3-3-dashboa.swiftdictionary-testing.pages.dev.
 - PR #7 is open and mergeable. The frontend change is not merged to `main` or deployed. The database migrations are live, so the previous Daily Learning server-schema blocker is resolved.
 - Owner should refresh the live website and test Daily Learning. The Dashboard detail UI requires PR #7 approval, merge and successful main deployment before it is live.
 
