@@ -499,6 +499,10 @@
 
   function renderReader(activityType,content,session) {
     const reader = byId("dailyActivityReader");
+    reader.classList.add("modal-backdrop");
+    reader.setAttribute("role","dialog");
+    reader.setAttribute("aria-modal","true");
+    reader.setAttribute("aria-label",activityMeta[activityType].title);
     const completed = session.status === "completed";
     const isQuiz = activityType === "daily_application" || activityType === "daily_revision";
     reader.hidden = false;
@@ -510,8 +514,16 @@
       + (completed ? '<span class="daily-activity-tag">Completed · replay is free</span>' : '<span class="daily-activity-tag">In progress · no allowance used yet</span>')
       + '</div><h2>' + esc(content.title) + '</h2>';
     if (content.body) html += '<p>' + esc(content.body) + '</p>';
-    if (content.example) html += '<div class="daily-reader-example"><strong>Example 1</strong><p>' + esc(content.example) + '</p></div>';
-    if (Array.isArray(content.examples) && content.examples.length) html += '<section class="daily-extra-examples"><h3>More examples</h3>' + content.examples.map((example,index)=>'<div class="daily-reader-example"><strong>Example '+(index+2)+'</strong><p>'+esc(example)+'</p></div>').join("") + '</section>';
+    const practiceExamples = isQuiz && Array.isArray(content.questions)
+      ? content.questions.map(question => String(question.q || "").replace(/_{2,}/g,question.options?.[question.answer] || "…"))
+      : [];
+    const extraExamples = [
+      ...(Array.isArray(content.examples)?content.examples:[]),
+      ...(!isQuiz && typeof content.example==="string" ? content.example.split(/\s+\/\s+/).slice(1) : []),
+      ...practiceExamples
+    ].filter(Boolean);
+    if (content.example && !isQuiz) html += '<div class="daily-reader-example"><strong>Example 1</strong><p>' + esc(content.example.split(/\s+\/\s+/)[0]) + '</p></div>';
+    if (extraExamples.length) html += '<section class="daily-extra-examples"><h3>More examples</h3>' + extraExamples.map((example,index)=>'<div class="daily-reader-example"><strong>Example '+(index+2)+'</strong><p>'+esc(example)+'</p></div>').join("") + '</section>';
     if (content.tip) html += '<div class="daily-reader-example"><strong>Usage note</strong><p>' + esc(content.tip) + '</p></div>';
     html += selectedTranslation(content);
     if (content.zhExample && typeof translationLanguage !== "undefined" && translationLanguage === "zh") {
