@@ -357,7 +357,6 @@ begin
           when v_active is not null then 'active_session_exists'
           when v_learning is distinct from 'en' then 'learning_course_not_supported'
           when not coalesce((v_ctx ->> 'plan_enabled')::boolean,false) then 'plan_not_enabled'
-          when not coalesce((v_ctx ->> 'plan_enabled')::boolean,false) then 'plan_not_enabled'
           when (v_ctx ->> 'remaining_count')::integer < 1 then 'allowance_exhausted'
           when not v_beginner_min then 'question_bank_below_minimum'
           when not v_beginner_fresh then 'fresh_questions_unavailable_today'
@@ -373,7 +372,7 @@ begin
         'available', v_intermediate_min and v_intermediate_fresh and v_can_start,
         'reason', case
           when v_active is not null then 'active_session_exists'
-          when v_learning <> 'en' then 'learning_course_not_supported'
+          when v_learning is distinct from 'en' then 'learning_course_not_supported'
           when not coalesce((v_ctx ->> 'plan_enabled')::boolean,false) then 'plan_not_enabled'
           when (v_ctx ->> 'remaining_count')::integer < 1 then 'allowance_exhausted'
           when not v_intermediate_min then 'question_bank_below_minimum'
@@ -390,7 +389,7 @@ begin
         'available', v_advanced_min and v_advanced_fresh and v_can_start,
         'reason', case
           when v_active is not null then 'active_session_exists'
-          when v_learning <> 'en' then 'learning_course_not_supported'
+          when v_learning is distinct from 'en' then 'learning_course_not_supported'
           when not coalesce((v_ctx ->> 'plan_enabled')::boolean,false) then 'plan_not_enabled'
           when (v_ctx ->> 'remaining_count')::integer < 1 then 'allowance_exhausted'
           when not v_advanced_min then 'question_bank_below_minimum'
