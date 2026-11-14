@@ -286,6 +286,7 @@ begin
    and c.content_id = q.source_lesson_id
    and c.language_code = q.learning_language_code
    and c.is_active
+   and c.topic_id = q.topic_id
   where q.status = 'approved'
     and q.learning_language_code = 'en'
     and v_learning = 'en'
@@ -305,6 +306,7 @@ begin
    and c.content_id = q.source_lesson_id
    and c.language_code = q.learning_language_code
    and c.is_active
+   and c.topic_id = q.topic_id
   where q.status = 'approved'
     and q.learning_language_code = 'en'
     and v_learning = 'en'
@@ -502,6 +504,7 @@ begin
    and c.content_id=q.source_lesson_id
    and c.language_code=q.learning_language_code
    and c.is_active
+   and c.topic_id = q.topic_id
   where q.status='approved'
     and q.learning_language_code='en'
     and q.translation_language_code=v_translation;
@@ -517,6 +520,7 @@ begin
    and c.content_id=q.source_lesson_id
    and c.language_code=q.learning_language_code
    and c.is_active
+   and c.topic_id = q.topic_id
   where q.status='approved'
     and q.learning_language_code='en'
     and q.translation_language_code=v_translation
@@ -592,6 +596,7 @@ begin
        and c.content_id=q.source_lesson_id
        and c.language_code=q.learning_language_code
        and c.is_active
+   and c.topic_id = q.topic_id
       where q.status='approved'
         and q.learning_language_code='en'
         and q.translation_language_code=v_translation
@@ -622,6 +627,7 @@ begin
          and c.content_id=q.source_lesson_id
          and c.language_code=q.learning_language_code
          and c.is_active
+   and c.topic_id = q.topic_id
         where q.status='approved'
           and q.learning_language_code='en'
           and q.translation_language_code=v_translation
