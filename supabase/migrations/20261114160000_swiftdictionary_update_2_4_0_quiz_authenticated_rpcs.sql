@@ -598,9 +598,10 @@ begin
         from pg_catalog.jsonb_array_elements(q.options) as o(value)
         order by pg_catalog.random()
       ) as shuffled_options
-    from pg_catalog.unnest(v_selected_ids,v_selected_revisions) as picked(question_id,revision)
+    from pg_catalog.generate_subscripts(v_selected_ids,1) as picked(idx)
     join private.quiz_question_bank q
-      on q.question_id=picked.question_id and q.revision=picked.revision
+      on q.question_id=v_selected_ids[picked.idx]
+     and q.revision=v_selected_revisions[picked.idx]
   )
   insert into private.quiz_session_questions(
     session_id,user_id,local_date,question_id,question_revision,position,
