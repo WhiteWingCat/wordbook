@@ -60,7 +60,7 @@ test("exhausted lesson allowance blocks new lessons but preserves completed less
   await expect(notStarted).toBeDisabled();
   await completed.click();
   await expect(page.locator("#lessonReader")).toBeVisible();
-  await expect(page.locator("#lessonStatus")).toContainText("Completed lesson reopened — free revisit.");
+  await expect(page.locator("#lessonStatus")).toContainText("已完成的课程已重新打开，可免费重温。");
 });
 
 test("Premium lesson allowance blocks new lessons after fifteen completions but keeps reviews free", async ({ page }) => {
