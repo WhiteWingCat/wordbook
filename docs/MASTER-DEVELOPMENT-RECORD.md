@@ -1276,10 +1276,10 @@ Update 2.4.0 Quiz is in product-planning only. No Quiz frontend, question bank, 
   - Beginner: 10 questions.
   - Intermediate: 15 questions.
   - Advanced: 20 questions.
-- Question difficulty and eligibility must be aligned with the relevant lesson curriculum, avoiding assessment of knowledge outside the learner's applicable course scope.
+- Question difficulty and eligibility must be aligned with the relevant lesson curriculum, avoiding assessment of knowledge outside the learner's applicable course scope. **Eligibility mode: curriculum** — draw from all approved curriculum lessons within the selected difficulty, regardless of whether the individual learner has personally completed each lesson. Do not draw from unapproved or out-of-scope content. Exact cumulative mapping between difficulty levels remains to be specified.
 - Update 2.4.0 uses multiple-choice questions only. Fill-in-the-blank is deliberately deferred to a later update until flexible answer evaluation can be designed reliably.
 - Answer options are randomly arranged. Randomisation should be fixed for the lifetime of a quiz session so that resuming or navigating does not unexpectedly reorder options.
-- No correct-answer reveal, correctness feedback or result disclosure before the learner submits the completed quiz. Wrong answers are included in the results; users cannot change answers after submission.
+- No correct-answer reveal, correctness feedback or result disclosure before the learner submits the completed quiz. Wrong answers are included in the results. **Answer navigation: change** — learners may navigate between questions and revise their selections any time before final submission. After submission, answers are locked and the result is immutable.
 - Completed results must include all questions, the learner's selected answers, correct answers and explanations.
 - Quiz feedback and explanations follow the user's selected translation language.
 - Unfinished quiz progress is saved and can be resumed. Only one quiz may be in progress for an account at a time; a learner cannot start another while one remains active.
@@ -1287,7 +1287,7 @@ Update 2.4.0 Quiz is in product-planning only. No Quiz frontend, question bank, 
 - Completed quizzes can be reviewed, but cannot be retaken. Review is read-only.
 - Quiz results should inform Dashboard learning recommendations and weak-topic prioritisation for relevant Lessons/Daily Revision. Avoid treating one quiz result as definitive mastery.
 - Visual direction: clean, organised layout; question text in bold white; answer cards arranged adaptively in a row or two columns when answer text is sufficiently short, otherwise use a readable wider layout.
-- The earlier proposal for a time limit was not confirmed. Do not introduce a timer without owner approval; default planning direction should remain consistent with the no-time-pressure lesson experience.
+- **Timer: none.** Quiz has no countdown, time limit or time-pressure mechanic, consistent with the Lessons experience.
 
 ### Multilingual course and translation architecture — standing future rule
 
@@ -1310,14 +1310,12 @@ This rule is a future architecture requirement. It does **not** mean a full Chin
 ### Remaining design and implementation questions
 
 Before implementation, settle:
-1. Whether a quiz may assess all approved lessons at the selected difficulty or only lessons the individual learner has completed. The owner requires avoiding unseen curriculum content; do not assume completion-gating without clarification.
-2. Exact difficulty-to-curriculum mapping, including whether Intermediate includes Beginner knowledge and Advanced includes all lower-level knowledge.
-3. Whether learners may navigate backward and change selections before final submission; after submission the result is immutable.
-4. How to handle an abandoned active session across a daily allowance reset, content retirement or a change in course/translation preferences.
-5. Whether results include a pass threshold or only score, percentage and per-question review. No pass mark has been approved.
-6. Exact daily quiz uniqueness/allowance enforcement, including prevention of duplicate or cloned sessions while allowing resume and read-only review.
-7. Which result fields are required to reproduce completed reviews if catalogue content changes. Prefer storing stable question/version references and the minimum answer/result snapshot needed for review.
-8. How question selection guarantees a balanced enough curriculum sample despite mixed-topic random selection and limited eligible content.
+1. Exact difficulty-to-curriculum mapping, including whether Intermediate includes Beginner knowledge and Advanced includes all lower-level knowledge.
+2. How to handle an abandoned active session across a daily allowance reset, content retirement or a change in course/translation preferences.
+3. Whether results include a pass threshold or only score, percentage and per-question review. No pass mark has been approved.
+4. Exact daily quiz uniqueness/allowance enforcement, including prevention of duplicate or cloned sessions while allowing resume and read-only review.
+5. Which result fields are required to reproduce completed reviews if catalogue content changes. Prefer storing stable question/version references and the minimum answer/result snapshot needed for review.
+6. How question selection guarantees a balanced enough curriculum sample despite mixed-topic random selection and limited eligible content.
 
 ### Data, security and legal planning notes
 
@@ -1328,3 +1326,33 @@ Before implementation, settle:
 - Preserve sufficient versioned result information for read-only review while minimising stored personal data. Align Quiz history with the existing learning-history deletion model and ensure deletion does not accidentally reset allowance ledgers.
 - Keep account isolation, shared-device account switching, timezone-based midnight reset and free dictionary search intact.
 - Perform the mandatory Malaysia PDPA and international privacy review before implementation. Review content licensing/originality, retention and deletion, security, age-related obligations and cross-border processing as relevant. This is planning guidance, not legal advice or a compliance certification.
+
+
+## 29. Update 2.4.0 — confirmed Quiz interaction decisions and global language-refresh QA rule (2026-11-14)
+
+The owner confirmed the remaining interaction choices for the Quiz implementation plan:
+
+- **Lesson eligibility: curriculum.** The quiz may sample all approved lessons/content within the selected difficulty, whether or not the learner has personally completed each lesson. It must not include unapproved material or content outside the selected difficulty's curriculum. The exact cumulative relationship between Beginner, Intermediate and Advanced remains an implementation-design question.
+- **Timer: none.** There is no countdown or time limit.
+- **Answer navigation: change.** Learners may navigate between questions and change their selected answers until they submit the complete quiz. After submission, answers are locked and the completed result is read-only.
+
+### New standing course/translation refresh and QA rule
+
+This rule applies across SwiftDictionary, not only Quiz:
+
+- Whenever a user changes either the learning-course selection or translation-language selection, the relevant page and all dependent content must refresh to the newly selected state. The user must not need to navigate away and back to see the change.
+- Verify that controls, page content, question/lesson text, answer choices where language-dependent, explanations, feedback, labels, status text and other dependent UI update consistently. No stale language or mixed-language remnants should remain.
+- Test both course and translation selectors, switching between available values and switching back, including while viewing relevant learning content.
+- Verify translation quality, not just refresh mechanics: content must be accurate, complete, context-appropriate and correct for the selected course/translation pair. A language label changing or only some strings updating is not sufficient.
+- Persisted preferences and active-session snapshots must remain coherent: a new session uses the new selection; an existing in-progress session retains the course/translation pair it started with unless the product explicitly provides a safe, tested transition.
+- Add explicit refresh and translation-quality checks to the regression suite for Lessons, Quiz, Flashcards and future language-aware features.
+
+### Scope and implementation status
+
+These are planning and QA requirements only. No application source, question content, migration, production database setting or live deployment was changed in this session. The next implementation phase still requires explicit owner authorisation, a feature branch, source/schema inspection, and the mandatory Malaysia/international legal and privacy review.
+
+### Recovery point
+
+- Documentation branch: `docs/master-development-record`.
+- Production baseline remains Update 2.3.3; merge commit `90dc73a9b65fc3af713fefab4955057026089b96`.
+- Quiz remains unimplemented; the existing Coming Soon state must remain until a separately approved and validated release.
