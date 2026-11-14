@@ -99,6 +99,8 @@ create table if not exists private.quiz_sessions (
   updated_at timestamptz not null default pg_catalog.now(),
   constraint quiz_sessions_result_shape_check check (
     (status = 'completed'
+      and correct_count is not null
+      and percentage is not null
       and correct_count between 0 and question_count
       and percentage = pg_catalog.round(correct_count * 100.0 / question_count)::integer
       and completed_at is not null
@@ -220,7 +222,7 @@ begin
     select value from pg_catalog.jsonb_array_elements(new.options)
   loop
     if pg_catalog.jsonb_typeof(v_option) <> 'object'
-       or pg_catalog.nullif(pg_catalog.btrim(v_option ->> 'id'), '') is null
+       or nullif(pg_catalog.btrim(v_option ->> 'id'), '') is null
        or pg_catalog.nullif(pg_catalog.btrim(v_option ->> 'learning_text'), '') is null
        or pg_catalog.nullif(pg_catalog.btrim(v_option ->> 'translation_text'), '') is null then
       raise exception 'Each Quiz option requires id, learning_text and translation_text'
