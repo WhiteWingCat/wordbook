@@ -7,6 +7,7 @@
   const PREVIEW_HOST = "feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev";
   const ACTIVATION_PARAM = "swiftMock";
   const STORAGE_PREFIX = "swiftDictionaryMock:v1:";
+  const SELECTION_GENERATION_KEY = STORAGE_PREFIX + "selection-generation";
   const host = String(location.hostname || "").toLowerCase();
   const requested = new URLSearchParams(location.search).get(ACTIVATION_PARAM) === "1";
   if (!requested || host !== PREVIEW_HOST || host === "swiftdictionary-testing.pages.dev") return;
@@ -265,11 +266,18 @@
   window.supabase.createClient=function(){ client=adapter; return client; };
   window.SWIFT_DICTIONARY_MOCK_MODE=true;
   window.SWIFT_DICTIONARY_MOCK_CAPABILITIES={auth:false,rls:false,database:false,crossDeviceSync:false,frontendSimulation:true};
+  function selectionGeneration() {
+    const value=Number(nativeGet.call(sessionStorage,SELECTION_GENERATION_KEY));
+    return Number.isSafeInteger(value) && value>=0 ? value : 0;
+  }
   function resetMockStore() {
     try {
+      // Change the content-selection generation before clearing both mock identities.
+      // This makes reset visibly generate a fresh personalised daily set.
+      nativeSet.call(sessionStorage,SELECTION_GENERATION_KEY,String(selectionGeneration()+1));
       for(let i=sessionStorage.length-1;i>=0;i--){
         const k=sessionStorage.key(i);
-        if(k && k.startsWith(STORAGE_PREFIX)) nativeRemove.call(sessionStorage,k);
+        if(k && k.startsWith(STORAGE_PREFIX) && k!==SELECTION_GENERATION_KEY) nativeRemove.call(sessionStorage,k);
       }
     } catch(error) { console.error("[SwiftDictionary mock] Reset failed.",error); }
   }
@@ -279,6 +287,7 @@
     setActiveUser,
     activeUser:()=>activeUser?.id || null,
     reset:resetMockStore,
+    selectionGeneration,
     getClient:()=>client
   });
 
