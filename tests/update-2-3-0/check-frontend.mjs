@@ -571,12 +571,15 @@ if (!mockElements.dailyLearningStatus.textContent.includes("Asia/Kuala_Lumpur"))
   throw new Error("Daily Learning runtime fixture failed: " + mockElements.dailyLearningStatus.textContent);
 }
 for (const activity of ["daily_topic","daily_application","daily_discovery","daily_revision"]) {
-  if (!mockElements.dailyActivityGrid.innerHTML.includes(`data-start-daily="${activity}"`)) {
-    throw new Error(`Daily Learning runtime did not render ${activity}.`);
+  if (!mockElements.dailyActivityGrid.innerHTML.includes(`data-daily-tab="${activity}"`)) {
+    throw new Error(`Daily Learning runtime did not render the ${activity} tab.`);
   }
 }
+if (!mockElements.dailyActivityGrid.innerHTML.includes('data-start-daily="daily_topic"')) {
+  throw new Error("Daily Learning runtime did not render the selected Daily Topic panel.");
+}
 const firstTopicCard = mockElements.dailyActivityGrid.innerHTML
-  .split('data-activity-card="daily_topic"')[1]?.split('data-activity-card="daily_application"')[0] || "";
+  .split('data-activity-card="daily_topic"')[1] || "";
 if (firstTopicCard.includes("Past simple or present perfect?")) {
   throw new Error("Daily Topic selected a previously completed assignment instead of unused content.");
 }
