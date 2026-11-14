@@ -176,6 +176,25 @@
     }
     return "";
   }
+  function renderDailyStaticLabels() {
+    const zh = translationLanguage === "zh";
+    const labels = {
+      dailyLearningEyebrow: zh ? "每日练习" : "DAILY PRACTICE",
+      dailyLearningHeading: zh ? "每日学习" : "Daily Learning",
+      dailyLearningIntro: zh ? "通过个性化活动和全球共享的每日词汇，建立持续学习的习惯。" : "Build consistency with personalised activities and a shared daily dictionary word for everyone.",
+      dailyPreferencesLegend: zh ? "我的每日活动" : "My daily activities"
+    };
+    Object.entries(labels).forEach(([id,value]) => { const node=byId(id); if(node) node.textContent=value; });
+    const names = {
+      daily_topic: zh ? "每日主题" : "Daily Topic",
+      daily_application: zh ? "每日应用" : "Daily Application",
+      daily_discovery: zh ? "每日发现" : "Daily Discovery",
+      daily_revision: zh ? "每日复习" : "Daily Revision"
+    };
+    document.querySelectorAll("[data-daily-pref-label]").forEach(node => {
+      if(names[node.dataset.dailyPrefLabel]) node.textContent=names[node.dataset.dailyPrefLabel];
+    });
+  }
 
   function makeRevisionContent(topicId, contentId, reason) {
     const source = dailyApplications.find(item =>
@@ -448,6 +467,7 @@
   }
 
   function renderCards() {
+    renderDailyStaticLabels();
     const grid = byId("dailyActivityGrid");
     const enabledTypes = Object.keys(activityMeta).filter(type => preferences[type + "_enabled"] !== false);
     if (!enabledTypes.length) {
@@ -629,6 +649,7 @@
   }
 
   window.refreshDailyLearningTranslation = function() {
+    renderDailyStaticLabels();
     if (typeof renderCards === "function" && snapshot.content && Object.keys(snapshot.content).length) renderCards();
     if (readerState) {
       const state=readerState;
