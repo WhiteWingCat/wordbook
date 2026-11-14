@@ -1482,3 +1482,64 @@ The technical specification records a preliminary Malaysia Act 709/2024 amendmen
 - Documentation branch: \`docs/master-development-record\`.
 - Quiz remains Coming Soon.
 - No implementation branch or production change has been made. Wait for owner review of the technical specification and remaining choices before starting feature implementation.
+
+
+## 33. Update 2.4.0 — final product decisions and implementation authorisation (2026-11-14)
+
+### Owner-confirmed final decisions
+
+The owner confirmed all remaining Quiz pre-development decisions:
+
+- Exactly **four answer options** per question. Every approved question must have one correct answer and three strong, plausible distractors; weak or ambiguous questions must be rejected rather than published with fewer options.
+- Do not repeat a question for the same account within the same effective local allowance day, across all Quiz sessions and difficulty levels.
+- Do not repeat the same complete quiz sequence within the same day. The individual-question non-reuse rule also prevents this.
+- A started session reserves all questions issued to it for that local day, even if the learner later abandons it. Abandonment remains free and does not consume a completion allowance.
+- Minimum question-bank capacity: **two complete sessions** per selected difficulty. Preferred target: **three complete sessions** per selected difficulty.
+- Free Quiz allowance: **1 completed Quiz per local day**.
+- Premium Quiz allowance: **3 completed Quizzes per local day**. The 1:3 ratio is confirmed and supersedes the earlier conceptual example.
+- Display percentage rounded to the nearest whole percentage, while retaining exact score and question-count integers.
+
+### Approved question-bank capacity
+
+| Selected difficulty | Two-session minimum | Three-session target |
+|---|---|---|
+| Beginner | 20 Beginner | 30 Beginner |
+| Intermediate | 24 Intermediate + 16 Beginner | 36 Intermediate + 24 Beginner |
+| Advanced | 32 Advanced + 8 Intermediate + 8 Beginner | 48 Advanced + 12 Intermediate + 12 Beginner |
+
+The counts support non-overlapping sessions at each selected difficulty and are based on the largest source-difficulty counts permitted by the approved composition rules. Because lower-difficulty questions can be used in higher-difficulty quizzes, the question pools are shared. The server must exclude all questions already issued to that account on the current effective local day, across difficulty levels. If the remaining unseen inventory cannot support a complete session with the exact composition and coverage rules, the system must block the start rather than repeat or substitute questions.
+
+The three-session target is aligned with Premium's three-completion daily allowance. It is a capacity target per selected difficulty, not a guarantee that every arbitrary mix of difficulty sessions remains possible after lower-level pools have been used. The availability operation must assess the remaining pool before creating each session.
+
+### Technical specification and current implementation baseline
+
+The technical specification at `docs/UPDATE-2.4.0-QUIZ-TECHNICAL-SPECIFICATION.md` has been updated to replace all prior open decisions and proposal wording with the confirmed rules.
+
+Read-only inspection of the connected live Supabase project reconfirmed:
+
+- PostgreSQL 17.11, region Tokyo (`ap-northeast-1`).
+- 18 applied migrations through the six Update 2.3.0 migrations.
+- Existing activity log and private allowance ledger already accept the `quiz` activity type.
+- Current production Quiz limits remain Free 5/day and Premium 12/day. These are not changed; a reviewed migration is required to set Free 1/day and Premium 3/day before Quiz is enabled.
+- No Quiz question-bank table, session table, Quiz RPC or approved Quiz question exists.
+- Existing completion allowance trigger uses the server-owned effective timezone and plan and charges only completed activity events.
+- Existing personal testing exemption remains lesson-only and must not extend to Quiz.
+- Learning-history deletion currently removes Daily Learning sessions, Lesson practice summaries, Lesson progress and activity log. Quiz session/history deletion must be added while preserving the private allowance ledger.
+- Main's Quiz page remains a Coming Soon placeholder. Existing Lesson practice content is not a substitute for the independent Quiz question bank.
+
+No production schema, allowance values, user data, application source or deployment was changed during the read-only inspection.
+
+### Legal and privacy roadmap clarification
+
+The existing privacy-policy draft prepared during Update 2.3.0 is not approved for publication and will need revision to reflect Quiz answer selection, score, session snapshots, topic performance and retention/deletion. This release still requires the mandatory Malaysia and international privacy review.
+
+The owner also raised a broader legal-documentation update. Record this as a **proposed Update 2.6.0 — Legal, Privacy & Terms Foundation**, to begin only after Update 2.5.0 Flashcards has been released to `main`. Candidate scope includes Terms of Service/Use, Privacy Notice, data collection and user-rights disclosures, content and third-party licensing, educational disclaimers, acceptable use, service availability and (if monetisation is later introduced) subscription, payment, renewal, cancellation and refund terms. Scope and legal applicability must be researched and approved closer to that release. This is a planning item, not a legal opinion or compliance certification.
+
+### Recovery point and next actions
+
+1. The owner has authorised the recommended Update 2.4.0 sequence to proceed.
+2. Keep documentation changes on `docs/master-development-record`.
+3. Create the Quiz implementation branch from the current `main` head, not from a stale feature branch.
+4. Implement and test question-bank/session/allowance foundations in isolation. Do not apply production migrations, change live allowance values, merge or deploy without explicit owner approval.
+5. Keep Quiz difficulties unavailable until the independent question bank meets the hard two-session threshold and passes content review.
+6. Continue preserving the Coming Soon production state until the Quiz release is validated and explicitly approved.
