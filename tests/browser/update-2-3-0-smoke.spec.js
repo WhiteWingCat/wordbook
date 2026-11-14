@@ -87,7 +87,7 @@ test("signed-in Daily Topic completes through the server RPC without answer-leve
   });
   expect(JSON.stringify(calls)).not.toMatch(/selectedAnswer|answerIndex|questionAnswer/i);
   await expect(page.locator('#dailyActivityGrid [data-activity-card="daily_topic"]'))
-    .toContainText("0 / 1 completions remaining");
+    .toContainText("剩余 0 / 1 次完成额度");
 });
 
 test("signed-in Daily Application submits only aggregate first-try results", async ({ page }) => {
@@ -116,7 +116,7 @@ test("signed-in Daily Application submits only aggregate first-try results", asy
   for (let i = 0; i < count; i += 1) {
     const question = questions.nth(i);
     let feedback = await question.locator(".daily-question-feedback").textContent();
-    if (feedback.includes("Correct.")) {
+    if (feedback.includes("Correct.") || feedback.includes("正确。")) {
       firstTryCorrect += 1;
       continue;
     }
@@ -127,7 +127,7 @@ test("signed-in Daily Application submits only aggregate first-try results", asy
       await options.nth(option).check();
       await page.locator("#dailyActivityReader [data-check-daily]").click();
       feedback = await question.locator(".daily-question-feedback").textContent();
-      if (feedback.includes("Correct.")) { solved = true; break; }
+      if (feedback.includes("Correct.") || feedback.includes("正确。")) { solved = true; break; }
     }
     expect(solved).toBeTruthy();
   }
@@ -377,6 +377,7 @@ test("Daily activity translation refreshes in place while preserving English lea
   await page.locator("#translationSelect").evaluate(el => { el.value="en"; el.dispatchEvent(new Event("change",{bubbles:true})); });
   await expect(page.locator("#dailyActivityReader [data-daily-back]")).toHaveText("← Back to Lessons");
   await expect(page.locator("#dailyActivityReader #dailyQuestions .daily-question strong").first()).toContainText(/[A-Za-z]/);
+  await expect(page.locator("#dailyActivityReader .daily-question-feedback").first()).not.toBeEmpty();
   await expect(page.locator("#dailyActivityReader .daily-question-feedback").first()).not.toContainText("中文说明");
 
   await page.locator("#translationSelect").evaluate(el => { el.value="zh"; el.dispatchEvent(new Event("change",{bubbles:true})); });
@@ -397,7 +398,7 @@ test("Daily Discovery uses dictionary layout and the approved global catalogue m
   await expect(reader.locator("[data-previous],[data-next],#previousButton,#nextButton")).toHaveCount(0);
   const style = await reader.evaluate(el => ({
     backdrop: getComputedStyle(el).backgroundColor,
-    padding: getComputedStyle(el.querySelector(".daily-activity-modal")).padding
+    padding: getComputedStyle(el.querySelector(".daily-discovery-modal .modal-content")).padding
   }));
   expect(style.backdrop).toBe("rgba(0, 0, 0, 0)");
   expect(style.padding).not.toBe("0px");
