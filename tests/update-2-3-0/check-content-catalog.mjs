@@ -25,11 +25,11 @@ for (const [name, type] of [
 }
 {
   const core = arrayBlock(dailySource, "dailyDiscoveryCoreVocabulary");
-  for (const match of core.matchAll(/\\{\\s*["']?id["']?\\s*:\\s*"([^"]+)"/g)) {
+  for (const match of core.matchAll(/id:"([^"]+)"/g)) {
     frontendRows.push(["daily_discovery", match[1], null, null, "en"].join("|"));
   }
   const additional = arrayBlock(dailySource, "dailyDiscoveryAdditionalWords");
-  for (const match of additional.matchAll(/\\["(discovery-word-[^"]+)"/g)) {
+  for (const match of additional.matchAll(/\["(discovery-word-[^"]+)"/g)) {
     frontendRows.push(["daily_discovery", match[1], null, null, "en"].join("|"));
   }
 }
