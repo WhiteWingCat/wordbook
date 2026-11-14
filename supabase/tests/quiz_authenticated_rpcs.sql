@@ -33,11 +33,20 @@ where plan_code='free' and activity_type='quiz';
 update public.learning_plan_limits set daily_limit=3,is_enabled=true
 where plan_code='premium' and activity_type='quiz';
 
-insert into private.learning_content_catalog(activity_type,content_id,language_code,is_active)
-select 'permanent_lesson','lesson-'||n,'en',true
-from generate_series(1,5) n
+insert into private.learning_content_catalog(
+  activity_type,content_id,topic_id,difficulty,language_code,is_active
+)
+select
+  'permanent_lesson',
+  d.prefix||'-lesson-'||n,
+  'topic-'||n,
+  d.difficulty,
+  'en',
+  true
+from (values ('b','beginner'),('i','intermediate'),('a','advanced')) d(prefix,difficulty)
+cross join generate_series(1,5) n
 on conflict (activity_type,content_id,language_code)
-do update set is_active=true;
+do update set topic_id=excluded.topic_id,difficulty=excluded.difficulty,is_active=true;
 
 -- Synthetic bank: 3-session target capacity for all three difficulties,
 -- with five distinct topics and five approved lesson mappings.
@@ -48,7 +57,7 @@ insert into private.quiz_question_bank(
 )
 select
   prefix||'-'||n,1,'en','zh',
-  'lesson-'||(((n-1)%5)+1),
+  prefix||'-lesson-'||(((n-1)%5)+1),
   'topic-'||(((n-1)%5)+1),
   difficulty,
   'Select the correct answer for '||prefix||' question '||n||'.',
