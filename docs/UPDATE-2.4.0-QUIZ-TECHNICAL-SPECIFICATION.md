@@ -1,7 +1,7 @@
 # SwiftDictionary Update 2.4.0 — Quiz Technical Specification
 
 **Date:** 2026-11-14  
-**Status:** Technical preparation draft; product decisions recorded, implementation not started  
+**Status:** Final product decisions confirmed; technical specification ready for implementation  
 **Repository baseline:** \`main\`, Update 2.3.3  
 **Production baseline:** GitHub Pages Update 2.3.3; Supabase Postgres 17.11  
 **Owner approval required before implementation, migrations, allowance changes or deployment.**
@@ -252,44 +252,36 @@ Dashboard should show Quiz completion count and recent score/percentage. Topic r
 - Keep the integration compatible with the existing static GitHub Pages deployment; no bundler or paid runtime is required for this feature.
 - Reuse the existing Playwright setup and add a dedicated Quiz browser suite. Do not refactor unrelated Dictionary/Lessons/Daily Learning code as part of the Quiz feature unless a narrowly scoped integration fix is required.
 
-## 6. Question-bank availability and sampling proposal
+## 6. Question-bank availability, same-day uniqueness and sampling
 
 **Observed inventory:** zero approved Quiz questions. All difficulties are unavailable at the start of this feature.
 
-The availability gate must be evaluated independently for each learning-course/translation-language pair and difficulty. Before a difficulty can be enabled, the server must verify:
+The availability gate is evaluated independently for the supported course/translation pair and selected difficulty. It must verify the complete session can be generated from approved, active, distinct questions and exact source-difficulty ratios. Every question must map to an approved lesson/topic, have four reviewed answer options with one unambiguous correct answer, a useful explanation, and complete reviewed language-pair content. The recommended topic-diversity gate remains at least three distinct topic IDs per session and no single topic supplying more than 40% of questions.
 
-1. Enough approved, active, distinct question IDs exist to build the complete fixed-length session.
-2. The selected source-difficulty composition can be satisfied exactly.
-3. Every selected question belongs to an approved lesson/topic in the eligible curriculum.
-4. The pool has sufficient topic diversity. Recommended starting rule: at least three distinct topic IDs per session, with no single topic supplying more than 40% of the questions in that session.
-5. Every question has a valid answer key, plausible distractors, explanation and complete content for the selected language pair.
-6. No question is duplicated within one session.
-7. Question selection can avoid immediate repeats across recent sessions where the bank has enough remaining content.
+### Confirmed two-session minimum and three-session target
 
-### Proposed pool-size thresholds (for owner review)
+The owner approved a hard minimum capacity for two complete sessions and a target capacity for three complete sessions. Counts below are per selected difficulty and source-difficulty pool. They are sized to the largest permitted whole-question source count for that difficulty.
 
-A practical minimum-variety proposal is to maintain at least **two complete sessions' worth** of approved questions at the maximum source-difficulty counts for the selected difficulty. This provides at least two non-overlapping session pools when the same composition is selected.
+| Selected difficulty | Two-session minimum | Three-session target |
+|---|---|---|
+| Beginner | 20 Beginner | 30 Beginner |
+| Intermediate | 24 Intermediate + 16 Beginner | 36 Intermediate + 24 Beginner |
+| Advanced | 32 Advanced + 8 Intermediate + 8 Beginner | 48 Advanced + 12 Intermediate + 12 Beginner |
 
-| Selected difficulty | Proposed minimum pool by source difficulty | Total |
-|---|---|---:|
-| Beginner | 20 Beginner | 20 |
-| Intermediate | 24 Intermediate + 16 Beginner | 40 |
-| Advanced | 32 Advanced + 8 Intermediate + 8 Beginner | 48 |
+The counts support two or three sessions of the same selected difficulty without repeating a question, across the approved composition choices. Because lower-level questions may also appear in higher-difficulty quizzes, source-difficulty pools are shared. The selector must exclude questions already issued to the same account during its current local allowance day, across all Quiz difficulties.
 
-These counts are derived from twice the maximum whole-question source counts required by the approved compositions. For example, Intermediate's largest per-session source counts are 12 Intermediate and 8 Beginner; Advanced's are 16 Advanced, 4 Intermediate and 4 Beginner.
+### Same-day uniqueness
 
-A larger **three-session pool** would be preferable if the future Premium allowance is confirmed at three quizzes per day and the product wants to avoid repeating questions across all three sessions on the same local day:
+- Do not issue the same question more than once to the same account during one effective local allowance day, regardless of selected Quiz difficulty.
+- A started session reserves all question IDs issued in that session for the remainder of that local day. This includes a session later abandoned: abandonment does not charge the Quiz allowance, but questions already delivered to the learner still count as seen.
+- Do not repeat the same complete quiz. Preventing any individual question from repeating within the same local day also prevents an identical question sequence.
+- Randomise both question order and the four answer-option order at session creation. Persist both orders for the lifetime of the session.
+- Use the server-owned effective allowance timezone and date. The uniqueness window resets at that user's local midnight, not UTC midnight.
+- If remaining unseen eligible content cannot satisfy a complete session with exact ratios and topic coverage, prevent the new session and explain that fresh questions are unavailable until the next reset or additional approved content is added. Never repeat questions to fill a shortfall.
 
-| Selected difficulty | Three-session pool target |
-|---|---|
-| Beginner | 30 Beginner |
-| Intermediate | 36 Intermediate + 24 Beginner |
-| Advanced | 48 Advanced + 12 Intermediate + 12 Beginner |
+The two-session minimum is the hard content gate. The three-session target is the preferred capacity aligned with the confirmed Premium allowance of three completed quizzes per local day. The question bank may be larger; these are minimum capacity requirements, not maximum bank sizes.
 
-The two-session counts are a proposed hard launch threshold, not an owner-approved numeric policy yet. The three-session counts are a quality target tied to the proposed Premium allowance. The owner must confirm the cross-session reuse policy and Premium limit before these figures become final. If question reuse across separate sessions is permitted, the system should still avoid immediate repeats when possible and must never duplicate a question within one session.
-
-If a difficulty fails the gate, show it as unavailable with a clear explanation. Never shorten a quiz, silently relax a ratio, reuse a question within a session or substitute an out-of-scope question.
-
+If a difficulty fails the hard gate, it must remain unavailable. Never shorten a quiz, relax a ratio, duplicate a question within a session or substitute out-of-scope material.
 ## 7. User interface proposal
 
 ### Quiz landing page
@@ -420,15 +412,24 @@ Do not test against production by creating synthetic user sessions or modifying 
 7. Owner reviews the preview and explicitly approves any production migration and deployment.
 8. Update privacy notices and operational procedures before public release.
 
-## 10. Decisions still requiring owner confirmation
+## 10. Final owner-confirmed decisions (2026-11-14)
 
-The core Quiz product scope is settled. The following implementation details should be confirmed before coding:
+All remaining product-level decisions from the pre-development review are confirmed:
 
-1. **Answer-option count:** recommend four options when four strong, plausible distractors can be written; allow three rather than adding a weak fourth option. Existing Lesson practice currently uses three options.
-2. **Cross-session reuse:** recommend avoiding questions used in the same user's recent completed sessions where possible, while only forbidding duplicates within a single session. Confirm whether same-day repeats across separate sessions should be strictly prohibited; this affects the hard question-bank threshold.
-3. **Availability thresholds:** the two-session minimum and three-session Premium target in Section 6 are proposals. Confirm after the cross-session reuse policy and Premium limit are settled.
-4. **Premium allowance:** production currently has 12/day. The planned 3/day is a proposal and requires explicit configuration approval before a migration changes it.
-5. **Score rounding:** recommend a whole-number percentage rounded to the nearest integer, while retaining the exact numerator/denominator for display and analytics.
+1. **Answer options:** exactly four multiple-choice options per question. Content authors must write three plausible, defensible distractors; do not publish a question with weak, duplicate or ambiguous options. A question that cannot meet this quality bar is not approved for the bank.
+2. **Same-day uniqueness:** no question may repeat for the same account within the same effective local day, across separate sessions and across all Quiz difficulties. No complete quiz sequence may repeat. Issued questions remain reserved for that day even if the session is abandoned.
+3. **Question-bank capacity:** each difficulty requires at least two complete sessions' worth of distinct approved questions. The preferred target is three complete sessions' worth. See Section 6 for the exact source-difficulty counts.
+4. **Daily allowance:** Free = 1 completed Quiz per local day; Premium = 3 completed Quizzes per local day. This is the confirmed 1:3 ratio. It supersedes the earlier conceptual example. Production currently has Free 5/day and Premium 12/day; a reviewed migration is required before enabling Quiz.
+5. **Percentage rounding:** display the percentage rounded to the nearest whole percent, calculated from the exact score and question count. Retain the integer numerator and denominator as the source of truth.
+
+The following previously approved requirements remain unchanged: Beginner 10 questions, Intermediate 15, Advanced 20; the approved difficulty compositions; curriculum-wide eligibility within the selected difficulty scope; no timer; score and percentage without pass/fail; answer changes until submission; unfinished sessions persist until completion or explicit abandonment; one active session per account; only successful submission consumes allowance; and completed review is read-only.
+
+### Implementation clarifications
+
+- Same-day question reservation must be server-authoritative and account-scoped. Do not rely on localStorage or browser state.
+- An abandoned session consumes no Quiz completion allowance but does not make already delivered questions eligible again on that local day.
+- If repeated abandoned sessions exhaust the remaining eligible question pool, the system may block further starts until reset. Explain this separately from allowance exhaustion.
+- The 3-session pool target is capacity per selected difficulty, not a promise that every possible combination of three different difficulty sessions can always be started if shared lower-level pools have already been used. The availability RPC must calculate remaining eligible inventory before creating each session.
 
 ## 11. Preparation outcome and recovery point
 
@@ -436,4 +437,4 @@ The core Quiz product scope is settled. The following implementation details sho
 - Quiz remains Coming Soon.
 - No application source, question bank, database schema, migration, live allowance setting, production data or deployment was changed during this preparation.
 - Documentation is maintained on \`docs/master-development-record\`.
-- The implementation branch has not been created. Do not begin implementation until the owner reviews the technical specification and confirms the remaining choices.
+- The owner has approved the remaining product decisions. Implementation may proceed on a dedicated feature branch from current `main` after the final read-only baseline check.
