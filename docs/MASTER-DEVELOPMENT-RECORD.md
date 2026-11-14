@@ -5,8 +5,8 @@
 > **Repository:** https://github.com/WhiteWingCat/wordbook  
 > **Last consolidated:** 2026-11-14  
 > **Current baseline:** Update 2.3.0 merged to main on 2026-11-13  
-> **Current work:** Update 2.3.1 bug fixes and dashboard/navigation improvements on feature/update-2-3-1-bug-fix-and-changes  
-> **Record status:** Updated after the 2.3.0 merge and live-site owner testing; re-check repository, Supabase and deployment state before further changes.
+> **Current work:** Update 2.3.1 merged to main on 2026-11-14; next planned milestone is Update 2.4.0 Quiz  
+> **Record status:** Updated after Update 2.3.1 owner approval and PR #5 merge; verify main-branch deployment and production Supabase migration state separately before any release operation.
 
 This record combines confirmed owner decisions, repository evidence and the latest development handover. It is not proof that the live application or production database matches a draft branch.
 
@@ -1023,54 +1023,83 @@ All three jobs passed:
 6. The preceding Update 2.3.1 content-quality/allowance work remains in force and is recorded in the prior archive. This layout change does not reverse those fixes.
 
 
+
 ## 24. Update 2.3.1 — owner feedback: activity rows, allowance indicator and Premium mock allowance (2026-11-14)
 
-### Owner feedback
+### Owner feedback and final acceptance
 
 The owner requested five final refinements to the Daily Learning category tabs:
 1. Premium activity cards must each occupy one full-width row; three columns caused text crowding beside the Review completed content action.
-2. Numeric allowance must appear only beside the active category title, not inside activity cards.
+2. Numeric allowance must appear only beside the category title, not inside activity cards.
 3. The title-side allowance indicator should be clean, centered and color-coded according to remaining allowance.
 4. Premium mock account must show the established 15 permanent lesson completions, not the Free limit of 5.
 5. Category tabs should be slightly larger with white text.
 
-### Implementation
+The corrected preview was deployed for commit `8c4c4949be68f2b372def13ce75c8ec67b67405e`. The owner retested it and confirmed that all requested changes were present, then approved Update 2.3.1 for merge.
 
-- Premium continues to receive up to three activity cards per category, but the cards now stack vertically in one full-width column. Free remains one card.
+### Implementation confirmed in the final feature commit
+
+- Premium continues to receive up to three activity cards per category, but the cards stack vertically in one full-width column. Free remains one card.
 - Card actions remain right-aligned. Numeric remaining-allowance text was removed from unstarted activity cards; those cards use a neutral “New activity” label. In-progress and completed/review statuses remain.
-- Moved the category allowance count into a centered compact indicator at the right side of the category title. Added green (> two-thirds remaining), amber (> one-third through two-thirds) and red (one-third or less/exhausted) states.
-- Increased category tab padding and font size/weight; active and inactive labels use white text.
-- Investigation of the Premium permanent lesson display found that the mock fixture already supplied Premium 15 / Free 5 and enforced the values. The Lessons view was not reloading progress and entitlement allowance after account switching, so it could retain the prior account's visible count. Account refresh now reinitializes lesson progress and reloads the allowance for the current identity.
-- Added mock coverage for Free 5 and Premium 15 plan fixtures, plus successful completion of 15 Premium lessons and rejection of the 16th. Extended frontend regression assertions for account-refresh behavior and allowance presentation.
-- No database schema, allowance values, migrations or production data were changed.
+- The category allowance count is displayed in a centered compact indicator beside the category title. The indicator uses green, amber and red states according to remaining allowance.
+- Category tabs have increased padding/font size/weight and white text.
+- Account refresh now reinitializes lesson progress and reloads allowance for the active identity, preventing a stale Free/Premium lesson allowance from remaining visible after account switching.
+- Frontend regression assertions cover the layout, allowance presentation and account-refresh behavior. The isolated mock fixture records Free 5 and Premium 15; the earlier Premium completion-enforcement test was present in the preceding validation work.
+- No database schema, allowance values or production data were changed by these presentation/account-refresh refinements.
 
-### Commits and validation
+### Correction to the earlier validation record
 
-Latest implementation commit: `d1c9be67b2d37578cd46bad6c4b123b644d75386`.
+A source rollback incident was identified after the first attempted fix: a stale Git tree reference had caused older CSS and Daily Learning JavaScript to be restored, despite earlier commit-history inspection and a successful CI run. The earlier report that the five final visual changes were implemented was incorrect, and CI run #763 on commit `d1c9be67` did **not** validate the final five refinements.
 
-GitHub Actions run #763: https://github.com/WhiteWingCat/wordbook/actions/runs/43570440623
+The branch was corrected by updating the actual current file versions sequentially. The corrected implementation and regression assertions are in commit **`8c4c4949be68f2b372def13ce75c8ec67b67405e`**. Raw branch-file inspection confirmed the requested source changes before the owner was asked to retest.
 
-GitHub Actions run **#763** completed successfully against commit **`d1c9be67b2d37578cd46bad6c4b123b644d75386`**: https://github.com/WhiteWingCat/wordbook/actions/runs/43570440623
+### Final validation and merge
 
-All three jobs passed:
-- **Chromium browser regression smoke tests:** passed, including the isolated mock adapter and frontend regression checker.
-- **PostgreSQL 17 migration and allowance tests:** passed, including isolated mock allowance enforcement, frontend syntax/RPC integration, migration/policy/ledger assertions, concurrency and history-deletion checks.
-- **Supabase CLI local Auth compatibility:** passed against disposable local Supabase services, including Auth schema/roles/JWT helpers, migration/policy assertions and security-advisor checks.
+Both GitHub Actions runs below completed successfully against commit `8c4c4949be68f2b372def13ce75c8ec67b67405e`, with all three jobs passing in each run (Chromium browser regression, PostgreSQL 17 migration/allowance tests, and disposable local Supabase Auth compatibility):
 
-An earlier intermediate mock test failure was due to incorrectly expecting both plan rows to exist in one isolated mock fixture. The test was corrected to inspect each plan in its own mock identity. The final run #763 passed, including the Premium 15-completion RPC enforcement test.
+- Run #771: https://github.com/WhiteWingCat/wordbook/actions/runs/43571579491
+- Run #772: https://github.com/WhiteWingCat/wordbook/actions/runs/43571583586
+
+Cloudflare's pull-request deployment status reported a successful preview deployment for commit `8c4c494`. The owner confirmed all five requested changes in the preview.
+
+**PR #5 was merged into `main` on 2026-11-14 at 07:52:23 UTC.**
+- PR: https://github.com/WhiteWingCat/wordbook/pull/5
+- Feature head: `8c4c4949be68f2b372def13ce75c8ec67b67405e`
+- Merge commit and verified `main` HEAD: `3ca194f908356f85aed1c143c647ebf488e9a353`
 
 ### Privacy and release boundaries
 
-- Presentation, account-refresh and mock-only test changes; no new personal data, analytics, tracking or third-party content.
-- No new data processing category or database migration. Malaysia PDPA and general privacy planning remains applicable; this is not legal-compliance certification.
-- PR #5 remains open and unmerged. No production migration, production data operation or deployment occurred.
+- The final changes are presentation, account-refresh and mock-test changes; they add no personal-data fields, analytics, tracking or third-party content.
+- No production Supabase migration or production data operation was run as part of this merge.
+- The merge itself is not proof that the production database has been migrated or that the main-branch site deployment has completed. Verify the main-branch deployment and production schema separately before treating the live production service as fully released.
+- Malaysia PDPA and general privacy planning remains applicable to future feature expansion; this update does not constitute a legal-compliance certification.
 
-### Current recovery point and owner retest
+## 25. Update 2.3.1 — final approval, merge and recovery point (2026-11-14)
 
-1. Continue on `feature/update-2-3-1-bug-fix-and-changes`; PR #5 remains open and unmerged.
-2. Latest code/test commit validated by CI: `d1c9be67b2d37578cd46bad6c4b123b644d75386`.
-3. CI run #763 passed all three jobs. Confirm Cloudflare Pages rebuilt the latest branch head before owner retesting.
-4. Retest Free/Premium category card stacking, title-side allowance indicator and colors, no card-level allowance count, tab size/white text, and Premium 15 vs Free 5 permanent lesson allowance after switching accounts while Lessons remains open.
-5. Verify 15 Premium mock lesson completions succeed and the 16th is blocked; completed lessons remain reviewable.
-6. Use only fictional Test User A (Free) and Test User B (Premium) in the explicit mock preview.
-7. Do not merge PR #5, apply production migrations or deploy without explicit owner approval.
+### Current project state
+
+- Update 2.3.1 is approved by the owner and merged to `main`.
+- PR #5 is closed as merged.
+- Verified `main` HEAD: `3ca194f908356f85aed1c143c647ebf488e9a353`.
+- The final feature commit is `8c4c4949be68f2b372def13ce75c8ec67b67405e`.
+- The feature branch preview was deployed successfully for the final commit and manually accepted by the owner.
+- CI runs #771 and #772 passed all three jobs on the final feature commit.
+- Do not repeat the earlier incorrect CI #763 claim as validation of the final five layout refinements.
+
+### Next development milestone
+
+The next planned milestone remains **Update 2.4.0 — Quiz**:
+- Dedicated Quiz experience.
+- Quiz progress tracking.
+- Quiz allowance integration using the established completion-based allowance principles.
+- Preserve free dictionary search and account isolation.
+- Before planning or implementing any new feature, perform the standing Malaysia-specific and general legal/privacy review. Re-check content licensing and data minimisation if the Quiz introduces new question content, answer telemetry or analytics.
+
+Update 2.5.0 — Flashcards remains planned after Quiz. Do not treat either roadmap item as implemented.
+
+### Release safeguards
+
+1. Verify the main-branch hosting deployment independently; merge confirmation alone is not deployment confirmation.
+2. Confirm production Supabase migration state read-only before proposing any production migration. No production migration or production data operation was performed in this session.
+3. Do not initiate a production migration, destructive operation or additional deployment without explicit owner approval.
+4. Continue using isolated mock identities for future browser tests; never use real user accounts or production data in automated tests.
