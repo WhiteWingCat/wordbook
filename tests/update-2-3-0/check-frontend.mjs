@@ -69,6 +69,7 @@ if (!dayOrdinalSource) throw new Error("UTC day ordinal helper could not be loca
 const scheduleRunner = vm.runInNewContext(`
   const dailyDiscoveryVocabulary = ${JSON.stringify(curated.discoveries)};
   const DAILY_DISCOVERY_SCHEDULE_EPOCH = "2026-11-15";
+  const DAILY_DISCOVERY_SCHEDULE_VERSION = 1;
   ${dayOrdinalSource}
   ${dailyScript.slice(discoveryScheduleStart,discoveryScheduleEnd)}
   dailyDiscoverySchedule;
