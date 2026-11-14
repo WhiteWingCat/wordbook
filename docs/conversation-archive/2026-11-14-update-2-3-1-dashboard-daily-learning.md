@@ -69,3 +69,21 @@ Before implementing true statistical selection, obtain and inspect the actual fr
 ## Source conversation
 
 ChatGPT conversation dated 2026-11-14 covering the owner's seven Update 2.3.1 refinements and the implementation handover.
+
+
+### Follow-up validation and server-catalogue correction — 2026-11-14
+
+- A first CI attempt failed because `tests/update-2-3-0/check-frontend.mjs` still expected the old `dailyDiscoveries` array. The test was updated to validate `dailyDiscoveryVocabulary` and its dictionary metadata.
+- Further review found that dynamically generated global discovery IDs would be rejected by the server-side approved content catalogue. Corrected this before owner testing:
+  - Each of the 12 vocabulary entries now has a stable approved base ID.
+  - Session IDs use `approved-word-id:YYYY-MM-DD`, with the date based on the shared UTC day.
+  - The private validator accepts only a valid date suffix whose base ID is active in the private catalogue, with null topic and difficulty.
+  - The content-catalogue migration draft replaces the old 27 discovery rows with 12 approved vocabulary IDs.
+  - Catalogue checker expectations now total 80 entries (28 Topic + 25 Application + 12 Discovery + 15 permanent lessons).
+  - SQL assertions test valid date-scoped IDs, unknown IDs, malformed dates and forged topic metadata. The allowance test fixture was updated to use a date-scoped ID.
+- Latest PR #5 head confirmed: `c2f7ab612e1d3f773eb5322296b77240e8a36e24`.
+- Latest CI run [#499](https://github.com/WhiteWingCat/wordbook/actions/runs/43550190284) completed successfully: Chromium browser regression, PostgreSQL 17 migration/allowance tests and disposable local Supabase Auth compatibility all passed.
+- The earlier run #495 failure was confined to the stale frontend checker expectation; run #499 includes the corrected checker, catalogue migration, date-scoped validator and updated allowance assertion.
+- Static JavaScript syntax and catalogue matching checks also passed.
+- This CI evidence does not replace owner preview testing. Cloudflare preview deployment for the latest commit has not been independently confirmed in this record.
+- The current Daily Discovery set is still a curated pilot, not statistically ranked by spoken-corpus frequency. This remains a known content-quality limitation.
