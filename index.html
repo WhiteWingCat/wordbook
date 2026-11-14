@@ -217,7 +217,7 @@
     .definition { font-size: 1.05rem; margin: 0; display:grid; gap:12px; }
     .definition-sense { padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,.025); }
     .definition-sense strong { color:var(--accent); font-size:.9rem; }
-    .definition-sense-text { margin:4px 0 0; line-height:1.65; }
+    .definition-sense-text { margin:4px 0 0; line-height:1.65; color:var(--text); }
     .example-list { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
     .example-list li { border-left: 2px solid #56699e; padding: 9px 13px; border-radius: 0 8px 8px 0; background: #20242d; }
     .conversation { border: 1px solid var(--border); border-radius: 12px; padding: 14px; background: #13161c; }
@@ -317,7 +317,7 @@
     .lesson-detail-reader{width:min(900px,100%);margin:0 auto;padding:clamp(18px,3vw,32px);border:1px solid var(--border);border-radius:18px;background:var(--panel);box-shadow:var(--shadow)}
     .lesson-detail-reader #lessonBack{margin-bottom:18px}
     .daily-activity-backdrop{background:transparent}
-    .daily-activity-modal{width:min(580px,92vw);min-width:0;max-width:760px;height:100dvh;max-height:100dvh;overflow-y:auto;overscroll-behavior:contain;padding:clamp(20px,3vw,34px);border:1px solid var(--border);border-left:0;border-radius:0 18px 18px 0;box-shadow:var(--shadow)}
+    .daily-activity-modal{width:min(580px,92vw);min-width:0;max-width:760px;height:100dvh;max-height:100dvh;overflow-y:auto;overscroll-behavior:contain;padding:clamp(20px,3vw,34px);border:0;border-radius:0 18px 18px 0;box-shadow:var(--shadow)}
     .daily-activity-modal .daily-reader-example{margin:16px 0}
     .daily-examples-box ul{margin:9px 0 0;padding-left:1.25rem;display:grid;gap:9px}
     .daily-examples-box li{padding-left:3px;line-height:1.65}
@@ -327,7 +327,7 @@
     .daily-discovery-modal{padding:0}
     .daily-discovery-modal .modal-head{padding:23px 24px 17px}
     .daily-discovery-modal .modal-content{padding:26px 28px 32px}
-    .daily-discovery-modal .modal-content .definition{display:block}
+    .daily-discovery-modal .modal-content .definition{display:block;color:var(--text)}
     @media(max-width:650px){
       .daily-activity-modal{width:92vw;min-width:0;padding:18px}
       .daily-discovery-modal{padding:0}

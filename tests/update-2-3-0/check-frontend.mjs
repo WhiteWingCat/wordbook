@@ -192,6 +192,12 @@ if (!html.includes('id="lessonDetailPage"') || !html.includes('showPage("lessonD
   throw new Error("Permanent lesson page navigation or shared translation refresh is missing.");
 }
 if (!html.includes(".daily-activity-backdrop{background:transparent}")
+    || !html.includes(".daily-activity-modal{width:min(580px,92vw);min-width:0;max-width:760px;height:100dvh;max-height:100dvh;overflow-y:auto;overscroll-behavior:contain;padding:clamp(20px,3vw,34px);border:0;")
+    || !html.includes(".definition-sense-text { margin:4px 0 0; line-height:1.65; color:var(--text); }")
+    || !html.includes(".daily-discovery-modal .modal-content .definition{display:block;color:var(--text)}")
+    || !dailyScript.includes("function renderDailyStatus()")
+    || !dailyScript.includes('await supabaseClient.rpc("abandon_daily_activity_session",{p_session_id:session.id})')
+    || !dailyScript.includes("closeDailyReader();")
     || !html.includes("daily-examples-box")
     || !dailyScript.includes('dailyUi("Examples","例句")')
     || dailyScript.includes("More examples")) {

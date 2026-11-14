@@ -72,6 +72,7 @@ test("signed-in Daily Topic completes through the server RPC without answer-leve
   await start.click();
   await expect(page.locator("#dailyActivityReader")).toBeVisible();
   await page.locator("#dailyActivityReader [data-complete-daily]").click();
+  await expect(page.locator("#dailyActivityReader")).toBeHidden();
 
   const dailyRpcNames = () => page.evaluate(() => window.__swiftDailyMock.rpcCalls
     .filter(call => ["start_daily_activity_session","complete_daily_activity_session"].includes(call.name))
@@ -319,6 +320,7 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
               difficulty: args.p_difficulty,
               source: args.p_source,
               status: "in_progress",
+              started_at: new Date().toISOString(),
               completed_at: null,
               correct_count: null,
               question_count: null
@@ -368,6 +370,7 @@ test("Daily activity translation refreshes in place while preserving English lea
   await page.locator('[data-page="lessons"]').click();
   await expect(page.locator("#dailyLearningHeading")).toHaveText("每日学习");
   await expect(page.locator('[data-daily-pref-label="daily_topic"]')).toHaveText("每日主题");
+  await expect(page.locator("#dailyLearningStatus")).toContainText("每日活动于午夜重置");
   await page.locator('#dailyActivityGrid [data-start-daily="daily_application"]').click();
   await expect(page.locator("#dailyActivityReader")).toBeVisible();
   await expect(page.locator("#dailyActivityReader [data-daily-back]")).toHaveText("← 返回课程");
@@ -380,6 +383,7 @@ test("Daily activity translation refreshes in place while preserving English lea
   await expect(page.locator("#dailyActivityReader [data-daily-back]")).toHaveText("← Back to Lessons");
   await expect(page.locator("#dailyLearningHeading")).toHaveText("Daily Learning");
   await expect(page.locator('[data-daily-pref-label="daily_topic"]')).toHaveText("Daily Topic");
+  await expect(page.locator("#dailyLearningStatus")).toContainText("Your daily activities reset at midnight");
   await expect(page.locator("#dailyActivityReader #dailyQuestions .daily-question strong").first()).toContainText(/[A-Za-z]/);
   await expect(page.locator("#dailyActivityReader .daily-question-feedback").first()).not.toBeEmpty();
   await expect(page.locator("#dailyActivityReader .daily-question-feedback").first()).not.toContainText("中文说明");
@@ -388,6 +392,7 @@ test("Daily activity translation refreshes in place while preserving English lea
   await expect(page.locator("#dailyActivityReader [data-daily-back]")).toHaveText("← 返回课程");
   await expect(page.locator("#dailyLearningHeading")).toHaveText("每日学习");
   await expect(page.locator('[data-daily-pref-label="daily_topic"]')).toHaveText("每日主题");
+  await expect(page.locator("#dailyLearningStatus")).toContainText("每日活动于午夜重置");
   await expect(page.locator("#dailyActivityReader .daily-question-feedback").first()).toContainText("中文说明");
 });
 
@@ -404,10 +409,14 @@ test("Daily Discovery uses dictionary layout and the approved global catalogue m
   await expect(reader.locator("[data-previous],[data-next],#previousButton,#nextButton")).toHaveCount(0);
   const style = await reader.evaluate(el => ({
     backdrop: getComputedStyle(el).backgroundColor,
-    padding: getComputedStyle(el.querySelector(".daily-discovery-modal .modal-content")).padding
+    padding: getComputedStyle(el.querySelector(".daily-discovery-modal .modal-content")).padding,
+    border: getComputedStyle(el.querySelector(".daily-discovery-modal")).borderTopWidth,
+    definitionColor: getComputedStyle(el.querySelector(".daily-discovery-modal .definition")).color
   }));
   expect(style.backdrop).toBe("rgba(0, 0, 0, 0)");
   expect(style.padding).not.toBe("0px");
+  expect(style.border).toBe("0px");
+  expect(style.definitionColor).toBe("rgb(243, 244, 246)");
 
   const start = await page.evaluate(() => window.__swiftDailyMock.rpcCalls.find(call => call.name === "start_daily_activity_session"));
   expect(start.args.p_activity_type).toBe("daily_discovery");
@@ -470,6 +479,31 @@ test("Daily Revision is adaptive, abandonment is free, and Daily Discovery is un
   expect(discovery.call.args.p_question_count).toBeNull();
   expect(discovery.session.status).toBe("completed");
   expect(discovery.used).toBe(1);
+});
+
+test("unfinished daily activities expire at the user's local midnight", async ({ page }) => {
+  await installDailyLearningMock(page, "daily-expiry-user");
+  await page.goto("/");
+  await page.evaluate(() => {
+    const state = window.__swiftDailyMock;
+    state.sessions.push({
+      id:"stale-daily-session", user_id:"daily-expiry-user", activity_type:"daily_topic",
+      content_id:"topic-present-perfect-01", topic_id:"verb-tenses", status:"in_progress",
+      started_at:"2026-11-13T08:00:00.000Z", completed_at:null, correct_count:null, question_count:null
+    });
+    state.tables.daily_activity_sessions = state.sessions;
+  });
+  await page.reload();
+  await expect.poll(() => page.evaluate(() =>
+    window.__swiftDailyMock.sessions.find(row => row.id === "stale-daily-session")?.status
+  )).toBe("abandoned");
+  await expect(page.locator('#dailyActivityGrid [data-activity-card="daily_topic"]')).not.toContainText("In progress");
+  await expect(page.locator('#dailyActivityGrid [data-start-daily="daily_topic"]')).toBeEnabled();
+  await page.locator('#dailyActivityGrid [data-start-daily="daily_topic"]').click();
+  await expect(page.locator("#dailyActivityReader")).toBeVisible();
+  const active = await page.evaluate(() => window.__swiftDailyMock.sessions.find(row => row.status === "in_progress"));
+  expect(active.id).not.toBe("stale-daily-session");
+  expect(active.started_at).toBeTruthy();
 });
 
 test("Dashboard shows saved words, course recency, ledger allowances and practice insights; Preferences stays separate", async ({ page }) => {

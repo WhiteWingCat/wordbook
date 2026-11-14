@@ -196,6 +196,26 @@
     });
   }
 
+  function renderDailyStatus() {
+    if (!snapshot.day) return;
+    const status = byId("dailyLearningStatus");
+    if (!status) return;
+    const timezone = snapshot.timezone || "UTC";
+    const plan = snapshot.plan === "premium" ? "Premium" : "Free";
+    status.textContent = dailyUi(
+      "Your daily activities reset at midnight (" + timezone + "). Plan: " + plan + ". English learning context is preserved; Chinese explanations are shown where available.",
+      "每日活动于午夜重置（" + timezone + "）。方案：" + plan + "。英语学习语境会保留，并在适用位置提供中文说明。"
+    );
+    if (snapshot.timezoneChangePending) status.textContent += dailyUi(
+      " Your preferred timezone (" + snapshot.preferredTimezone + ") will take effect after this allowance day ends.",
+      " 你偏好的时区（" + snapshot.preferredTimezone + "）将在当前额度日结束后生效。"
+    );
+    if (snapshot.courseNeedsEnglish) status.textContent += dailyUi(
+      " Select English as your Learning course to start these activities. Your saved Chinese course preference is not changed by this message.",
+      "请将学习课程切换为 English 后开始这些活动。此提示不会更改你已保存的中文课程偏好。"
+    );
+  }
+
   function makeRevisionContent(topicId, contentId, reason) {
     const source = dailyApplications.find(item =>
       item.topicId === topicId && contentId.includes(":" + item.id + ":"))
@@ -439,22 +459,34 @@
       if (typeof row.activity_type === "string" && Number.isInteger(used) && used >= 0) completed[row.activity_type] = used;
     }
     const completedToday = (dailyResult.data || []).filter(row => row.completed_at && row.completed_at >= start && row.completed_at < finish);
+    const activeSessions = [];
+    for (const session of openSessionResult.data || []) {
+      const startedAt = Date.parse(session.started_at || "");
+      if (!Number.isFinite(startedAt) || startedAt < Date.parse(start) || startedAt >= Date.parse(finish)) {
+        if (!session.id) throw new Error("An expired daily activity session could not be identified for reset.");
+        const {error} = await supabaseClient.rpc("abandon_daily_activity_session",{p_session_id:session.id});
+        if (error) throw error;
+      } else {
+        activeSessions.push(session);
+      }
+    }
     const language = prefs.learning_language || "en";
+    const timezoneChangePending = !!(prefs.allowance_timezone && Date.parse(prefs.allowance_timezone_until || "") > Date.now());
     snapshot = {
       timezone, day, learningLanguage:language, plan, limits, completed, completedToday,
       lessonResults:lessonResult.data || [],
       dailyResults:dailyResult.data || [],
-      openSessions:openSessionResult.data || [],
+      openSessions:activeSessions,
+      timezoneChangePending,
+      preferredTimezone:prefs.timezone || "UTC",
+      courseNeedsEnglish:language !== "en" || course !== "en",
       content:{}
     };
 
     const slots = {};
     for (const type of Object.keys(activityMeta)) slots[type] = completed[type] || 0;
     for (const type of Object.keys(activityMeta)) snapshot.content[type] = chooseContent(type,slots[type]);
-    const timezoneChangePending = prefs.allowance_timezone && Date.parse(prefs.allowance_timezone_until || "") > Date.now();
-    status.textContent = dailyUi("Your daily activities reset at midnight (" + timezone + "). Plan: " + (plan === "premium" ? "Premium" : "Free") + ". English learning context is preserved; Chinese explanations are shown where available.","每日活动于午夜重置（" + timezone + "）。方案：" + (plan === "premium" ? "Premium" : "Free") + "。英语学习语境会保留，并在适用位置提供中文说明。");
-    if (timezoneChangePending) status.textContent += " Your preferred timezone (" + prefs.timezone + ") will take effect after this allowance day ends.";
-    if (language !== "en" || course !== "en") status.textContent += " Select English as your Learning course to start these activities. Your saved Chinese course preference is not changed by this message."
+    renderDailyStatus();
     renderCards();
   }
 
@@ -509,7 +541,8 @@
       else if (allowanceUnavailable) disabledReason = limitConfig?.enabled === false
         ? dailyUi("This activity is not available for your current plan.","当前方案暂不提供此活动。")
         : dailyUi("Your allowance could not be checked. Please refresh before starting this activity.","无法确认活动额度，请刷新页面后再试。");
-      else if (exhausted) disabledReason = dailyUi("You have used today's completion allowance. It resets at midnight (" + snapshot.timezone + ").","今日完成额度已用完，将于午夜重置（" + snapshot.timezone + "）。");
+      // The cooldown preview already explains the midnight reset. Avoid repeating
+      // the same allowance message a second time beneath it.
       const disabled = !!disabledReason;
       return '<article class="daily-activity-card" data-activity-card="' + type + '">'
         + '<div class="daily-activity-meta"><span class="daily-activity-tag">' + esc(meta.label) + '</span><span class="daily-activity-tag">' + esc(remainingLabel) + '</span></div>'
@@ -650,6 +683,7 @@
 
   window.refreshDailyLearningTranslation = function() {
     renderDailyStaticLabels();
+    renderDailyStatus();
     if (typeof renderCards === "function" && snapshot.content && Object.keys(snapshot.content).length) renderCards();
     if (readerState) {
       const state=readerState;
@@ -750,8 +784,7 @@
       if (error) throw error;
       saved = Array.isArray(data) ? data[0] : data;
       if (!saved) throw new Error("The completion could not be confirmed.");
-      readerState.session = saved;
-      renderReader(activityType,content,saved);
+      closeDailyReader();
     } catch (error) {
       byId("dailyLearningStatus").textContent = error.message || "Completion could not be saved. Your session remains in progress.";
       if (button) { button.disabled = false; button.textContent = dailyUi("Complete activity","完成活动"); }
@@ -759,9 +792,9 @@
     }
     try {
       await loadDailyData();
-      byId("dailyLearningStatus").textContent = "Activity completed successfully. " + byId("dailyLearningStatus").textContent;
+      byId("dailyLearningStatus").textContent = dailyUi("Activity completed successfully. ","活动已成功完成。") + byId("dailyLearningStatus").textContent;
     } catch (error) {
-      byId("dailyLearningStatus").textContent = "Activity completed successfully. The remaining allowance display could not be refreshed: " + (error.message || "Please reload the page.");
+      byId("dailyLearningStatus").textContent = dailyUi("Activity completed successfully. The remaining allowance display could not be refreshed: ","活动已成功完成，但无法刷新剩余额度显示：") + (error.message || "Please reload the page.");
     }
   }
 
