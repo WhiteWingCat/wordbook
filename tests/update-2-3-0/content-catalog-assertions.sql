@@ -9,8 +9,8 @@ begin
   if (select count(*) from private.learning_content_catalog where activity_type='daily_application' and is_active) <> 25 then
     raise exception 'Expected 25 approved Daily Application IDs';
   end if;
-  if (select count(*) from private.learning_content_catalog where activity_type='daily_discovery' and is_active) <> 27 then
-    raise exception 'Expected 27 approved Daily Discovery IDs';
+  if (select count(*) from private.learning_content_catalog where activity_type='daily_discovery' and is_active) <> 12 then
+    raise exception 'Expected 12 approved Daily Discovery word IDs';
   end if;
   if (select count(*) from private.learning_content_catalog where activity_type='permanent_lesson' and is_active) <> 15 then
     raise exception 'Expected 15 approved permanent lesson IDs';
@@ -60,9 +60,21 @@ begin
     'daily_application','application-articles-01','nouns-and-articles','advanced','en','daily'
   ) then raise exception 'Daily Application difficulty mismatch was accepted'; end if;
 
+  if not private.is_approved_learning_content(
+    'daily_discovery','discovery-word-meticulous-01:2026-11-14',null,null,'en','daily'
+  ) then raise exception 'Valid date-scoped global Daily Discovery word was rejected'; end if;
+
   if private.is_approved_learning_content(
-    'daily_discovery','discovery-not-in-catalogue',null,null,'en','daily'
-  ) then raise exception 'Unknown Daily Discovery content was accepted'; end if;
+    'daily_discovery','discovery-not-in-catalogue:2026-11-14',null,null,'en','daily'
+  ) then raise exception 'Unknown Daily Discovery word was accepted'; end if;
+
+  if private.is_approved_learning_content(
+    'daily_discovery','discovery-word-meticulous-01:not-a-date',null,null,'en','daily'
+  ) then raise exception 'Daily Discovery with an invalid global date was accepted'; end if;
+
+  if private.is_approved_learning_content(
+    'daily_discovery','discovery-word-meticulous-01:2026-11-14','forged-topic',null,'en','daily'
+  ) then raise exception 'Daily Discovery with a forged topic was accepted'; end if;
 
   if not private.is_approved_learning_content(
     'daily_revision',
