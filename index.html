@@ -411,16 +411,16 @@
     <section id="lessonsPage" class="page-panel" hidden aria-labelledby="lessonsHeading">
       <p class="eyebrow">ENGLISH COURSE</p><h1 id="lessonsHeading">Lessons</h1><p class="page-intro">Build English skills through guided explanations, examples and short practice.</p>
     <section id="dailyLearningPage" class="lesson-daily-section" aria-labelledby="dailyLearningHeading">
-      <p class="eyebrow">DAILY PRACTICE</p>
+      <p class="eyebrow" id="dailyLearningEyebrow">DAILY PRACTICE</p>
       <h2 id="dailyLearningHeading">Daily Learning</h2>
-      <p class="page-intro">Build consistency with personalised activities and a shared daily dictionary word for everyone.</p>
+      <p class="page-intro" id="dailyLearningIntro">Build consistency with personalised activities and a shared daily dictionary word for everyone.</p>
       <p id="dailyLearningStatus" role="status" aria-live="polite" class="page-intro">Sign in to save daily activity progress across devices.</p>
       <fieldset class="daily-preferences">
-        <legend>My daily activities</legend>
-        <label class="daily-preference"><input type="checkbox" data-daily-pref="daily_topic_enabled" checked> Daily Topic</label>
-        <label class="daily-preference"><input type="checkbox" data-daily-pref="daily_application_enabled" checked> Daily Application</label>
-        <label class="daily-preference"><input type="checkbox" data-daily-pref="daily_discovery_enabled" checked> Daily Discovery</label>
-        <label class="daily-preference"><input type="checkbox" data-daily-pref="daily_revision_enabled" checked> Daily Revision</label>
+        <legend id="dailyPreferencesLegend">My daily activities</legend>
+        <label class="daily-preference"><input type="checkbox" data-daily-pref="daily_topic_enabled" checked><span data-daily-pref-label="daily_topic">Daily Topic</span></label>
+        <label class="daily-preference"><input type="checkbox" data-daily-pref="daily_application_enabled" checked><span data-daily-pref-label="daily_application">Daily Application</span></label>
+        <label class="daily-preference"><input type="checkbox" data-daily-pref="daily_discovery_enabled" checked><span data-daily-pref-label="daily_discovery">Daily Discovery</span></label>
+        <label class="daily-preference"><input type="checkbox" data-daily-pref="daily_revision_enabled" checked><span data-daily-pref-label="daily_revision">Daily Revision</span></label>
       </fieldset>
       <div id="dailyActivityGrid" class="daily-activity-grid"></div>
       <article id="dailyActivityReader" class="daily-reader-card" hidden></article>
