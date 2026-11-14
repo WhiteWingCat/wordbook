@@ -660,3 +660,64 @@ The owner reviewed the prior Update 2.3.1 preview and requested:
 6. Owner retest priorities: switch translation while a permanent lesson is open; switch translation while a Daily Activity is open and after checking answers; verify English learning context remains English; inspect activity panel backdrop/insets; verify Discovery layout; compare A/B Topic/Application/Revision and shared Discovery; reset mock data and verify the personalised selections rotate; open/back from a permanent lesson page.
 7. Dashboard is frozen unless the owner raises a new issue. Statistical spoken-frequency ranking for Daily Discovery remains future work; the current 12-word set is curated, not corpus-ranked.
 8. Wait for owner testing feedback before any further app changes. Do not merge PR #5 or deploy without explicit approval.
+
+
+## 17. Update 2.3.1 — final daily activity polish and rollover handling (2026-11-14)
+
+### Owner feedback
+
+The owner requested six final refinements before considering Update 2.3.1 ready for main: remove the activity reader outline; translate the Daily Learning reset/plan/context status when the translation language changes; remove duplicate cooldown text; improve definition contrast to white in Daily Discovery and lessons; ensure unfinished activities reset after the daily boundary; and close the reader after successful completion. The Dashboard remains explicitly out of scope.
+
+### Implementation
+
+All application work stayed on feature/update-2-3-1-bug-fix-and-changes, PR #5, targeting main.
+
+- Removed the activity reader border while retaining its transparent backdrop, spacing, rounded outer corners and shadow.
+- Added a shared renderDailyStatus() path. The reset timezone, plan, English-context note, deferred timezone-change notice and English-course guidance now refresh in the selected translation language whenever the global translation selector changes.
+- Retained the cooldown preview and removed the second repeated allowance-exhaustion message.
+- Set lesson definition text and Daily Discovery definition text to the primary foreground colour (var(--text)).
+- After the server confirms complete_daily_activity_session, the reader closes immediately. The activity list and remaining allowance then refresh. Completion confirmation and refresh-error messages use the selected translation language.
+- On Daily Learning load, each in-progress session's started_at timestamp is compared with the current allowance-day interval in the user's effective allowance timezone. Sessions outside that interval, including malformed timestamps, are marked abandoned through the existing abandon_daily_activity_session RPC before cards render. Only sessions started within the current allowance day remain resumable. Abandonment does not count as completion or consume allowance.
+
+### Daily reset and allowance clarification
+
+The reset is based on the configured allowance timezone, not on whether the learner completed the activity. At the next local midnight, a completed activity remains recorded as completed for its original day, while an unfinished session is marked abandoned on the next Daily Learning load. The user can then start the new day's activity without resuming yesterday's session. Only successful completion consumes the daily allowance.
+
+This is a lazy rollover cleanup, not a background job at the exact stroke of midnight. If the user does not open Daily Learning, the old database row may remain in_progress until the next load; that load performs cleanup before rendering resumable sessions.
+
+### Tests and validation
+
+Latest application commit: 99dc69446ca56459c344915711ed2169c909b0c4.
+
+Browser regression coverage now checks:
+- Daily Learning status switching Chinese → English → Chinese while a reader is open.
+- Reader border removal and primary-foreground definition colour.
+- Reader closure after successful completion.
+- Automatic abandonment of a previous-day unfinished session, followed by creation of a fresh session.
+
+Latest GitHub Actions run: [run #557](https://github.com/WhiteWingCat/wordbook/actions/runs/43556612276).
+
+- Chromium browser regression: 16 tests passed.
+- PostgreSQL 17 migration and allowance tests passed.
+- Disposable local Supabase Auth compatibility and security-advisor checks passed.
+- All three CI jobs passed on commit 99dc69446ca56459c344915711ed2169c909b0c4.
+
+An earlier browser attempt failed only because an existing test expected an English completion confirmation while the fixture selected Simplified Chinese. The implementation correctly returned the Chinese confirmation; the assertion was corrected and the subsequent full CI run passed.
+
+### Legal, privacy and data-safety review
+
+- No new personal-data fields, tables, raw-answer collection, tracking or learner-profile categories were added; no database migration was introduced.
+- Rollover cleanup changes only the status of the signed-in user's existing expired activity session through the existing account-scoped server RPC and access controls.
+- No additional learner data is collected, exposed or logged.
+- This is not a legal-compliance certification. Malaysia PDPA and applicable global privacy/age obligations remain project-wide review requirements.
+
+### Current branch and recovery point
+
+1. Feature branch: feature/update-2-3-1-bug-fix-and-changes.
+2. PR #5: https://github.com/WhiteWingCat/wordbook/pull/5 — open, targets main, not merged.
+3. Latest feature head: 99dc69446ca56459c344915711ed2169c909b0c4.
+4. CI run #557 passed all three jobs; browser suite passed 16 tests.
+5. No production database migration, production data operation, PR merge or production deployment was performed.
+6. The owner-confirmed Cloudflare preview host remains feature-update-2-3-1-bug-fix.swiftdictionary-testing.pages.dev. Confirm Cloudflare rebuilt the latest commit before testing. Use the explicit mock opt-in and fictional Test User A/B only; do not use real accounts or real data-changing tests.
+7. Owner retest priorities: inspect the reader edge; switch translation while the Daily Learning status is visible; verify only one cooldown explanation; inspect definition contrast in Discovery and permanent lessons; leave an activity unfinished across local midnight and verify it is abandoned before a fresh session starts; complete an activity and confirm the reader closes.
+8. Dashboard remains frozen unless the owner raises a new issue. Do not merge PR #5 or deploy without explicit owner approval.
