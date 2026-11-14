@@ -1365,7 +1365,7 @@ The owner confirmed the curriculum difficulty mix for Quiz. A higher-difficulty 
 | Selected Quiz difficulty | Approved question composition |
 |---|---|
 | Beginner | 100% Beginner |
-| Intermediate | 50–80% Intermediate and 20–50% Beginner. The owner explicitly accepts both 50/50 and 80/20 distributions; intermediate mixes within that range may be used when appropriate. |
+| Intermediate | Either 50% Intermediate / 50% Beginner or 80% Intermediate / 20% Beginner. These are the two approved mixes. |
 | Advanced | 60–80% Advanced, exactly 20% Intermediate, and 0–20% Beginner. |
 
 All percentages for an individual quiz must total 100%. Question counts are fixed by the existing plan (Beginner 10, Intermediate 15, Advanced 20). For a 15-question Intermediate quiz, 80/20 maps exactly to 12 Intermediate and 3 Beginner questions; 50/50 cannot be represented exactly with an odd count, so use a balanced 7/8 split and alternate which level receives 8 across quizzes to avoid systematic bias. For a 20-question Advanced quiz, 4 questions are Intermediate and 0–4 are Beginner, with the remaining 16–12 questions Advanced (80/20/0 through 60/20/20). Beginner remains 10 Beginner questions. The implementation must never silently produce a ratio outside the approved compositions. The question bank must contain enough approved questions at each source difficulty to satisfy the selected composition; if it does not, the system should not quietly substitute out-of-scope questions.
