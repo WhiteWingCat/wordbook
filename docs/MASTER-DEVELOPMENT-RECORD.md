@@ -3,7 +3,7 @@
 > Durable project handover and source-of-truth summary for future development conversations.
 >
 > **Repository:** https://github.com/WhiteWingCat/wordbook  
-> **Last consolidated:** 2026-11-14 (Quiz planning decisions and multilingual learning/translation rule added)  
+> **Last consolidated:** 2026-11-14 (Quiz pre-development decisions approved)  
 > **Current baseline:** Update 2.3.3 merged to main and GitHub Pages deployment succeeded on 2026-11-14 (merge commit `90dc73a9b65fc3af713fefab4955057026089b96`); six 2.3.0 Supabase migrations are applied to production  
 > **Current work:** Update 2.3.3 is live and owner-confirmed working. Planning Update 2.4.0 Quiz; no Quiz implementation has started.  
 > **Record status:** Updated after the six approved production migrations were applied and verified, PR #7 merged, and main GitHub Pages deployment succeeded. No production user-content bulk operation was performed.
@@ -1311,11 +1311,11 @@ This rule is a future architecture requirement. It does **not** mean a full Chin
 ### Remaining design and implementation questions
 
 Before implementation, settle:
-1. How to handle an abandoned active session across a daily allowance reset, content retirement or a change in course/translation preferences.
-2. Whether results include a pass threshold or only score, percentage and per-question review. No pass mark has been approved.
+1. How to handle an unfinished active session across a daily allowance reset, content retirement or a change in course/translation preferences — session persistence and abandonment are resolved in Section 31; content retirement and preference snapshots remain subject to the existing versioning/language-pair rules.
+2. Whether results include a pass threshold or only score, percentage and per-question review — resolved in Section 31: score and percentage only; no pass/fail threshold.
 3. Exact daily quiz uniqueness/allowance enforcement, including prevention of duplicate or cloned sessions while allowing resume and read-only review.
 4. Which result fields are required to reproduce completed reviews if catalogue content changes. Prefer storing stable question/version references and the minimum answer/result snapshot needed for review.
-5. How question selection guarantees a balanced enough curriculum sample despite mixed-topic random selection and limited eligible content.
+5. How question selection guarantees a balanced enough curriculum sample despite mixed-topic random selection and limited eligible content — minimum question-bank availability gates are approved in principle; numeric thresholds must be set from the approved content inventory and validated before a difficulty is enabled (Section 31).
 
 ### Data, security and legal planning notes
 
@@ -1373,3 +1373,41 @@ All percentages for an individual quiz must total 100%. Question counts are fixe
 This resolves the previously open question about cumulative difficulty composition. It does not change the separate rule that questions may come from all approved curriculum lessons within the selected difficulty scope regardless of the learner's personal lesson-completion history.
 
 No application implementation, question-bank content, migration, production data or deployment was changed by this planning decision.
+
+
+## 31. Update 2.4.0 — approved final pre-development decisions (2026-11-14)
+
+The owner explicitly approved the following three decisions to close the remaining product-level questions before Quiz development:
+
+### Scoring: score and percentage, no pass/fail
+
+- A completed Quiz displays the raw score (for example, 12/15) and percentage.
+- Do not assign a pass/fail status, passing grade or pass threshold in Update 2.4.0.
+- Retain per-question review with the learner's selected answer, correct answer and explanation, as already specified.
+- Results may inform topic-level revision recommendations, but must not be represented as a pass/fail judgement or definitive proof of mastery.
+
+### Unfinished-session persistence: no automatic expiry
+
+- Preserve an unfinished Quiz session until the learner completes it or explicitly abandons it.
+- Do not expire or discard an unfinished session solely because the user's local daily allowance window resets.
+- Resuming an existing session remains free and must not consume another Quiz allowance.
+- Explicit abandonment releases the account's single-active-session slot and does not consume an allowance.
+- Preserve the session under its owning account; signing out or switching accounts must not transfer or expose it to another account.
+- Retain the session's original difficulty, question order, fixed answer-option order and course/translation language pair when resumed.
+- Content retirement or catalogue updates must not silently mutate an active session; use stable/versioned question references or an equivalent reviewed snapshot strategy.
+
+### Question-bank availability: minimum content gate
+
+- A difficulty must not be presented as available or allowed to start a Quiz until its approved question bank meets a defined minimum-content requirement.
+- Availability checks must account for the complete session length, approved difficulty composition, distinct-question selection, curriculum/topic coverage and the supported course/translation language pair.
+- The system must detect insufficient eligible content before session creation. It must not silently lower the session length, violate the approved ratios, reuse a question within the same session, or substitute out-of-scope content.
+- The numeric minimum bank size is not yet fixed. Set it after inspecting the approved question inventory and sampling/reuse policy; document and test the chosen threshold before enabling each difficulty. If a difficulty fails the gate, clearly mark it unavailable or otherwise prevent starting it with a clear user-facing explanation.
+- Adding content or approving a new language pair may make a previously unavailable difficulty eligible, but availability must be re-evaluated against the same gate.
+
+### Planning status and recovery point
+
+- These decisions complete the three product-level items raised in the pre-development review.
+- Remaining work is technical specification and evidence-based content threshold setting, followed by source-code and Supabase inspection, legal/privacy review, implementation and validation.
+- No application source, question bank, Supabase schema/migration, production data, allowance setting or deployment was changed by this approval.
+- Production remains Update 2.3.3 (main merge commit `90dc73a9b65fc3af713fefab4955057026089b96`). Quiz remains Coming Soon.
+- Documentation branch: `docs/master-development-record`.
