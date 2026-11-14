@@ -501,7 +501,7 @@ test("completed Discovery content remains reviewable across UTC rollover within 
   });
   await page.locator('[data-page="lessons"]').click();
   await page.locator('[data-daily-tab="daily_discovery"]').click();
-  await expect(page.locator('#dailyActivityGrid [data-discovery-card]')).toHaveCount(1);
+  await expect(page.locator('#dailyActivityGrid [data-activity-card="daily_discovery"]')).toHaveCount(1);
   const discoveryCards = page.locator('#dailyActivityGrid [data-activity-card="daily_discovery"]');
   await expect(discoveryCards).toHaveCount(1);
   await expect(discoveryCards.first()).toContainText("重温已完成内容");
