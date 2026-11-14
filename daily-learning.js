@@ -152,6 +152,14 @@
         {q:"There were _____ applicants this year than last year.",options:["less","fewer","little"],answer:1,explanation:"Fewer is used with plural countable nouns such as applicants.",zh:"applicants 是可数复数名词，因此使用 fewer。"}
       ]
     },
+    "collocations": {
+      title:"Build natural word partnerships", titleZh:"建立自然的词语搭配",
+      examples:["The sudden announcement came as a complete surprise.","She made a strong argument in favour of the proposal."],
+      questions:[
+        {q:"Which adjective naturally completes “_____ evidence”?",options:["strong","powerful","heavy"],answer:0,explanation:"Strong evidence is the usual collocation.",zh:"strong evidence 是常见且自然的词语搭配。"},
+        {q:"Choose the natural phrase.",options:["do progress","make progress","take progress"],answer:1,explanation:"Make progress is the established expression.",zh:"make progress 是固定且自然的表达。"}
+      ]
+    },
     "everyday-vocabulary": {
       title:"Choose natural everyday combinations", titleZh:"选择自然的日常词语搭配",
       examples:["I usually make breakfast before checking my messages.","Could you give me a hand with these boxes?"],
