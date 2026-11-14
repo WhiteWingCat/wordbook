@@ -435,6 +435,22 @@ test("Daily activity translation refreshes in place while preserving English lea
   await expect(page.locator("#dailyActivityReader .daily-question-feedback").first()).toContainText("中文说明");
 });
 
+test("Daily Revision presents real examples separately from its practice questions", async ({ page }) => {
+  await installDailyLearningMock(page,"daily-revision-example-user");
+  await page.goto("/");
+  await page.locator('[data-page="lessons"]').click();
+  await page.locator('#dailyActivityGrid [data-start-daily="daily_revision"]').click();
+  await expect(page.locator("#dailyActivityReader")).toBeVisible();
+  const examples = page.locator("#dailyActivityReader .daily-examples-box li");
+  const questions = page.locator("#dailyActivityReader #dailyQuestions .daily-question strong");
+  await expect(examples).toHaveCount(2);
+  await expect(questions).toHaveCount(2);
+  const exampleTexts = await examples.allTextContents();
+  const questionTexts = await questions.allTextContents();
+  expect(exampleTexts.every(text => !text.trim().endsWith("?"))).toBeTruthy();
+  expect(exampleTexts.some(example => questionTexts.some(question => question.includes(example)))).toBeFalsy();
+});
+
 test("Daily Discovery shows one Free entry and three identical Premium entries globally", async ({ browser }) => {
   const freePage = await browser.newPage();
   const premiumPageA = await browser.newPage();
