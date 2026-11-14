@@ -647,3 +647,39 @@ The CI run follows two corrected test-fixture issues: SQL exception-message quot
 4. Continue using only the explicit mock preview and fictional Free/Premium accounts. Do not use real accounts or production data-changing tests.
 5. No production Supabase migration, production data operation, merge or deployment was performed.
 6. The next gate is owner preview testing of the Free/Premium Discovery experience and the existing Update 2.3.1 regression checklist. Do not merge or deploy without explicit owner approval.
+
+
+## 21. Update 2.3.1 — Free/Premium mock accounts and final CI revalidation (2026-11-14)
+
+### Mock preview plan fixtures
+
+To make the owner preview testable without real accounts:
+- Test User A is now a Free mock identity (1 Daily Discovery completion/day).
+- Test User B is now a Premium mock identity (3 Daily Discovery completions/day).
+- The mock control panel labels each identity with its plan.
+- The mock adapter now returns matching plan entitlements and plan-limit rows, including Free/Premium lesson and daily-activity limits. Existing sessionStorage isolation and no-cloud/no-real-OAuth boundaries remain unchanged.
+- Added mock unit coverage confirming the two plan fixtures and Premium's three-completion Daily Discovery allowance.
+
+### Final CI revalidation
+
+GitHub Actions run **#647** completed successfully against code/test commit **308138b72917161d14ba5c5ed028a293509423b9**:
+https://github.com/WhiteWingCat/wordbook/actions/runs/43562295504
+
+All three jobs passed again:
+- Chromium browser regression: 17 tests passed.
+- PostgreSQL 17 migration and allowance tests: passed.
+- Supabase CLI local Auth compatibility and security-advisor checks: passed.
+
+The mock-adapter unit test step also passed with the Free/Premium plan fixtures. The browser and database suites continued to pass after those changes.
+
+### Owner preview handoff
+
+Use the existing feature preview only after confirming Cloudflare Pages has rebuilt the latest feature branch:
+- Test User A — Free: exactly one Discovery card, no locked placeholders.
+- Test User B — Premium: exactly three Discovery cards.
+- Compare the UTC-day words between both accounts; the Free card must match Premium's first card, and two Premium accounts must match all three.
+- Complete Discovery entries and check the remaining allowance: Free 0 after one; Premium 2 after one and 0 after three. Abandoning must not consume a completion.
+- Switch translation while the reader is open and confirm the definition and usage note update without changing the English learning context.
+- Refresh/reopen on the same UTC date and confirm the three scheduled words remain unchanged.
+
+No owner preview test has yet been recorded. PR #5 remains open/unmerged; no production database migration, production data operation or deployment was performed. Do not merge or deploy without explicit owner approval.
