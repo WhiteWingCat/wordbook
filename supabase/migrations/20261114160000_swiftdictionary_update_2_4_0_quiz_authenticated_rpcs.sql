@@ -8,6 +8,27 @@
 
 begin;
 
+-- Keep a minimal local-day reservation ledger separate from deletable session
+-- history. This preserves the no-repeat rule after an account deletes its Quiz
+-- history; expired reservations are purged after a conservative 36-hour window.
+create table if not exists private.quiz_daily_question_reservations (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  local_date date not null,
+  question_id text not null check (pg_catalog.char_length(question_id) between 1 and 120),
+  reserved_at timestamptz not null default pg_catalog.now(),
+  primary key (user_id,local_date,question_id)
+);
+
+comment on table private.quiz_daily_question_reservations is
+  'Minimal temporary no-repeat ledger. Kept after history deletion until the local-day reservation expires; contains no prompt, answer, score or explanation.';
+
+create index if not exists quiz_daily_question_reservations_expiry_idx
+  on private.quiz_daily_question_reservations(reserved_at);
+
+alter table private.quiz_daily_question_reservations enable row level security;
+revoke all on table private.quiz_daily_question_reservations
+  from public,anon,authenticated;
+
 -- Preserve curriculum mappings in each issued snapshot so later bank edits
 -- cannot rewrite the topic evidence used by Dashboard and Daily Revision.
 alter table private.quiz_session_questions
@@ -126,6 +147,12 @@ begin
   v_enabled := coalesce(v_enabled,false);
 
   v_local_date := (pg_catalog.now() at time zone v_timezone)::date;
+
+  -- Reservations contain only question IDs and expire after the local day.
+  -- Keep them when a user deletes history, but avoid indefinite retention.
+  delete from private.quiz_daily_question_reservations
+  where reserved_at < pg_catalog.now() - interval '36 hours';
+
   v_used := private.current_learning_allowance_usage(v_user, 'quiz', v_timezone);
 
   return pg_catalog.jsonb_build_object(
@@ -312,7 +339,7 @@ begin
     and v_learning = 'en'
     and q.translation_language_code = v_translation
     and not exists (
-      select 1 from private.quiz_session_questions issued
+      select 1 from private.quiz_daily_question_reservations issued
       where issued.user_id = v_user
         and issued.local_date = v_day
         and issued.question_id = q.question_id
@@ -525,7 +552,7 @@ begin
     and q.learning_language_code='en'
     and q.translation_language_code=v_translation
     and not exists (
-      select 1 from private.quiz_session_questions issued
+      select 1 from private.quiz_daily_question_reservations issued
       where issued.user_id=v_user and issued.local_date=v_day
         and issued.question_id=q.question_id
     );
@@ -602,7 +629,7 @@ begin
         and q.translation_language_code=v_translation
         and q.difficulty=v_source
         and not exists (
-          select 1 from private.quiz_session_questions issued
+          select 1 from private.quiz_daily_question_reservations issued
           where issued.user_id=v_user and issued.local_date=v_day
             and issued.question_id=q.question_id
         );
@@ -633,7 +660,7 @@ begin
           and q.translation_language_code=v_translation
           and q.difficulty=v_source
           and not exists (
-            select 1 from private.quiz_session_questions issued
+            select 1 from private.quiz_daily_question_reservations issued
             where issued.user_id=v_user and issued.local_date=v_day
               and issued.question_id=q.question_id
           )
@@ -676,6 +703,10 @@ begin
   ) values (
     v_user,p_difficulty,'en',v_translation,v_question_count,v_comp,v_day,v_timezone,'in_progress'
   ) returning id into v_session;
+
+  insert into private.quiz_daily_question_reservations(user_id,local_date,question_id)
+  select v_user,v_day,picked.question_id
+  from pg_catalog.unnest(v_selected_ids) as picked(question_id);
 
   with selected as (
     select q.*,
