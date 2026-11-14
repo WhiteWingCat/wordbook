@@ -678,7 +678,7 @@
     grid.innerHTML = enabledTypes.flatMap(type => {
       if (type === "daily_discovery") {
         const scheduled = Array.isArray(snapshot.content.daily_discovery)
-          ? snapshot.content.daily_discovery : [];
+          ? snapshot.content.daily_discovery : chooseContent("daily_discovery",0);
         const visibleCount = Math.min(3,Math.max(1,Number(snapshot.limits.daily_discovery?.limit) || 1));
         return scheduled.slice(0,visibleCount).map((content,index) => renderCard(type,content,index));
       }
