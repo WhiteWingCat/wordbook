@@ -325,10 +325,14 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
       function query(table) {
         const filters = {};
         let selectError = null;
+        let operation = "select";
+        let writeValues = null;
+        let conflictColumns = null;
+        let ignoreDuplicates = false;
         const q = {
           insert(values) {
-            const rows = state.tables[table] || (state.tables[table] = []);
-            rows.push(...(Array.isArray(values) ? values : [values]));
+            operation = "insert";
+            writeValues = values;
             return q;
           },
           select(columns) {
@@ -348,10 +352,40 @@ window.__SWIFT_TEST_INITIAL_USER = { id: ${JSON.stringify(userId)}, email: ${JSO
           lt(key, value) { filters[key] = { op: "lt", value }; return q; },
           order() { return q; },
           limit() { return q; },
-          upsert() { return Promise.resolve({ data: null, error: null }); },
+          upsert(values, options) {
+            operation = "upsert";
+            writeValues = values;
+            conflictColumns = options?.onConflict ? options.onConflict.split(",") : null;
+            ignoreDuplicates = !!options?.ignoreDuplicates;
+            return q;
+          },
+          delete() { operation = "delete"; return q; },
           maybeSingle() { return Promise.resolve({ data: selectError ? null : (rowsFor(table, filters)[0] || null), error: selectError }); },
           single() { return Promise.resolve({ data: selectError ? null : (rowsFor(table, filters)[0] || null), error: selectError }); },
-          then(resolve, reject) { return Promise.resolve({ data: selectError ? null : rowsFor(table, filters), error: selectError }).then(resolve, reject); }
+          then(resolve, reject) {
+            if (selectError) return Promise.resolve({ data:null, error:selectError }).then(resolve,reject);
+            const rows = state.tables[table] || (state.tables[table] = []);
+            if (operation === "upsert") {
+              const values = Array.isArray(writeValues) ? writeValues : [writeValues];
+              for (const value of values) {
+                const keys = conflictColumns || Object.keys(value);
+                const existing = rows.find(row => keys.every(key => row[key] === value[key]));
+                if (existing) { if (!ignoreDuplicates) Object.assign(existing,value); }
+                else rows.push({ ...value });
+              }
+              return Promise.resolve({ data:null, error:null }).then(resolve,reject);
+            }
+            if (operation === "delete") {
+              const removed = rowsFor(table,filters);
+              state.tables[table] = rows.filter(row => !removed.includes(row));
+              return Promise.resolve({ data:removed, error:null }).then(resolve,reject);
+            }
+            if (operation === "insert") {
+              rows.push(...(Array.isArray(writeValues) ? writeValues : [writeValues]));
+              return Promise.resolve({ data:null, error:null }).then(resolve,reject);
+            }
+            return Promise.resolve({ data:rowsFor(table,filters), error:null }).then(resolve,reject);
+          }
         };
         return q;
       }
@@ -690,7 +724,10 @@ test("Dashboard shows saved words, course recency, ledger allowances and practic
     state.tables.profiles = [{ user_id:userId, display_name:"Learner", avatar_icon:"🦊" }];
     state.tables.saved_words = [
       { user_id:userId, course:"en", word:"hello" },
-      { user_id:userId, course:"zh", word:"你" }
+      { user_id:userId, course:"zh", word:"你" },
+      // Legacy rows were sometimes assigned the default English course.
+      { user_id:userId, course:"en", word:"好" },
+      { user_id:userId, course:"zh", word:"hello" }
     ];
     state.tables.learning_activity_log = [
       { user_id:userId, activity_type:"lesson", event_type:"completed", language_code:"en", created_at:new Date(now-2*86400000).toISOString() },
@@ -730,6 +767,14 @@ test("Dashboard shows saved words, course recency, ledger allowances and practic
   await expect(page.locator("#favoriteEnglishGrid .word-card")).toContainText("hello");
   await page.locator("#favoriteChineseGrid").locator("xpath=..").locator("summary").click();
   await expect(page.locator("#favoriteChineseGrid .word-card")).toContainText("你");
+  await expect(page.locator("#favoriteEnglishGrid .word-card")).not.toContainText("好");
+  await expect(page.locator("#favoriteEnglishGrid .word-card")).not.toContainText("你");
+  await expect(page.locator("#favoriteChineseGrid .word-card")).not.toContainText("hello");
+  const repairedFavorites = await page.evaluate(() => window.__swiftDailyMock.tables.saved_words.map(row => ({course:row.course,word:row.word})));
+  expect(repairedFavorites).toContainEqual({course:"zh",word:"好"});
+  expect(repairedFavorites).toContainEqual({course:"en",word:"hello"});
+  expect(repairedFavorites.filter(row => row.word === "hello")).toHaveLength(1);
+  expect(repairedFavorites.filter(row => row.word === "好")).toHaveLength(1);
 
   await page.locator("#accountButton").click();
   await page.locator("#menuPreferences").click();
