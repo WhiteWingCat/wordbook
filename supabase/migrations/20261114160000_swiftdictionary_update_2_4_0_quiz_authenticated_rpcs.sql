@@ -511,8 +511,8 @@ begin
     end if;
   end loop;
 
-  select pg_catalog.count(*)::integer,
-         pg_catalog.count(distinct key)::integer
+  select coalesce(pg_catalog.sum((value #>> '{}')::integer),0)::integer,
+         pg_catalog.count(*)::integer
   into v_topic_total,v_topic_count
   from pg_catalog.jsonb_each(v_topic_counts);
 
@@ -855,6 +855,10 @@ $function$;
 
 -- Public RPC wrappers are SECURITY INVOKER (the default). The implementation
 -- functions remain in the non-exposed private schema and validate auth.uid().
+create or replace function public.delete_my_learning_history()
+returns jsonb language sql set search_path=''
+as $function$ select private.delete_my_learning_history_impl(); $function$;
+
 create or replace function public.get_my_quiz_availability()
 returns jsonb language sql set search_path=''
 as $function$ select private.get_my_quiz_availability_impl(); $function$;
@@ -897,6 +901,8 @@ as $function$ select private.get_my_quiz_review_impl(p_session_id); $function$;
 -- The private schema is not an exposed PostgREST schema; every implementation
 -- still checks auth.uid() and does not accept a caller-supplied owner.
 grant usage on schema private to authenticated;
+grant execute on function private.delete_my_learning_history_impl() to authenticated;
+revoke all on function private.delete_my_learning_history_impl() from public,anon;
 grant execute on function private.quiz_request_context() to authenticated;
 grant execute on function private.quiz_session_payload(uuid,boolean) to authenticated;
 grant execute on function private.get_my_quiz_availability_impl() to authenticated;
@@ -919,6 +925,7 @@ revoke all on function private.abandon_my_quiz_impl(uuid) from public,anon;
 revoke all on function private.get_my_quiz_history_impl(integer) from public,anon;
 revoke all on function private.get_my_quiz_review_impl(uuid) from public,anon;
 
+revoke all on function public.delete_my_learning_history() from public,anon;
 revoke all on function public.get_my_quiz_availability() from public,anon;
 revoke all on function public.start_my_quiz(text) from public,anon;
 revoke all on function public.get_my_active_quiz() from public,anon;
@@ -928,6 +935,7 @@ revoke all on function public.abandon_my_quiz(uuid) from public,anon;
 revoke all on function public.get_my_quiz_history(integer) from public,anon;
 revoke all on function public.get_my_quiz_review(uuid) from public,anon;
 
+grant execute on function public.delete_my_learning_history() to authenticated;
 grant execute on function public.get_my_quiz_availability() to authenticated;
 grant execute on function public.start_my_quiz(text) to authenticated;
 grant execute on function public.get_my_active_quiz() to authenticated;
