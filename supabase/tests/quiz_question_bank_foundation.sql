@@ -154,12 +154,41 @@ begin
     raise exception 'Learner could not change an answer before submission';
   end if;
 
-  -- An invalid option order must be rejected by the snapshot validator.
+  -- A second bank question allows us to validate the insert-time permutation
+  -- guard without attempting to mutate an immutable snapshot.
+  insert into private.quiz_question_bank (
+    question_id, revision, learning_language_code,
+    translation_language_code, source_lesson_id, topic_id, difficulty,
+    prompt_learning, prompt_translation, options, correct_option_id,
+    explanation_learning, explanation_translation, status
+  ) values (
+    'test-foundation-question-two', 1, 'en', 'zh',
+    'test-source-lesson', 'test-topic', 'beginner',
+    'Choose the correct colour.', '选择正确的颜色。',
+    '[
+      {"id":"a","learning_text":"Red","translation_text":"红色"},
+      {"id":"b","learning_text":"Run","translation_text":"跑"},
+      {"id":"c","learning_text":"Tomorrow","translation_text":"明天"},
+      {"id":"d","learning_text":"Softly","translation_text":"轻轻地"}
+    ]'::jsonb,
+    'a', 'Red is a colour.', 'Red 是一种颜色。', 'approved'
+  );
+
   v_failed := false;
   begin
-    update private.quiz_session_questions
-    set option_order=array['a','a','c','d']
-    where session_id=v_session_one and position=1;
+    insert into private.quiz_session_questions (
+      session_id, user_id, local_date, question_id, question_revision,
+      position, option_order, prompt_learning_snapshot,
+      prompt_translation_snapshot, options_snapshot, correct_option_id_snapshot,
+      explanation_learning_snapshot, explanation_translation_snapshot
+    )
+    select
+      v_session_one, v_user, v_day, q.question_id, q.revision,
+      2, array['a','a','c','d'], q.prompt_learning,
+      q.prompt_translation, q.options, q.correct_option_id,
+      q.explanation_learning, q.explanation_translation
+    from private.quiz_question_bank q
+    where q.question_id='test-foundation-question-two' and q.revision=1;
   exception when check_violation then
     v_failed := true;
   end;
