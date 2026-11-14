@@ -253,6 +253,9 @@ declare
   v_rb integer := 0;
   v_ri integer := 0;
   v_ra integer := 0;
+  v_beginner_topics integer := 0;
+  v_intermediate_topics integer := 0;
+  v_advanced_topics integer := 0;
   v_beginner_min boolean;
   v_intermediate_min boolean;
   v_advanced_min boolean;
@@ -291,8 +294,11 @@ begin
   select
     count(*) filter (where q.difficulty = 'beginner')::integer,
     count(*) filter (where q.difficulty = 'intermediate')::integer,
-    count(*) filter (where q.difficulty = 'advanced')::integer
-  into v_rb, v_ri, v_ra
+    count(*) filter (where q.difficulty = 'advanced')::integer,
+    count(distinct q.topic_id) filter (where q.difficulty = 'beginner')::integer,
+    count(distinct q.topic_id) filter (where q.difficulty in ('beginner','intermediate'))::integer,
+    count(distinct q.topic_id)::integer
+  into v_rb, v_ri, v_ra, v_beginner_topics, v_intermediate_topics, v_advanced_topics
   from private.quiz_question_bank q
   join private.learning_content_catalog c
     on c.activity_type = 'permanent_lesson'
@@ -317,12 +323,13 @@ begin
   v_intermediate_target := v_learning = 'en' and v_i >= 36 and v_b >= 24;
   v_advanced_target := v_learning = 'en' and v_a >= 48 and v_i >= 12 and v_b >= 12;
 
-  v_beginner_fresh := v_rb >= 10;
-  v_intermediate_fresh :=
+  v_beginner_fresh := v_rb >= 10 and v_beginner_topics >= 3;
+  v_intermediate_fresh := v_intermediate_topics >= 3 and (
        (v_ri >= 12 and v_rb >= 3)
     or (v_ri >= 8 and v_rb >= 7)
-    or (v_ri >= 7 and v_rb >= 8);
-  v_advanced_fresh := v_ri >= 4 and (
+    or (v_ri >= 7 and v_rb >= 8)
+  );
+  v_advanced_fresh := v_advanced_topics >= 3 and v_ri >= 4 and (
        (v_ra >= 16)
     or (v_ra >= 15 and v_rb >= 1)
     or (v_ra >= 14 and v_rb >= 2)
