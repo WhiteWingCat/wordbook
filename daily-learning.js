@@ -448,7 +448,7 @@
         : exhausted ? "Daily limit reached" : "Start activity";
       const reason = type === "daily_revision" ? '<p class="daily-activity-meta"><span class="daily-activity-tag">' + esc(content.body) + '</span></p>' : "";
       const preview = exhausted
-        ? '<div class="daily-reader-example daily-cooldown-message"><strong>Today's activity is complete</strong><p>Your next activity will be available after the daily allowance resets at midnight (' + esc(snapshot.timezone || "your timezone") + ').</p></div>'
+        ? '<div class="daily-reader-example daily-cooldown-message"><strong>Today’s activity is complete</strong><p>Your next activity will be available after the daily allowance resets at midnight (' + esc(snapshot.timezone || "your timezone") + ').</p></div>'
         : '<div class="daily-reader-example"><strong>' + esc(content.title) + '</strong></div>';
       let disabledReason = "";
       if (!currentUser || !supabaseClient) disabledReason = "Sign in to start and sync this activity.";
