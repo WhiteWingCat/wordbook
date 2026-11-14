@@ -17672,6 +17672,7 @@
       if (activeWord) openWord(activeWord);
       if (ls.active) {
         const activeLesson = lessonData[ls.difficulty].find(item=>item.id===ls.active.id) || ls.active;
+        ls.topic="all";
         renderLessons();
         renderLesson(activeLesson,true);
       }
