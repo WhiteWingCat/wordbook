@@ -131,18 +131,23 @@
     .daily-preference input { accent-color:var(--accent); width:18px; height:18px; }
     .daily-activity-grid { display:block; margin:18px 0; }
     .daily-activity-tabs { display:flex; gap:8px; overflow-x:auto; border-bottom:1px solid var(--border); margin-bottom:16px; }
-    .daily-activity-tab { flex:0 0 auto; border:1px solid var(--border); border-bottom:0; border-radius:10px 10px 0 0; padding:10px 14px; background:var(--panel); color:var(--muted); font:inherit; cursor:pointer; }
-    .daily-activity-tab.active { color:var(--text); border-color:var(--accent); background:var(--panel-hover); box-shadow:inset 0 -2px var(--accent); }
+    .daily-activity-tab { flex:0 0 auto; border:1px solid var(--border); border-bottom:0; border-radius:10px 10px 0 0; padding:12px 18px; background:var(--panel); color:#fff; font-size:1rem; font-weight:650; cursor:pointer; }
+    .daily-activity-tab.active { color:#fff; border-color:var(--accent); background:var(--panel-hover); box-shadow:inset 0 -3px var(--accent); }
     .daily-activity-tab:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
     .daily-tab-paused { display:block; font-size:.7rem; opacity:.75; }
     .daily-activity-panel { min-width:0; }
-    .daily-activity-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin:8px 0 16px; }
+    .daily-activity-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:8px 0 16px; }
     .daily-activity-heading h3 { margin:0 0 5px; font-size:1.15rem; }
     .daily-activity-heading-note { margin:0; color:var(--muted); font-size:.9rem; }
-    .daily-activity-count { color:var(--muted); font-size:.82rem; white-space:nowrap; }
+    .daily-activity-count { display:flex; flex:0 0 auto; min-width:112px; flex-direction:column; align-items:center; justify-content:center; gap:1px; padding:8px 13px; border:1px solid var(--border); border-radius:12px; text-align:center; white-space:nowrap; background:var(--panel); color:#fff; }
+    .daily-activity-count strong { font-size:1.08rem; line-height:1.25; font-weight:800; font-variant-numeric:tabular-nums; }
+    .daily-activity-count small { font-size:.7rem; line-height:1.3; color:inherit; opacity:.9; }
+    .daily-activity-count.healthy { color:#a8e6bf; border-color:#37694b; background:rgba(38,105,65,.16); }
+    .daily-activity-count.medium { color:#f2d18a; border-color:#80673a; background:rgba(128,103,58,.16); }
+    .daily-activity-count.low,.daily-activity-count.exhausted { color:#ffaaaa; border-color:#874b4b; background:rgba(135,75,75,.16); }
     .daily-activity-cards { display:grid; gap:12px; }
     .daily-activity-cards.free { grid-template-columns:minmax(0,1fr); }
-    .daily-activity-cards.premium { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .daily-activity-cards.premium { grid-template-columns:minmax(0,1fr); }
     .daily-activity-card { display:flex; align-items:center; justify-content:space-between; gap:16px; min-width:0; border:1px solid var(--border); border-radius:14px; background:var(--panel); padding:16px; box-shadow:var(--shadow); }
     .daily-activity-card-copy { flex:1 1 auto; min-width:0; }
     .daily-activity-card h3 { margin:6px 0; font-size:1rem; }
@@ -167,7 +172,7 @@
     .daily-question label { display:flex; gap:9px; align-items:flex-start; padding:8px 0; }
     .daily-question input { accent-color:var(--accent); margin-top:4px; }
     .daily-question-feedback { color:var(--muted); font-size:.9rem; min-height:1.2em; }
-    @media(max-width:1000px){.daily-activity-cards.premium{grid-template-columns:repeat(2,minmax(0,1fr));}} @media(max-width:760px){.daily-preferences{grid-template-columns:repeat(2,minmax(0,1fr));}.daily-activity-cards.premium{grid-template-columns:1fr;}.daily-activity-card{align-items:flex-start;}.daily-activity-heading{flex-direction:column;gap:4px;}.daily-activity-tabs{gap:4px;}.daily-activity-tab{padding:9px 10px;font-size:.88rem;}}
+    @media(max-width:760px){.daily-preferences{grid-template-columns:repeat(2,minmax(0,1fr));}.daily-activity-cards.premium{grid-template-columns:minmax(0,1fr);}.daily-activity-card{align-items:flex-start;}.daily-activity-heading{flex-direction:row;align-items:center;gap:10px;}.daily-activity-count{min-width:96px;padding:7px 9px;}.daily-activity-tabs{gap:6px;}.daily-activity-tab{padding:11px 15px;font-size:.96rem;}}
     .profile-card details { border-top:1px solid var(--border); padding:12px 0; }
     .profile-card summary { cursor:pointer; font-weight:650; }
     .preference-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
@@ -17856,6 +17861,8 @@
           document.getElementById("profileContent").hidden = true;
           document.getElementById("profileSignedOut").hidden = false;
         }
+        // Refresh the permanent lesson allowance whenever the active account changes.
+        if (typeof initialiseLessons === "function") await initialiseLessons();
       }
       await refreshAccount();
       supabaseClient.auth.onAuthStateChange((event, session) => {
