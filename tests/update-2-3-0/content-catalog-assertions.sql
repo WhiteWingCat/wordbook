@@ -115,6 +115,10 @@ begin
   ) then raise exception 'Daily Discovery with an invalid global date was accepted'; end if;
 
   if private.is_approved_learning_content(
+    'daily_discovery',v_ids[1] || ':2026-02-30',null,null,'en','daily'
+  ) then raise exception 'Daily Discovery with an impossible calendar date was accepted'; end if;
+
+  if private.is_approved_learning_content(
     'daily_discovery',v_ids[1] || ':' || v_day_text,'forged-topic',null,'en','daily'
   ) then raise exception 'Daily Discovery with a forged topic was accepted'; end if;
 
