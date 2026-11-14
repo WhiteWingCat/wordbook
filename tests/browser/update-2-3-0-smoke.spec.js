@@ -484,6 +484,7 @@ test("Daily Revision is adaptive, abandonment is free, and Daily Discovery is un
 test("unfinished daily activities expire at the user's local midnight", async ({ page }) => {
   await installDailyLearningMock(page, "daily-expiry-user");
   await page.goto("/");
+  await page.locator('[data-page="lessons"]').click();
   await page.evaluate(() => {
     const state = window.__swiftDailyMock;
     state.sessions.push({
@@ -493,7 +494,7 @@ test("unfinished daily activities expire at the user's local midnight", async ({
     });
     state.tables.daily_activity_sessions = state.sessions;
   });
-  await page.reload();
+  await page.evaluate(() => window.initialiseDailyLearning());
   await expect.poll(() => page.evaluate(() =>
     window.__swiftDailyMock.sessions.find(row => row.id === "stale-daily-session")?.status
   )).toBe("abandoned");
