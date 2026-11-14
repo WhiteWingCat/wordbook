@@ -477,8 +477,16 @@ begin
   end if;
   if has_table_privilege('authenticated','private.quiz_question_bank','SELECT')
      or has_table_privilege('authenticated','private.quiz_sessions','SELECT')
-     or has_table_privilege('authenticated','private.quiz_session_questions','SELECT') then
+     or has_table_privilege('authenticated','private.quiz_session_questions','SELECT')
+     or has_table_privilege('authenticated','private.quiz_daily_question_reservations','SELECT') then
     raise exception 'Authenticated role has direct Quiz table access';
+  end if;
+  if not (
+    select relrowsecurity
+    from pg_catalog.pg_class
+    where oid='private.quiz_daily_question_reservations'::regclass
+  ) then
+    raise exception 'Daily question reservation ledger does not have RLS enabled';
   end if;
 end;
 $security$;
