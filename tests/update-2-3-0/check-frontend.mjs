@@ -447,11 +447,15 @@ if (dailyScript.includes('.from("daily_activity_sessions").insert(')
     || dailyScript.includes('.from("learning_activity_log").insert(')) {
   throw new Error("Daily Learning frontend must use server RPCs, not direct activity-log/session INSERTs.");
 }
-if (!dailyScript.includes("const disabled = !!disabledReason || exhausted;")
+if (!dailyScript.includes("const disabled = !!disabledReason || (exhausted && !alreadyCompleted);")
     || !dailyScript.includes("const completedRows = (snapshot.completedToday || [])")
-    || !dailyScript.includes("renderCard(type,completedContent,null,true)")
+    || !dailyScript.includes("renderCard(item,null,true)")
+    || !dailyScript.includes("role=\"tablist\"")
+    || !dailyScript.includes("daily-activity-cards premium")
+    || !dailyScript.includes("Your allowance resets at midnight")
+    || dailyScript.includes("Today’s activity is complete")
     || dailyScript.includes("const practiceExamples =")) {
-  throw new Error("Daily activity allowance lock, completed-content review, or example/Q&A separation regressed.");
+  throw new Error("Daily activity tabs, plan-sized rows, allowance lock/reset placement, completed review, or example/Q&A separation regressed.");
 }
 if (!html.includes("allowanceRemaining<=0")
     || !html.includes("get_my_learning_allowance_usage")
