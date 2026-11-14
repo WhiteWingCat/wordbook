@@ -1447,6 +1447,7 @@ Existing foundations that can be reused:
 ### Technical direction proposed
 
 - Private, versioned Quiz question bank with stable question, lesson and topic identifiers.
+- Prefer a dedicated `quiz.js` frontend module with a narrow explicit bridge to the existing inline app state, avoiding further growth of the large `index.html` file.
 - Private session/question snapshots that preserve question version, fixed order, fixed option order, selected answer, correct answer and explanation.
 - Server RPCs for availability, start, resume, save answer, submit, abandon and completed review.
 - Correct answer keys stay server-side until submission. Evaluation, score calculation, session completion and allowance charge occur atomically.
