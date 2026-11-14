@@ -4,9 +4,9 @@
 >
 > **Repository:** https://github.com/WhiteWingCat/wordbook  
 > **Last consolidated:** 2026-11-14  
-> **Current baseline:** Update 2.3.2 merged to main; six 2.3.0 Supabase migrations applied to production on 2026-11-14; Update 2.3.3 Dashboard Favorite Words detail change is in PR #7  
-> **Current work:** Validate the Update 2.3.3 Dashboard Favorite Words detail change in PR #7; production Daily Learning schema is now installed. Next roadmap feature remains Update 2.4.0 Quiz  
-> **Record status:** Updated after the six approved production migrations were applied and verified, and Update 2.3.3 PR #7 was opened. No production user-content bulk operation was performed.
+> **Current baseline:** Update 2.3.3 merged to main and GitHub Pages deployment succeeded on 2026-11-14 (merge commit `90dc73a9b65fc3af713fefab4955057026089b96`); six 2.3.0 Supabase migrations are applied to production  
+> **Current work:** Owner live-testing Update 2.3.3 Daily Learning and Dashboard Favorite Words details; production Daily Learning schema is installed. Next roadmap feature remains Update 2.4.0 Quiz  
+> **Record status:** Updated after the six approved production migrations were applied and verified, PR #7 merged, and main GitHub Pages deployment succeeded. No production user-content bulk operation was performed.
 
 This record combines confirmed owner decisions, repository evidence and the latest development handover. It is not proof that the live application or production database matches a draft branch.
 
@@ -1244,8 +1244,7 @@ No production test account, synthetic user, or test session was inserted. No per
 - GitHub Actions run #775 passed PostgreSQL 17 migration/allowance tests, Chromium browser regression tests (including the new Dashboard favorite detail test), and disposable local Supabase Auth compatibility.
 - GitHub Actions run #780 passed all three jobs on final branch head `b09f10aa1fa22ea3ba4209408758cb2325eba4ae`: PostgreSQL 17 migration/allowance tests, Chromium browser regression and disposable local Supabase Auth compatibility.
 - Cloudflare Pages reported a successful branch preview build for final PR head `b09f10a`: https://feature-update-2-3-3-dashboa.swiftdictionary-testing.pages.dev.
-- PR #7 is open and mergeable. **The frontend change has not been merged to `main` or deployed to the live site.** The six database migrations are already live. The production Daily Learning schema blocker is therefore resolved; the owner should refresh the live site and test Daily Learning start/resume/completion/allowance behavior.
-- Do not claim Update 2.3.3's Dashboard detail interface is live until the owner approves merge and the main deployment succeeds.
+- PR #7 was squash-merged into `main` as commit `90dc73a9b65fc3af713fefab4955057026089b96` on 2026-11-14 at 08:38:54 UTC. Main GitHub Pages deployment run #79 (`43576812434`) completed successfully at 08:39:35 UTC. Update 2.3.3 frontend and the six database migrations are now live. The owner should refresh the live site and test Daily Learning start/resume/completion/allowance behavior and Dashboard favorite details.
 
 ### Privacy and legal-risk review
 
@@ -1255,9 +1254,8 @@ Malaysia PDPA and general international privacy obligations remain relevant to a
 
 ### Recovery point and next actions
 
-1. Verify GitHub Actions run #780 and the latest Cloudflare branch preview result for PR #7.
-2. Let the owner test the live Daily Learning experience now that the production schema is installed.
-3. Obtain explicit owner approval before merging PR #7 and triggering the main frontend deployment.
-4. After merge, verify the main deployment and ask the owner to test English/Chinese Dashboard favorite detail panels on desktop and mobile.
-5. Continue to Update 2.4.0 Quiz only after the 2.3.3 rollout is accepted.
+1. Owner refreshes the live website and tests Daily Learning start/resume/completion/allowance behaviour.
+2. Owner tests English and Simplified Chinese Dashboard Favorite Word details, including close/return focus, on desktop and mobile.
+3. Record any production-only bugs as a small 2.3.3 follow-up patch if needed.
+4. Continue to Update 2.4.0 Quiz after the 2.3.3 rollout is accepted.
 
