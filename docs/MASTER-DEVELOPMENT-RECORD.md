@@ -1021,3 +1021,49 @@ All three jobs passed:
    - Confirm Chinese/English translation refresh works without navigating away.
 5. Do not merge PR #5, apply production migrations or deploy until the owner explicitly approves.
 6. The preceding Update 2.3.1 content-quality/allowance work remains in force and is recorded in the prior archive. This layout change does not reverse those fixes.
+
+
+## 24. Update 2.3.1 — owner feedback: activity rows, allowance indicator and Premium mock allowance (2026-11-14)
+
+### Owner feedback
+
+The owner requested five final refinements to the Daily Learning category tabs:
+1. Premium activity cards must each occupy one full-width row; three columns caused text crowding beside the Review completed content action.
+2. Numeric allowance must appear only beside the active category title, not inside activity cards.
+3. The title-side allowance indicator should be clean, centered and color-coded according to remaining allowance.
+4. Premium mock account must show the established 15 permanent lesson completions, not the Free limit of 5.
+5. Category tabs should be slightly larger with white text.
+
+### Implementation
+
+- Premium continues to receive up to three activity cards per category, but the cards now stack vertically in one full-width column. Free remains one card.
+- Card actions remain right-aligned. Numeric remaining-allowance text was removed from unstarted activity cards; those cards use a neutral “New activity” label. In-progress and completed/review statuses remain.
+- Moved the category allowance count into a centered compact indicator at the right side of the category title. Added green (> two-thirds remaining), amber (> one-third through two-thirds) and red (one-third or less/exhausted) states.
+- Increased category tab padding and font size/weight; active and inactive labels use white text.
+- Investigation of the Premium permanent lesson display found that the mock fixture already supplied Premium 15 / Free 5 and enforced the values. The Lessons view was not reloading progress and entitlement allowance after account switching, so it could retain the prior account's visible count. Account refresh now reinitializes lesson progress and reloads the allowance for the current identity.
+- Added mock coverage for Free 5 and Premium 15 plan fixtures, plus successful completion of 15 Premium lessons and rejection of the 16th. Extended frontend regression assertions for account-refresh behavior and allowance presentation.
+- No database schema, allowance values, migrations or production data were changed.
+
+### Commits and validation
+
+Latest implementation commit: `d1c9be67b2d37578cd46bad6c4b123b644d75386`.
+
+GitHub Actions run #763: https://github.com/WhiteWingCat/wordbook/actions/runs/43570440623
+
+At the time of writing, Chromium browser regression and PostgreSQL 17 allowance/migration tests passed; Supabase CLI local Auth compatibility was still running. An earlier intermediate mock test failure was due to incorrectly expecting both plan rows to exist in one isolated mock fixture. The test was corrected to inspect each plan in its own mock identity; the Premium 15-completion RPC enforcement test passed.
+
+### Privacy and release boundaries
+
+- Presentation, account-refresh and mock-only test changes; no new personal data, analytics, tracking or third-party content.
+- No new data processing category or database migration. Malaysia PDPA and general privacy planning remains applicable; this is not legal-compliance certification.
+- PR #5 remains open and unmerged. No production migration, production data operation or deployment occurred.
+
+### Current recovery point and owner retest
+
+1. Continue on `feature/update-2-3-1-bug-fix-and-changes`; PR #5 remains open and unmerged.
+2. Latest code/test commit: `d1c9be67b2d37578cd46bad6c4b123b644d75386`.
+3. Wait for CI run #763 to complete and confirm Cloudflare Pages rebuilt the latest branch head.
+4. Retest Free/Premium category card stacking, title-side allowance indicator and colors, no card-level allowance count, tab size/white text, and Premium 15 vs Free 5 permanent lesson allowance after switching accounts while Lessons remains open.
+5. Verify 15 Premium mock lesson completions succeed and the 16th is blocked; completed lessons remain reviewable.
+6. Use only fictional Test User A (Free) and Test User B (Premium) in the explicit mock preview.
+7. Do not merge PR #5, apply production migrations or deploy without explicit owner approval.
