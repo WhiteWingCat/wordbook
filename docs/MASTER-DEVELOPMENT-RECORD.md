@@ -575,3 +575,50 @@ The repository was reviewed at the root and within the main `docs`, `tests` and 
 - Keep the older `UPDATE-2.1.0-TECHNICAL-PLAN.md`, `UPDATE-2.3.0-PLANNING.md` and 2.2.0 migration files as historical/release traceability until their references and relevance have been checked. Do not delete or relocate them merely because a newer Master Development Record exists.
 
 **Tidy-up conclusion:** the branch needs supporting source, tests, workflows and technical/legal records in addition to the Master Development Record. The Master Development Record should be the single current roadmap and handover authority; specialised files remain as supporting detail. Revisit consolidation only after checking all internal links, workflow references and historical migration evidence.
+
+## 19. Update 2.3.1 — Daily Discovery three-slot global schedule implementation (2026-11-14)
+
+### Owner decision
+
+The owner selected **Option A**:
+- Free sees only the first globally scheduled Discovery entry for the UTC day.
+- Premium sees all three scheduled entries.
+- Free does not see locked placeholders or previews for entries two and three.
+- The existing completion allowance remains Free = 1 and Premium = 3 per allowance day.
+
+### Implementation on the existing feature branch
+
+- Expanded the active Discovery vocabulary from 12 to **93 unique, curated English words**. Each entry includes an original definition, Simplified Chinese definition, pronunciation, part of speech, explanatory note, two or more examples, and an English usage note with Chinese translation.
+- The 93-entry pool provides **31 days at three distinct entries per UTC day**.
+- Added schedule version 1, fixed UTC epoch 2026-11-15, and a fixed pool size of 93. Each date receives three consecutive entries from the ordered pool. The schedule is deterministic and independent of user ID, account completion, local timezone, and mock selection offsets.
+- The pool size is pinned. Appending/reordering content must not silently change published assignments; a future expansion requires an explicit schedule-version change and reviewed catalogue migration.
+- The frontend now renders three separate Discovery cards for Premium and only the first card for Free. It does not render locked cards for Free. Each card opens its own scheduled word and preserves the existing dictionary-style reader.
+- Discovery usage notes now display the selected translation language where a Chinese translation is available.
+- Added private rotation_order metadata (1–93) to the approved content catalogue. The server validator checks the UTC date, approved base ID, scheduled rotation slot and active plan allowance. start_daily_activity_session now calls the approved-content validator before creating a new session, preventing a Free user from bypassing the hidden second/third entries through a direct RPC call.
+- The catalogue remains server-only with RLS and no client SELECT access. It stores IDs and schedule metadata, not vocabulary text or learner answers.
+
+### Tests and source-level validation
+
+- Updated the frontend catalogue checker and SQL catalogue draft to match all **161** approved content records: 28 Daily Topic, 25 Daily Application, 93 Daily Discovery, and 15 permanent lessons.
+- Added browser coverage for Free one-card visibility, Premium three-card visibility, identical schedules across separate accounts, and uniqueness within a daily set.
+- Added SQL assertions for contiguous rotation order, Free slot-one-only validation, Premium slots one through three, rejection of an unscheduled fourth entry, stale/impossible UTC dates, and direct-RPC bypass attempts.
+- Updated frontend schedule tests for deterministic same-date assignments, no repeats on adjacent days, no repeat across the 31-day rotation boundary, and use of all 93 entries exactly once per cycle.
+- Source-level checks performed during implementation: JavaScript syntax compilation passed; all 93 entries have unique IDs and words and complete required fields; frontend IDs/metadata and SQL catalogue rows match exactly (161 records); the schedule helper returned three entries per date and passed the 31-day uniqueness and boundary checks; test source files passed syntax compilation after module imports were stripped for the check.
+- **Full CI, Playwright browser execution and disposable PostgreSQL/Supabase SQL assertions have not yet been run for this implementation.** No new GitHub Actions run is associated with the latest feature head yet. Source-level checks must not be described as full CI validation.
+- The Cloudflare preview has not yet been owner-tested with Free and Premium mock accounts.
+
+### Legal, privacy and release boundaries
+
+- The new word definitions, explanations, translations and examples were authored for this project; no third-party dictionary text or external spoken-corpus data was imported for this expansion.
+- No new personal-data field, user tracking, answer-level telemetry, or global learner-completion record was added. Per-user completion and allowance remain account-scoped.
+- This is a planning and engineering review, not a legal-compliance certification. Malaysia PDPA and applicable global privacy/age obligations remain project-wide requirements. If Premium is later commercialised, review subscription terms, price/renewal/cancellation disclosures and applicable consumer obligations before launch.
+- No production Supabase migration, production data operation, merge or deployment was performed. Dashboard remains frozen.
+
+### Current recovery point and next actions
+
+1. Continue on feature/update-2-3-1-bug-fix-and-changes; PR #5 remains open and unmerged.
+2. Latest implementation commit at this record update: 6bc0791116ca0a96410a84a3e3fe6953943b2ae3.
+3. Obtain full CI execution and inspect any failures before owner preview testing.
+4. Confirm Cloudflare Pages has rebuilt the current head. Use only ?swiftMock=1 and fictional Free/Premium Test User accounts; do not use real accounts or production data-changing tests.
+5. Verify Free sees exactly one Discovery card; Premium sees exactly three; both accounts share the same words for the UTC date; complete/abandon flows consume allowances correctly; translation switching updates definitions and usage notes; UTC rollover and local allowance reset remain understandable.
+6. Do not merge PR #5 or deploy without explicit owner approval.
