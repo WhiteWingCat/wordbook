@@ -43,11 +43,12 @@ test("lesson library renders and difficulty tabs switch independently", async ({
 test("exhausted lesson allowance blocks new lessons but preserves completed lesson review", async ({ page }) => {
   await installDailyLearningMock(page,"lesson-limit-user","free");
   await page.goto("/");
+  await expect.poll(() => page.evaluate(() => window.__swiftDailyMock?.user?.id)).toBe("lesson-limit-user");
   await page.evaluate(() => {
     const state = window.__swiftDailyMock;
     state.allowanceUsage.find(row => row.activity_type === "lesson").used_count = 5;
     state.tables.lesson_progress = [{
-      user_id:state.user.id,difficulty:"beginner",lesson_id:"b-sentence",status:"completed",
+      user_id:"lesson-limit-user",difficulty:"beginner",lesson_id:"b-sentence",status:"completed",
       started_at:new Date().toISOString(),completed_at:new Date().toISOString(),updated_at:new Date().toISOString()
     }];
   });
