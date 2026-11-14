@@ -1,10 +1,5 @@
--- DRAFT ONLY — not an applied Supabase migration.
--- Apply after:
---   1. docs/UPDATE-2.3.0-ALLOWANCE-MIGRATION-DRAFT.sql
---   2. docs/UPDATE-2.3.0-DAILY-ACTIVITY-MIGRATION-DRAFT.sql
--- Tested only in the disposable PostgreSQL 17 compatibility harness.
--- SwiftDictionary Update 2.3.0 — separate current-window allowance ledger
-
+-- SwiftDictionary Update 2.3.0 — separate current-window allowance ledger.
+-- Applied to the live SwiftDictionary Supabase project as migration 20261114082332.
 begin;
 
 -- One compact row per user/activity category. No lesson IDs, content IDs,
