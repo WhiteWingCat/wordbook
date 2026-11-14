@@ -96,7 +96,7 @@ begin
 
   if not private.is_approved_learning_content(
     'daily_discovery',v_ids[1] || ':' || v_day_text,null,null,'en','daily'
-  ) then raise exception 'Free plan was not allowed to access today's first global Discovery entry'; end if;
+  ) then raise exception 'Free plan was not allowed to access the first global Discovery entry for the current UTC day'; end if;
 
   if private.is_approved_learning_content(
     'daily_discovery',v_ids[2] || ':' || v_day_text,null,null,'en','daily'
