@@ -451,7 +451,8 @@ if (!dailyScript.includes("const disabled = !!disabledReason || (exhausted && !a
     || !dailyScript.includes("const completedRows = (snapshot.completedToday || [])")
     || !dailyScript.includes("renderCard(item,null,true)")
     || !dailyScript.includes("role=\"tablist\"")
-    || !dailyScript.includes("daily-activity-cards premium")
+    || !dailyScript.includes("daily-activity-cards")
+    || !dailyScript.includes('columns===3?" premium":" free"')
     || !dailyScript.includes("Your allowance resets at midnight")
     || dailyScript.includes("Today’s activity is complete")
     || dailyScript.includes("const practiceExamples =")) {
