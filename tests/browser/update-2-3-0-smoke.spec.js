@@ -469,7 +469,7 @@ test("Daily Revision is adaptive, abandonment is free, and Daily Discovery is un
   await expect(page.locator("#dailyActivityReader")).toBeVisible();
   await expect(page.locator("#dailyActivityReader #dailyQuestions")).toHaveCount(0);
   await page.locator("#dailyActivityReader [data-complete-daily]").click();
-  await expect(page.locator("#dailyLearningStatus")).toContainText("Activity completed successfully.");
+  await expect(page.locator("#dailyLearningStatus")).toContainText("活动已成功完成。");
   const discovery = await page.evaluate(() => ({
     call: window.__swiftDailyMock.rpcCalls.find(call => call.name === "complete_daily_activity_session"),
     session: window.__swiftDailyMock.sessions.find(row => row.activity_type === "daily_discovery"),
